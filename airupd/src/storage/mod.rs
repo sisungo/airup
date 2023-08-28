@@ -1,9 +1,9 @@
 //! # Airup Storage
 
 mod config;
+mod milestones;
 mod runtime;
 mod services;
-mod milestones;
 
 use self::config::Config;
 use self::milestones::Milestones;

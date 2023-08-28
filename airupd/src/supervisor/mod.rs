@@ -27,6 +27,16 @@ use std::{
 };
 use tokio::sync::{mpsc, oneshot};
 
+macro_rules! supervisor_req {
+    ($name:ident, $ret:ty, $req:expr) => {
+        pub async fn $name(&self) -> $ret {
+            let (tx, rx) = oneshot::channel();
+            self.sender.send($req(tx)).await.unwrap();
+            rx.await.unwrap()
+        }
+    };
+}
+
 /// A manager of Airup supervisors.
 #[derive(Debug, Default)]
 pub struct Manager {
@@ -99,29 +109,20 @@ impl SupervisorHandle {
         Arc::new(Self { sender })
     }
 
-    pub async fn query(&self) -> QueryResult {
-        let (tx, rx) = oneshot::channel();
-        self.sender.send(Request::Query(tx)).await.unwrap();
-        rx.await.unwrap()
-    }
-
-    pub async fn start(&self) -> Result<Arc<dyn TaskHandle>, Error> {
-        let (tx, rx) = oneshot::channel();
-        self.sender.send(Request::Start(tx)).await.unwrap();
-        rx.await.unwrap()
-    }
-
-    pub async fn stop(&self) -> Result<Arc<dyn TaskHandle>, Error> {
-        let (tx, rx) = oneshot::channel();
-        self.sender.send(Request::Stop(tx)).await.unwrap();
-        rx.await.unwrap()
-    }
-
-    pub async fn reload(&self) -> Result<Arc<dyn TaskHandle>, Error> {
-        let (tx, rx) = oneshot::channel();
-        self.sender.send(Request::Reload(tx)).await.unwrap();
-        rx.await.unwrap()
-    }
+    supervisor_req!(query, QueryResult, Request::Query);
+    supervisor_req!(start, Result<Arc<dyn TaskHandle>, Error>, Request::Start);
+    supervisor_req!(stop, Result<Arc<dyn TaskHandle>, Error>, Request::Stop);
+    supervisor_req!(reload, Result<Arc<dyn TaskHandle>, Error>, Request::Reload);
+    supervisor_req!(
+        get_task,
+        Result<Arc<dyn TaskHandle>, Error>,
+        Request::GetTaskHandle
+    );
+    supervisor_req!(
+        interrupt_task,
+        Result<Arc<dyn TaskHandle>, Error>,
+        Request::InterruptTask
+    );
 
     pub async fn make_active(&self) -> Result<(), Error> {
         let (task_handle_tx, task_handle_rx) = oneshot::channel();
@@ -137,7 +138,7 @@ impl SupervisorHandle {
         let task_handle = task_handle_rx.await.unwrap();
         let start = start_rx.await.unwrap();
 
-        if let Some(task_handle) = task_handle {
+        if let Ok(task_handle) = task_handle {
             if task_handle.task_type() == "StartService" {
                 return task_handle.wait().await.map(|_| ());
             } else {
@@ -206,7 +207,15 @@ impl Supervisor {
                         .ok();
                 }
                 Request::GetTaskHandle(chan) => {
-                    chan.send(self.current_task.0.clone()).ok();
+                    chan.send(self.current_task.0.clone().ok_or(Error::TaskNotFound)).ok();
+                }
+                Request::InterruptTask(chan) => {
+                    let handle = self.current_task.0.clone().ok_or(Error::TaskNotFound);
+                    if let Ok(x) = handle.as_deref() {
+                        x.send_interrupt();
+                    }
+                    self.context.last_error.set_autosave(false);
+                    chan.send(handle).ok();
                 }
                 Request::Transaction(list) => {
                     for req in list {
@@ -416,7 +425,8 @@ enum Request {
     Start(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     Stop(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     Reload(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
-    GetTaskHandle(oneshot::Sender<Option<Arc<dyn TaskHandle>>>),
+    GetTaskHandle(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
+    InterruptTask(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     Transaction(Vec<Self>),
 }
 

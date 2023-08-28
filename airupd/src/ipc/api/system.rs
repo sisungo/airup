@@ -16,6 +16,7 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     methods.insert("system.reload_service", reload_service);
     methods.insert("system.sideload_service", sideload_service);
     methods.insert("system.unsideload_service", unsideload_service);
+    methods.insert("system.interrupt_service_task", interrupt_service_task);
     methods.insert("system.shutdown", shutdown);
     methods.insert("system.reboot", reboot);
     methods.insert("system.halt", halt);
@@ -66,6 +67,19 @@ fn reload_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
         let service: String = req.extract_params()?;
         check_perm(&context, &[Action::ManageServices]).await?;
         airupd().reload_service(&service).await?.wait().await?;
+        ok_null()
+    })
+}
+
+fn interrupt_service_task(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+    Box::pin(async move {
+        let service: String = req.extract_params()?;
+        check_perm(&context, &[Action::ManageServices]).await?;
+        airupd()
+            .interrupt_service_task(&service)
+            .await?
+            .wait()
+            .await?;
         ok_null()
     })
 }

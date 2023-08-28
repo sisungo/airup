@@ -33,3 +33,8 @@ impl Milestones {
         }
     }
 }
+impl Default for Milestones {
+    fn default() -> Self {
+        Self::new()
+    }
+}

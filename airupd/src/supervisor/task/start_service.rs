@@ -62,12 +62,18 @@ impl StartService {
 
         let ace = super::ace(&self.context).await?;
 
-        for dep in self.context.service.service.dependencies.iter() {
-            airupd()
-                .make_service_active(dep)
-                .await
-                .map_err(|_| Error::dependency_not_satisfied(dep))?;
-        }
+        self.helper
+            .interruptable_scope::<Result<(), Error>, _>(async {
+                for dep in self.context.service.service.dependencies.iter() {
+                    airupd()
+                        .make_service_active(dep)
+                        .await
+                        .map_err(|_| Error::dependency_not_satisfied(dep))?;
+                }
+
+                Ok(())
+            })
+            .await??;
 
         let countdown = airupfx::time::countdown(self.context.service.exec.start_timeout());
 

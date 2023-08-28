@@ -81,7 +81,8 @@ impl PrintedStatus {
             PrintedStatus::Stopped => style("●"),
             PrintedStatus::Failed => style("●").red(),
             PrintedStatus::Starting | PrintedStatus::Stopping => style("●").blue(),
-        }.to_string()
+        }
+        .to_string()
     }
 }
 impl Display for PrintedStatus {

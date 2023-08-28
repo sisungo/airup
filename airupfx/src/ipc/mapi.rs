@@ -134,6 +134,10 @@ pub enum ApiError {
     #[error("Already exists a task running")]
     TaskAlreadyExists,
 
+    /// There is no task running.
+    #[error("Task not found")]
+    TaskNotFound,
+
     /// The running task is uninterruptable.
     #[error("Task interrupted")]
     TaskInterrupted,

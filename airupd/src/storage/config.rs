@@ -1,9 +1,6 @@
 //! Represents to Airup's config directory.
 
-use airupfx::{
-    policy,
-    prelude::*,
-};
+use airupfx::{policy, prelude::*};
 
 /// Main navigator of Airup's config directory.
 #[derive(Debug)]
