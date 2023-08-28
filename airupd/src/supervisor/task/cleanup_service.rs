@@ -78,7 +78,8 @@ impl CleanupService {
                 .await?;
         } else if self.context.retry.enabled() {
             self.context
-                .set_last_error::<Error>(CommandExitError::from_wait_force(&self.wait).into());
+                .last_error
+                .set::<Error>(CommandExitError::from_wait_force(&self.wait).into());
         }
 
         Ok(())

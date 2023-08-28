@@ -15,12 +15,24 @@ pub enum Status {
 }
 
 /// Result of querying a service.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryResult {
     pub status: Status,
     pub pid: Option<Pid>,
     pub task: Option<String>,
     pub last_error: Option<Error>,
+    pub service: Service,
+}
+impl QueryResult {
+    pub fn default_of(service: Service) -> Self {
+        Self {
+            status: Status::Stopped,
+            pid: None,
+            task: None,
+            last_error: None,
+            service,
+        }
+    }
 }
 
 #[async_trait::async_trait]

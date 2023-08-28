@@ -1,7 +1,7 @@
-use std::fmt::Display;
 use airupfx::sdk::prelude::*;
 use clap::Parser;
 use console::style;
+use std::fmt::Display;
 
 /// Query service information
 #[derive(Debug, Clone, Parser)]
@@ -15,7 +15,7 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     match cmdline.service {
         Some(x) => {
             let query_result = conn.query_service(&x).await??;
-            print_query_result(&x, &query_result);
+            print_query_result(&query_result);
         }
         None => {
             let supervisors = conn.supervisors().await??;
@@ -27,7 +27,7 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn print_query_result(name: &str, query_result: &QueryResult) {
+fn print_query_result(query_result: &QueryResult) {
     let status = PrintedStatus::of(query_result);
 
     let theme_dot = match status {
@@ -37,12 +37,13 @@ fn print_query_result(name: &str, query_result: &QueryResult) {
         PrintedStatus::Starting | PrintedStatus::Stopping => style("●").blue(),
     };
 
-    println!("{} {} - {}", theme_dot, name, name);
     println!(
-        "{:>12} {}",
-        "Status:",
-        status
+        "{} {} ({})",
+        theme_dot,
+        query_result.service.display_name(),
+        &query_result.service.name
     );
+    println!("{:>12} {}", "Status:", status);
     println!(
         "{:>12} {}",
         "Main PID:",
@@ -74,7 +75,7 @@ impl PrintedStatus {
             match x {
                 "StartService" => result = Self::Starting,
                 "StopService" => result = Self::Stopping,
-                _ => {},
+                _ => {}
             }
         }
 

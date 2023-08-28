@@ -53,12 +53,12 @@ impl StartService {
     }
 
     pub async fn run(&mut self) -> Result<(), Error> {
-        if self.context.status() == Status::Active {
+        if self.context.status.get() == Status::Active {
             return Err(Error::ObjectAlreadyConfigured);
         }
 
-        self.context.set_last_error(None);
-        self.context.save_task_error(true);
+        self.context.last_error.set(None);
+        self.context.last_error.set_autosave(true);
 
         let ace = super::ace(&self.context).await?;
 
@@ -116,7 +116,7 @@ impl StartService {
             }
         }
 
-        self.context.set_status(Status::Active);
+        self.context.status.set(Status::Active);
 
         Ok(())
     }

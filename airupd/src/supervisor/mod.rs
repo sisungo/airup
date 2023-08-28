@@ -123,12 +123,6 @@ impl SupervisorHandle {
         rx.await.unwrap()
     }
 
-    pub async fn service_def(&self) -> Service {
-        let (tx, rx) = oneshot::channel();
-        self.sender.send(Request::GetServiceDef(tx)).await.unwrap();
-        rx.await.unwrap()
-    }
-
     pub async fn make_active(&self) -> Result<(), Error> {
         let (task_handle_tx, task_handle_rx) = oneshot::channel();
         let (start_tx, start_rx) = oneshot::channel();
@@ -185,14 +179,15 @@ impl Supervisor {
             match req {
                 Request::Query(chan) => {
                     let query_result = QueryResult {
-                        status: self.context.status(),
+                        status: self.context.status.get(),
                         pid: self.context.pid().await,
                         task: self
                             .current_task
                             .0
                             .as_ref()
                             .map(|x| x.task_type().to_owned()),
-                        last_error: self.context.last_error(),
+                        last_error: self.context.last_error.get(),
+                        service: self.context.service.clone(),
                     };
                     chan.send(query_result).ok();
                 }
@@ -213,9 +208,6 @@ impl Supervisor {
                 Request::GetTaskHandle(chan) => {
                     chan.send(self.current_task.0.clone()).ok();
                 }
-                Request::GetServiceDef(chan) => {
-                    chan.send(self.context.service.clone()).ok();
-                }
                 Request::Transaction(list) => {
                     for req in list {
                         self.handle_req(req).await;
@@ -226,7 +218,7 @@ impl Supervisor {
     }
 
     async fn handle_wait(&mut self, wait: Wait) {
-        self.context.set_status(Status::Stopped);
+        self.context.status.set(Status::Stopped);
         self.context.set_child(None).await;
         if self.context.retry.enabled() {
             self.current_task
@@ -237,8 +229,8 @@ impl Supervisor {
 
     async fn handle_wait_task(&mut self, rslt: Result<TaskFeedback, Error>) {
         if let Err(err) = rslt {
-            if self.context.take_save_task_error() {
-                self.context.set_last_error(err);
+            if self.context.last_error.take_autosave() {
+                self.context.last_error.set(err);
             }
         }
     }
@@ -294,7 +286,7 @@ impl CurrentTask {
         if self.0.is_some() {
             return Err(Error::TaskAlreadyExists);
         }
-        context.save_task_error(false);
+        context.last_error.set_autosave(false);
         let task = task_new(context.clone());
         self.0 = Some(task);
         Ok(self.0.as_ref().cloned().unwrap())
@@ -304,20 +296,18 @@ impl CurrentTask {
 #[derive(Debug)]
 pub struct SupervisorContext {
     pub service: Service,
-    status: Mutex<Status>,
+    pub last_error: LastErrorContext,
+    pub status: StatusContext,
     child: tokio::sync::RwLock<Option<Child>>,
-    last_error: Mutex<Option<Error>>,
-    save_task_error: AtomicBool,
     retry: RetryContext,
 }
 impl SupervisorContext {
     pub fn new(service: Service) -> Arc<Self> {
         Arc::new(Self {
             service,
+            last_error: Default::default(),
             status: Default::default(),
             child: Default::default(),
-            last_error: Default::default(),
-            save_task_error: Default::default(),
             retry: Default::default(),
         })
     }
@@ -329,29 +319,42 @@ impl SupervisorContext {
     pub async fn set_child<T: Into<Option<Child>>>(&self, new: T) {
         *self.child.write().await = new.into();
     }
+}
 
-    pub fn status(&self) -> Status {
-        *self.status.lock().unwrap()
+#[derive(Debug, Default)]
+pub struct StatusContext {
+    data: Mutex<Status>,
+}
+impl StatusContext {
+    pub fn get(&self) -> Status {
+        *self.data.lock().unwrap()
     }
 
-    pub fn set_status(&self, new: Status) -> Status {
-        std::mem::replace(&mut self.status.lock().unwrap(), new)
+    pub fn set(&self, new: Status) -> Status {
+        std::mem::replace(&mut *self.data.lock().unwrap(), new)
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct LastErrorContext {
+    data: RwLock<Option<Error>>,
+    auto_save: AtomicBool,
+}
+impl LastErrorContext {
+    pub fn set<E: Into<Option<Error>>>(&self, new: E) -> Option<Error> {
+        std::mem::replace(&mut self.data.write().unwrap(), new.into())
     }
 
-    pub fn last_error(&self) -> Option<Error> {
-        self.last_error.lock().unwrap().clone()
+    pub fn get(&self) -> Option<Error> {
+        self.data.read().unwrap().clone()
     }
 
-    pub fn set_last_error<E: Into<Option<Error>>>(&self, new: E) -> Option<Error> {
-        std::mem::replace(&mut self.last_error.lock().unwrap(), new.into())
+    pub fn set_autosave(&self, val: bool) -> bool {
+        self.auto_save.swap(val, atomic::Ordering::SeqCst)
     }
 
-    pub fn save_task_error(&self, val: bool) -> bool {
-        self.save_task_error.swap(val, atomic::Ordering::SeqCst)
-    }
-
-    pub fn take_save_task_error(&self) -> bool {
-        self.save_task_error(false)
+    pub fn take_autosave(&self) -> bool {
+        self.set_autosave(false)
     }
 }
 
@@ -414,7 +417,6 @@ enum Request {
     Stop(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     Reload(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     GetTaskHandle(oneshot::Sender<Option<Arc<dyn TaskHandle>>>),
-    GetServiceDef(oneshot::Sender<Service>),
     Transaction(Vec<Self>),
 }
 

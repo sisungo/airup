@@ -52,12 +52,12 @@ impl StopService {
     pub async fn run(&mut self) -> Result<(), Error> {
         let service = &self.context.service;
 
-        if self.context.status() != Status::Active {
+        if self.context.status.get() != Status::Active {
             return Err(Error::ObjectNotConfigured);
         }
 
-        self.context.set_last_error(None);
-        self.context.save_task_error(true);
+        self.context.last_error.set(None);
+        self.context.last_error.set_autosave(true);
 
         let ace = super::ace(&self.context).await?;
 
@@ -82,7 +82,7 @@ impl StopService {
             }
         };
 
-        self.context.set_status(Status::Stopped);
+        self.context.status.set(Status::Stopped);
 
         super::cleanup_service(&ace, &self.context.service, &countdown)
             .await

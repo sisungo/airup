@@ -20,7 +20,7 @@ log = ["tracing-subscriber", "tracing-appender", "env"]
 policy = ["fs", "users"]
 power = ["process"]
 process = []
-sdk = ["ipc", "config"]
+sdk = ["ipc", "config", "files"]
 time = []
 users = ["sysinfo", "caches"]
 

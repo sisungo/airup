@@ -74,8 +74,8 @@ fn enter_milestone<'a>(
 
 async fn display_name(airupd: &crate::app::Airupd, name: &str) -> String {
     airupd
-        .service_def(name)
+        .query_service(name)
         .await
-        .map(|x| x.display_name().into())
+        .map(|x| x.service.display_name().into())
         .unwrap_or_else(|_| name.into())
 }

@@ -21,9 +21,6 @@ pub trait AirupdExt {
 
     /// Reloads a service.
     async fn reload_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error>;
-
-    /// Gets the service's definition.
-    async fn service_def(&self, name: &str) -> Result<Service, Error>;
 }
 #[async_trait::async_trait]
 impl AirupdExt for crate::app::Airupd {
@@ -56,10 +53,9 @@ impl AirupdExt for crate::app::Airupd {
         let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
         match self.supervisors.get(name) {
             Some(supervisor) => Ok(supervisor.query().await),
-            None => {
-                self.storage.config.services.get(name).await?;
-                Ok(QueryResult::default())
-            }
+            None => Ok(QueryResult::default_of(
+                self.storage.config.services.get(name).await?,
+            )),
         }
     }
 
@@ -82,14 +78,6 @@ impl AirupdExt for crate::app::Airupd {
                 self.storage.config.services.get(name).await?;
                 Err(Error::ObjectNotConfigured)
             }
-        }
-    }
-
-    async fn service_def(&self, name: &str) -> Result<Service, Error> {
-        let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
-        match self.supervisors.get(name) {
-            Some(supervisor) => Ok(supervisor.service_def().await),
-            None => Ok(self.storage.config.services.get(name).await?.clone()),
         }
     }
 }

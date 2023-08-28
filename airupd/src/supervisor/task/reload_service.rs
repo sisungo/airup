@@ -49,7 +49,7 @@ impl ReloadService {
     }
 
     pub async fn run(&mut self) -> Result<(), Error> {
-        if self.context.status() != Status::Active {
+        if self.context.status.get() != Status::Active {
             return Err(Error::ObjectNotConfigured);
         }
 
