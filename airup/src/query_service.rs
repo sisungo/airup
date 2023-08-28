@@ -30,16 +30,9 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
 fn print_query_result(query_result: &QueryResult) {
     let status = PrintedStatus::of(query_result);
 
-    let theme_dot = match status {
-        PrintedStatus::Active => style("●").green(),
-        PrintedStatus::Stopped => style("●"),
-        PrintedStatus::Failed => style("●").red(),
-        PrintedStatus::Starting | PrintedStatus::Stopping => style("●").blue(),
-    };
-
     println!(
         "{} {} ({})",
-        theme_dot,
+        status.theme_dot(),
         query_result.service.display_name(),
         &query_result.service.name
     );
@@ -80,6 +73,15 @@ impl PrintedStatus {
         }
 
         result
+    }
+
+    pub fn theme_dot(&self) -> String {
+        match self {
+            PrintedStatus::Active => style("●").green(),
+            PrintedStatus::Stopped => style("●"),
+            PrintedStatus::Failed => style("●").red(),
+            PrintedStatus::Starting | PrintedStatus::Stopping => style("●").blue(),
+        }.to_string()
     }
 }
 impl Display for PrintedStatus {

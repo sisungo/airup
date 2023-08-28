@@ -24,7 +24,7 @@ fn enter_milestone<'a>(
 ) -> BoxFuture<'a, Result<(), Error>> {
     Box::pin(async move {
         let name = name.strip_suffix(Milestone::SUFFIX).unwrap_or(&name);
-        let def = match airupd.storage.config.milestones.get(name).await {
+        let def = match airupd.storage.milestones.get(name).await {
             Ok(x) => x,
             Err(err) => {
                 tracing::error!(target: "console", "Failed to enter milestone `{}`: {}", name, err);

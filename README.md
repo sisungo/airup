@@ -11,7 +11,7 @@ Airup is a modern, portable and fast `init` daemon implementation.
 View [Installation Guide](INSTALL.md).
 
 ## Vulnerability Reporting
-For reporting a security vulnerability, please [contact sisungo](mailto:sisungo@icloud.com)
+For reporting a security vulnerability, please [contact sisungo](mailto:sisungo@icloud.com).
 
 ## License
 Airup is dual-licensed under either [MIT](LICENSE_MIT) OR [The Unlicense](UNLICENSE).

@@ -29,7 +29,7 @@ impl AirupdExt for crate::app::Airupd {
             Some(supervisor) => supervisor,
             None => {
                 self.supervisors
-                    .supervise(self.storage.config.services.get(name).await?)
+                    .supervise(self.storage.services.get(name).await?)
                     .await?
             }
         };
@@ -42,7 +42,7 @@ impl AirupdExt for crate::app::Airupd {
             None => {
                 let supervisor = self
                     .supervisors
-                    .supervise(self.storage.config.services.get(name).await?)
+                    .supervise(self.storage.services.get(name).await?)
                     .await?;
                 Ok(supervisor.start().await?)
             }
@@ -54,7 +54,7 @@ impl AirupdExt for crate::app::Airupd {
         match self.supervisors.get(name) {
             Some(supervisor) => Ok(supervisor.query().await),
             None => Ok(QueryResult::default_of(
-                self.storage.config.services.get(name).await?,
+                self.storage.services.get(name).await?,
             )),
         }
     }
@@ -64,7 +64,7 @@ impl AirupdExt for crate::app::Airupd {
         match self.supervisors.get(name) {
             Some(supervisor) => Ok(supervisor.stop().await?),
             None => {
-                self.storage.config.services.get(name).await?;
+                self.storage.services.get(name).await?;
                 Err(Error::ObjectNotConfigured)
             }
         }
@@ -75,7 +75,7 @@ impl AirupdExt for crate::app::Airupd {
         match self.supervisors.get(name) {
             Some(supervisor) => Ok(supervisor.reload().await?),
             None => {
-                self.storage.config.services.get(name).await?;
+                self.storage.services.get(name).await?;
                 Err(Error::ObjectNotConfigured)
             }
         }

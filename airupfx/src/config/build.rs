@@ -7,13 +7,19 @@ static MANIFEST: OnceLock<Manifest> = OnceLock::new();
 /// Represents to `build_manifest.json`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Manifest {
-    /// Represents to path of Airup's system-wide config directory, e.g. `/etc/airup`.
+    /// Path of Airup's system-wide config directory, e.g. `/etc/airup`.
     pub config_dir: PathBuf,
 
-    /// Represents to path of Airup's system-wide runtime directory, e.g. `/run/airup`.
+    /// Path of Airup's system-wide service directory, e.g. `/etc/airup/services`.
+    pub service_dir: PathBuf,
+
+    /// Path of Airup's system-wide milestone directory, e.g. `/etc/airup/milestones`.
+    pub milestone_dir: PathBuf,
+
+    /// Path of Airup's system-wide runtime directory, e.g. `/run/airup`.
     pub runtime_dir: PathBuf,
 
-    /// Represents to Airup's default system-wide config which is used when `$config_dir/system.conf` doesn't exist.
+    /// Default content of Airup's system-wide config which is used when `$config_dir/system.conf` doesn't exist.
     pub default_system_conf: SystemConf,
 }
 impl Manifest {

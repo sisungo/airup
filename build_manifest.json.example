@@ -1,5 +1,7 @@
 {
     "config_dir": "/etc/airup",
+    "service_dir": "/etc/airup/services",
+    "milestone_dir": "/etc/airup/milestones",
     "runtime_dir": "/run/airup",
     "default_system_conf": {
         "locations": {

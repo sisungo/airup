@@ -74,7 +74,7 @@ fn sideload_service(context: Arc<SessionContext>, req: Request) -> MethodFuture 
     Box::pin(async move {
         let (name, service): (String, _) = req.extract_params()?;
         check_perm(&context, &[Action::SideloadServices]).await?;
-        airupd().storage.config.services.load(&name, service)?;
+        airupd().storage.services.load(&name, service)?;
         ok_null()
     })
 }
@@ -83,7 +83,7 @@ fn unsideload_service(context: Arc<SessionContext>, req: Request) -> MethodFutur
     Box::pin(async move {
         let name: String = req.extract_params()?;
         check_perm(&context, &[Action::SideloadServices]).await?;
-        airupd().storage.config.services.unload(&name)?;
+        airupd().storage.services.unload(&name)?;
         ok_null()
     })
 }
