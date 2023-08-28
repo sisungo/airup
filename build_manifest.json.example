@@ -1,0 +1,10 @@
+{
+    "config_dir": "/etc/airup",
+    "runtime_dir": "/run/airup",
+    "default_system_conf": {
+        "locations": {
+            "logs": "/var/log/airup",
+        },
+        "env": {}
+    }
+}

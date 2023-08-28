@@ -1,0 +1,9 @@
+[workspace]
+members = ["airupfx", "airupd", "airup"]
+resolver = "2"
+
+[profile.release]
+lto = true
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["fs", "sync", "net", "io-util", "signal", "rt", "time", "macros", "rt-multi-thread"] }

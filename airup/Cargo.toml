@@ -1,0 +1,17 @@
+[package]
+name = "airup"
+authors = ["sisungo <sisungo@icloud.com>"]
+version = "0.1.1"
+edition = "2021"
+license = "Unlicense"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+airupfx = { path = "../airupfx", features = ["full"] }
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+console = "0.15"
+rustyline = "12"
+tokio = { version = "1", features = ["macros", "rt", "net", "time"] }
