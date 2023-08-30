@@ -207,7 +207,8 @@ impl Supervisor {
                         .ok();
                 }
                 Request::GetTaskHandle(chan) => {
-                    chan.send(self.current_task.0.clone().ok_or(Error::TaskNotFound)).ok();
+                    chan.send(self.current_task.0.clone().ok_or(Error::TaskNotFound))
+                        .ok();
                 }
                 Request::InterruptTask(chan) => {
                     let handle = self.current_task.0.clone().ok_or(Error::TaskNotFound);

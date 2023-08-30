@@ -24,8 +24,8 @@ pub struct Service {
     pub env: Env,
 }
 impl Service {
-    pub const EXTENSION: &str = "airs";
-    pub const SUFFIX: &str = ".airs";
+    pub const EXTENSION: &'static str = "airs";
+    pub const SUFFIX: &'static str = ".airs";
 
     /// Reads a [Service] from given path.
     pub async fn read_from<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {

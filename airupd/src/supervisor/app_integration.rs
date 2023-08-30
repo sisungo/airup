@@ -84,10 +84,7 @@ impl AirupdExt for crate::app::Airupd {
         }
     }
 
-    async fn interrupt_service_task(
-        &self,
-        name: &str,
-    ) -> Result<Arc<dyn TaskHandle>, Error> {
+    async fn interrupt_service_task(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
         let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
         match self.supervisors.get(name) {
             Some(supervisor) => Ok(supervisor.interrupt_task().await?),

@@ -14,8 +14,8 @@ use strum::{EnumIter, IntoEnumIterator};
 #[derive(Debug, Clone, Default)]
 pub struct Policy(pub Vec<Item>);
 impl Policy {
-    pub const EXTENSION: &str = "airp";
-    pub const SUFFIX: &str = ".airp";
+    pub const EXTENSION: &'static str = "airp";
+    pub const SUFFIX: &'static str = ".airp";
 
     /// Creates a new [Policy] with presets.
     pub fn with_preset() -> Self {
@@ -131,7 +131,7 @@ pub enum Action {
     ManageServices,
 }
 impl Action {
-    const STRING_MAP: &[(Self, &'static str)] = &[
+    const STRING_MAP: &'static [(Self, &'static str)] = &[
         (Self::Dump, "dump"),
         (Self::Power, "power"),
         (Self::SideloadServices, "sideload_services"),

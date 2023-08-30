@@ -15,8 +15,8 @@ pub struct Milestone {
     pub base_chain: DirChain,
 }
 impl Milestone {
-    pub const EXTENSION: &str = "airm";
-    pub const SUFFIX: &str = ".airm";
+    pub const EXTENSION: &'static str = "airm";
+    pub const SUFFIX: &'static str = ".airm";
 
     /// Reads a [Milestone] from given directory.
     pub async fn read_from<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
@@ -92,7 +92,7 @@ pub struct Manifest {
     pub milestone: Metadata,
 }
 impl Manifest {
-    pub const FILE_NAME: &str = "milestone.airc";
+    pub const FILE_NAME: &'static str = "milestone.airc";
 
     async fn read_from<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
         Ok(toml::from_str(&tokio::fs::read_to_string(path).await?)?)
