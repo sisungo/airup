@@ -4,41 +4,50 @@ use std::{
     collections::HashMap,
     future::Future,
     hash::{BuildHasher, Hash},
-    pin::Pin,
+    pin::Pin, ffi::CString,
 };
-
 use ahash::AHashSet;
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
-/// Port of unstable feature `#[feature(result_option_inspect)]` to stable Rust.
-///
-/// This will be deleted when the feature is stablized.
-pub trait ResultExt<T, E> {
-    fn inspect_err<F: FnOnce(&E)>(self, op: F) -> Self;
+/// An extension for standard [Result] type to support logging.
+#[cfg(feature = "process")]
+pub trait ResultExt<T> {
+    /// Returns the contained `Ok` value, consuming the `self` value.
+    fn unwrap_log(self, why: &str) -> T;
 }
-impl<T, E> ResultExt<T, E> for Result<T, E> {
-    fn inspect_err<F: FnOnce(&E)>(self, op: F) -> Self {
-        self.map_err(|e| {
-            op(&e);
-            e
-        })
+#[cfg(feature = "process")]
+impl<T, E> ResultExt<T> for Result<T, E>
+where
+    E: std::fmt::Display,
+{
+    fn unwrap_log(self, why: &str) -> T {
+        match self {
+            Ok(val) => val,
+            Err(err) => {
+                tracing::error!(target: "console", "{}: {}", why, err);
+                crate::process::emergency();
+            }
+        }
     }
 }
 
-/// Port of unstable feature `#[feature(result_option_inspect)]` to stable Rust.
-///
-/// This will be deleted when the feature is stablized.
+/// An extension for standard [Option] type to support logging.
+#[cfg(feature = "process")]
 pub trait OptionExt<T> {
-    fn inspect_none<F: FnOnce()>(self, op: F) -> Self;
+    /// Returns the contained `Ok` value, consuming the `self` value.
+    fn unwrap_log(self, why: &str) -> T;
 }
+#[cfg(feature = "process")]
 impl<T> OptionExt<T> for Option<T> {
-    fn inspect_none<F: FnOnce()>(self, op: F) -> Self {
-        if self.is_none() {
-            op()
+    fn unwrap_log(self, why: &str) -> T {
+        match self {
+            Some(val) => val,
+            None => {
+                tracing::error!(target: "console", "{why}");
+                crate::process::emergency();
+            }
         }
-
-        self
     }
 }
 
@@ -94,4 +103,10 @@ where
             }
         }
     }
+}
+
+pub fn cstring_lossy(s: &str) -> CString {
+    let s = s.replace('\0', "\u{fffd}").into_bytes();
+    debug_assert!(s.iter().find(|x| **x == 0).is_none());
+    unsafe { CString::from_vec_unchecked(s) }
 }

@@ -3,7 +3,7 @@ name = "airupfx"
 authors = ["sisungo <sisungo@icloud.com>"]
 version = "0.1.2"
 edition = "2021"
-license = "MIT OR Unlicense"
+license = "Unlicense"
 publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -33,6 +33,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", optional = true }
 strum = { version = "0.25", features = ["derive"] }
 sysinfo = { version = "0.29", optional = true }
+syslog-tracing = "0.2"
 libc = "0.2"
 thiserror = "1"
 tokio = { workspace = true }

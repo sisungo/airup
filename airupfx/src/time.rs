@@ -29,3 +29,11 @@ impl Countdown {
 pub fn countdown(dur: Option<Duration>) -> Countdown {
     Countdown::new(dur)
 }
+
+/// Returns how many milliseconds passed since `1970-01-01 00:00:00`.
+pub fn timestamp_ms() -> i64 {
+    match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+        Ok(x) => x.as_millis() as _,
+        Err(err) => -(err.duration().as_millis() as i64),
+    }
+}

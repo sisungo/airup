@@ -8,7 +8,7 @@ pub mod milestones;
 pub mod storage;
 pub mod supervisor;
 
-use airupfx::log::ResultExt;
+use airupfx::prelude::*;
 use milestones::AirupdExt;
 
 /// Entrypoint of the program.

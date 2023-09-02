@@ -15,6 +15,13 @@ pub use crate::users::{find_user_by_name, find_user_by_uid, users_db, Gid, Uid, 
 #[cfg(feature = "power")]
 pub use crate::power::{power_manager, PowerManager};
 
-pub use crate::util::{BoxFuture, HashMapExt, OptionExt, ResultExt};
+#[cfg(feature = "time")]
+pub use crate::time::{countdown, timestamp_ms, Countdown};
+
+pub use crate::util::{BoxFuture, HashMapExt, ResultExt as _, OptionExt as _, cstring_lossy};
 
 pub use crate::sync::ConcurrentInit;
+
+pub use crate::collections::RingBuffer;
+
+pub use crate::std_port::{OptionExt as _, ResultExt as _};

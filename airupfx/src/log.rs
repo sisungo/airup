@@ -2,6 +2,7 @@
 //! Airup uses [tracing] as its logging framework.
 
 use std::path::PathBuf;
+use crate::prelude::*;
 use tracing::metadata::LevelFilter;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{filter::filter_fn, fmt::writer::OptionalWriter, prelude::*};
@@ -59,8 +60,9 @@ impl Builder {
         let file_appender: OptionalWriter<_> = self
             .location
             .as_ref()
-            .map(|path| tracing_appender::rolling::daily(path, format!("{}.log", self.name)))
+            .map(|path| std::fs::File::create(path.join("airupd.log")).unwrap())
             .into();
+        let syslog_appender = syslog_tracing::Syslog::new(cstring_lossy(&self.name), Default::default(), syslog_tracing::Facility::Daemon).unwrap();
 
         let (stdio_appender, stdio_guard) = tracing_appender::non_blocking(stdio_appender);
         let (file_appender, file_guard) = tracing_appender::non_blocking(file_appender);
@@ -83,10 +85,21 @@ impl Builder {
                     .parse::<LevelFilter>()
                     .unwrap_or(LevelFilter::INFO),
             );
+        let syslog_layer = tracing_subscriber::fmt::layer()
+            .with_ansi(false)
+            .with_writer(syslog_appender)
+            .with_filter(
+                crate::env::take_var("AIRUP_LOG")
+                    .as_deref()
+                    .unwrap_or("info")
+                    .parse::<LevelFilter>()
+                    .unwrap_or(LevelFilter::INFO),
+            );
 
         tracing_subscriber::registry()
             .with(stdio_layer)
             .with(file_layer)
+            .with(syslog_layer)
             .init();
 
         (stdio_guard, file_guard)
@@ -99,47 +112,6 @@ impl Default for Builder {
             quiet: false,
             color: true,
             location: None,
-        }
-    }
-}
-
-/// An extension for standard [Result] type to support logging.
-#[cfg(feature = "process")]
-pub trait ResultExt<T> {
-    /// Returns the contained `Ok` value, consuming the `self` value.
-    fn unwrap_log(self, why: &str) -> T;
-}
-#[cfg(feature = "process")]
-impl<T, E> ResultExt<T> for Result<T, E>
-where
-    E: std::fmt::Display,
-{
-    fn unwrap_log(self, why: &str) -> T {
-        match self {
-            Ok(val) => val,
-            Err(err) => {
-                tracing::error!(target: "console", "{}: {}", why, err);
-                crate::process::emergency();
-            }
-        }
-    }
-}
-
-/// An extension for standard [Option] type to support logging.
-#[cfg(feature = "process")]
-pub trait OptionExt<T> {
-    /// Returns the contained `Ok` value, consuming the `self` value.
-    fn unwrap_log(self, why: &str) -> T;
-}
-#[cfg(feature = "process")]
-impl<T> OptionExt<T> for Option<T> {
-    fn unwrap_log(self, why: &str) -> T {
-        match self {
-            Some(val) => val,
-            None => {
-                tracing::error!(target: "console", "{why}");
-                crate::process::emergency();
-            }
         }
     }
 }

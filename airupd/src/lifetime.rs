@@ -1,6 +1,6 @@
 //! Inspection and manipulation of the system's lifetime.
 
-use airupfx::{log::ResultExt, power::power_manager};
+use airupfx::prelude::*;
 use tokio::sync::broadcast;
 
 /// Airupd's lifetime manager.
