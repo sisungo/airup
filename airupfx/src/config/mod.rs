@@ -1,9 +1,10 @@
 mod build;
 mod system_conf;
 
-pub use build::{manifest as build_manifest, Manifest as BuildManifest};
+pub use build::Security;
 pub use system_conf::SystemConf;
 
+use build::BuildManifest;
 use std::sync::OnceLock;
 
 static SYSTEM_CONF: OnceLock<SystemConf> = OnceLock::new();
@@ -23,4 +24,15 @@ pub async fn init() {
 #[inline]
 pub fn system_conf() -> &'static SystemConf {
     SYSTEM_CONF.get().unwrap()
+}
+
+/// Returns a reference to the unique [Manifest].
+///
+/// ## Panic
+/// Panics if `Manifest::init()` hasn't been called.
+#[inline]
+pub fn build_manifest() -> &'static BuildManifest {
+    static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
+
+    MANIFEST.get_or_init(|| include!(concat!(env!("OUT_DIR"), "/build_manifest.rs")))
 }

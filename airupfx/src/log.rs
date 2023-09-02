@@ -1,8 +1,8 @@
 //! The Airup Logger
 //! Airup uses [tracing] as its logging framework.
 
-use std::path::PathBuf;
 use crate::prelude::*;
+use std::path::PathBuf;
 use tracing::metadata::LevelFilter;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{filter::filter_fn, fmt::writer::OptionalWriter, prelude::*};
@@ -62,7 +62,12 @@ impl Builder {
             .as_ref()
             .map(|path| std::fs::File::create(path.join("airupd.log")).unwrap())
             .into();
-        let syslog_appender = syslog_tracing::Syslog::new(cstring_lossy(&self.name), Default::default(), syslog_tracing::Facility::Daemon).unwrap();
+        let syslog_appender = syslog_tracing::Syslog::new(
+            cstring_lossy(&self.name),
+            Default::default(),
+            syslog_tracing::Facility::Daemon,
+        )
+        .unwrap();
 
         let (stdio_appender, stdio_guard) = tracing_appender::non_blocking(stdio_appender);
         let (file_appender, file_guard) = tracing_appender::non_blocking(file_appender);

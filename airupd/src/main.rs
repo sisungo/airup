@@ -15,7 +15,6 @@ use milestones::AirupdExt;
 #[tokio::main]
 async fn main() {
     airupfx::process::ChildQueue::init(); // Initializes the child queue
-    airupfx::config::BuildManifest::init(); // Parses the built-in `build_manifest.json` for use of `airupfx::build::manifest()`
     self::env::Cmdline::init(); // Parses command-line arguments for use of `crate::env::cmdline()`
     airupfx::config::init().await; // Initializes the main configuration
     let _guard = airupfx::log::Builder::new()
@@ -43,7 +42,7 @@ async fn main() {
     if !env::cmdline().quiet {
         println!(
             "Welcome to {}!\n",
-            airupfx::config::system_conf().system.os_name()
+            airupfx::config::system_conf().system.os_name
         );
     }
 

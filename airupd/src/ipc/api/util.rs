@@ -2,41 +2,56 @@
 
 use crate::{app::airupd, ipc::SessionContext};
 use airupfx::{
-    ipc::mapi::ApiError,
+    config::{system_conf, Security},
+    sdk::Error,
     policy::{Action, Actions},
+    users::current_uid,
 };
 use serde::Serialize;
 
 /// Returns `Ok(())` if given context is permitted to perform the operation, other wise returns `Err(_)`.
-pub async fn check_perm(context: &SessionContext, actions: &[Action]) -> Result<(), ApiError> {
-    let actions: Actions = actions.iter().cloned().into();
-    match &context.uid {
-        Some(uid) => {
-            match airupd()
-                .storage
-                .config
-                .policy
-                .get()
-                .await
-                .check(*uid, &actions)
-            {
+pub async fn check_perm(context: &SessionContext, actions: &[Action]) -> Result<(), Error> {
+    let no_credentials = || Err(Error::permission_denied(["@channel:credentials"]));
+    match system_conf().system.security {
+        Security::Disabled => Ok(()),
+        Security::Simple => match &context.uid {
+            Some(uid) => match *uid == current_uid() || *uid == 0 {
                 true => Ok(()),
-                false => Err(ApiError::permission_denied(actions.iter())),
+                false => Err(Error::permission_denied(["@security_simple"]))
+            },
+            None => no_credentials(),
+        },
+        Security::Policy => {
+            let actions: Actions = actions.iter().cloned().into();
+            match &context.uid {
+                Some(uid) => {
+                    match airupd()
+                        .storage
+                        .config
+                        .policy
+                        .get()
+                        .await
+                        .check(*uid, &actions)
+                    {
+                        true => Ok(()),
+                        false => Err(Error::permission_denied(actions.iter())),
+                    }
+                }
+                None => no_credentials(),
             }
         }
-        None => Err(ApiError::permission_denied(["channel:credentials"])),
     }
 }
 
 /// Returns `Ok` variant of `Result<serde_json::Value, ApiError>` serializing the given value.
 #[inline]
-pub fn ok<T: Serialize>(val: T) -> Result<serde_json::Value, ApiError> {
+pub fn ok<T: Serialize>(val: T) -> Result<serde_json::Value, Error> {
     Ok(serde_json::to_value(val).unwrap())
 }
 
 /// Returns `Ok` variant of `Result<serde_json::Value, ApiError>` with payload `serde_json::json!(null)`.
 #[inline]
-pub fn ok_null() -> Result<serde_json::Value, ApiError> {
+pub fn ok_null() -> Result<serde_json::Value, Error> {
     Ok(null())
 }
 

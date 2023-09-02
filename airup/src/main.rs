@@ -27,8 +27,6 @@ pub enum Cmdline {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-    airupfx::config::BuildManifest::init();
-
     let cmdline = Cmdline::parse();
     let result = match cmdline {
         Cmdline::RawIo(cmdline) => raw_io::main(cmdline).await,

@@ -1,19 +1,20 @@
 //! Extension to the standard library.
 
+use ahash::AHashSet;
 use std::{
     collections::HashMap,
+    ffi::CString,
     future::Future,
     hash::{BuildHasher, Hash},
-    pin::Pin, ffi::CString,
+    pin::Pin,
 };
-use ahash::AHashSet;
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
 /// An extension for standard [Result] type to support logging.
-#[cfg(feature = "process")]
 pub trait ResultExt<T> {
     /// Returns the contained `Ok` value, consuming the `self` value.
+    #[cfg(feature = "process")]
     fn unwrap_log(self, why: &str) -> T;
 }
 #[cfg(feature = "process")]
@@ -21,6 +22,7 @@ impl<T, E> ResultExt<T> for Result<T, E>
 where
     E: std::fmt::Display,
 {
+    #[cfg(feature = "process")]
     fn unwrap_log(self, why: &str) -> T {
         match self {
             Ok(val) => val,
@@ -33,13 +35,14 @@ where
 }
 
 /// An extension for standard [Option] type to support logging.
-#[cfg(feature = "process")]
 pub trait OptionExt<T> {
     /// Returns the contained `Ok` value, consuming the `self` value.
+    #[cfg(feature = "process")]
     fn unwrap_log(self, why: &str) -> T;
 }
 #[cfg(feature = "process")]
 impl<T> OptionExt<T> for Option<T> {
+    #[cfg(feature = "process")]
     fn unwrap_log(self, why: &str) -> T {
         match self {
             Some(val) => val,

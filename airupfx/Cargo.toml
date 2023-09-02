@@ -11,7 +11,7 @@ publish = false
 [features]
 full = ["ace", "config", "files", "fs", "ipc", "log", "policy", "power", "process", "sdk", "time", "users"]
 ace = ["users", "process"]
-config = ["serde_json", "toml", "env"]
+config = ["toml", "env"]
 env = []
 files = ["toml", "users", "fs"]
 fs = []
@@ -20,7 +20,7 @@ log = ["tracing-subscriber", "tracing-appender", "env"]
 policy = ["fs", "users"]
 power = ["process"]
 process = []
-sdk = ["ipc", "config", "files"]
+sdk = ["ipc", "config", "files", "process"]
 time = []
 users = ["sysinfo", "caches"]
 
@@ -41,3 +41,8 @@ toml = { version = "0.7", optional = true }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["serde"], optional = true }
 tracing-appender = { version = "0.2", optional = true }
+
+[build-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uneval = "0.2"

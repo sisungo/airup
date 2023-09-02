@@ -18,7 +18,7 @@ pub use crate::power::{power_manager, PowerManager};
 #[cfg(feature = "time")]
 pub use crate::time::{countdown, timestamp_ms, Countdown};
 
-pub use crate::util::{BoxFuture, HashMapExt, ResultExt as _, OptionExt as _, cstring_lossy};
+pub use crate::util::{cstring_lossy, BoxFuture, HashMapExt, OptionExt as _, ResultExt as _};
 
 pub use crate::sync::ConcurrentInit;
 

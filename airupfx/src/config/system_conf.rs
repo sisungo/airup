@@ -1,5 +1,6 @@
 //! Represents to Airup's system config.
 
+use super::Security;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -7,11 +8,12 @@ use std::{
 };
 
 /// Represents to Airup's system config.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SystemConf {
     #[serde(default)]
     pub system: System,
 
+    #[serde(default)]
     pub locations: Locations,
 
     #[serde(default)]
@@ -32,29 +34,36 @@ impl SystemConf {
         Ok(toml::from_str(&s)?)
     }
 }
-impl Default for SystemConf {
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct System {
+    #[serde(default = "default_os_name")]
+    pub os_name: String,
+
+    #[serde(default = "default_security")]
+    pub security: Security,
+}
+impl Default for System {
     fn default() -> Self {
-        super::build_manifest().default_system_conf.clone()
+        Self {
+            os_name: default_os_name(),
+            security: default_security(),
+        }
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct System {
-    os_name: Option<String>,
-}
-impl System {
-    pub fn os_name(&self) -> &str {
-        self.os_name.as_deref().unwrap_or("\x1b[36;4mAirup\x1b[0m")
-    }
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct Locations {
+    pub logs: Option<PathBuf>,
 }
 
 /// Represents to Airup's environment.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Env {
-    /// Environment variables to execute for the service.
+    /// Table of initial environment variables.
     ///
     /// If a value is set to `null`, the environment variable gets removed if it exists.
-    #[serde(default)]
+    #[serde(default = "default_env_vars")]
     pub vars: BTreeMap<String, Option<String>>,
 }
 impl Env {
@@ -63,8 +72,22 @@ impl Env {
         crate::env::set_vars(self.vars.clone());
     }
 }
+impl Default for Env {
+    fn default() -> Self {
+        Self {
+            vars: default_env_vars(),
+        }
+    }
+}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Locations {
-    pub logs: Option<PathBuf>,
+fn default_env_vars() -> BTreeMap<String, Option<String>> {
+    super::build_manifest().env_vars.clone()
+}
+
+fn default_os_name() -> String {
+    super::build_manifest().os_name.clone()
+}
+
+fn default_security() -> Security {
+    super::build_manifest().security.clone()
 }
