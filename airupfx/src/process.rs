@@ -6,9 +6,13 @@ use std::{
     convert::Infallible,
     future::Future,
     os::unix::process::CommandExt,
-    sync::{OnceLock, RwLock},
+    sync::{OnceLock, RwLock, Mutex},
 };
-use tokio::{signal::unix::SignalKind, sync::mpsc};
+use tokio::{
+    process::{ChildStderr, ChildStdout},
+    signal::unix::SignalKind,
+    sync::mpsc,
+};
 
 static CHILD_QUEUE: OnceLock<ChildQueue> = OnceLock::new();
 
@@ -226,8 +230,10 @@ impl ExitStatus {
 #[derive(Debug)]
 pub struct Child {
     pid: Pid,
-    wait_queue: Option<mpsc::Receiver<Wait>>,
-    wait_cached: Option<Wait>,
+    wait_queue: tokio::sync::Mutex<Option<mpsc::Receiver<Wait>>>,
+    wait_cached: Mutex<Option<Wait>>,
+    pub stdout: Option<ChildStdout>,
+    pub stderr: Option<ChildStderr>,
 }
 impl Child {
     /// Returns OS-assign process ID of the child process.
@@ -238,7 +244,13 @@ impl Child {
     /// Converts from [std::process::Child] to [Child].
     pub fn from_std(c: std::process::Child) -> Self {
         // SAFETY: [std::process::Child] always represents to a valid child process.
-        unsafe { Self::from_pid_unchecked(c.id() as _) }
+        unsafe {
+            Self::from_pid_unchecked(
+                c.id() as _,
+                c.stdout.map(|x| ChildStdout::from_std(x).ok()).flatten(),
+                c.stderr.map(|x| ChildStderr::from_std(x).ok()).flatten(),
+            )
+        }
     }
 
     /// Creates a [Child] instance from PID. The PID must be a valid PID that belongs to child process of current process, or
@@ -247,11 +259,17 @@ impl Child {
     /// ## Safety
     /// Current implementation of AirupFX process module doesn't cause safety issues when the PID doesn't meet the requirements,
     /// but the behavior may be changed in the future version.
-    pub unsafe fn from_pid_unchecked(pid: Pid) -> Self {
+    pub unsafe fn from_pid_unchecked(
+        pid: Pid,
+        stdout: Option<ChildStdout>,
+        stderr: Option<ChildStderr>,
+    ) -> Self {
         Self {
             pid,
-            wait_queue: Some(child_queue().subscribe(pid)),
-            wait_cached: None,
+            wait_queue: Some(child_queue().subscribe(pid)).into(),
+            wait_cached: None.into(),
+            stdout,
+            stderr,
         }
     }
 
@@ -261,10 +279,12 @@ impl Child {
         match wait_nonblocking(pid)? {
             Some(wait) => Ok(Self {
                 pid,
-                wait_queue: None,
-                wait_cached: Some(wait),
+                wait_queue: None.into(),
+                wait_cached: Some(wait).into(),
+                stdout: None,
+                stderr: None,
             }),
-            None => Ok(unsafe { Self::from_pid_unchecked(pid) }),
+            None => Ok(unsafe { Self::from_pid_unchecked(pid, None, None) }),
         }
     }
 
@@ -272,27 +292,29 @@ impl Child {
     ///
     /// ## Cancel Safety
     /// This method is cancel safe.
-    pub async fn wait(&mut self) -> Result<Wait, WaitError> {
-        if let Some(wait) = &self.wait_cached {
+    pub async fn wait(&self) -> Result<Wait, WaitError> {
+        if let Some(wait) = &*self.wait_cached.lock().unwrap() {
             return Ok(wait.clone());
         }
 
-        let wait = self
-            .wait_queue
+        let mut wait_queue = self.wait_queue.lock().await;
+
+        let wait = wait_queue
             .as_mut()
             .ok_or(WaitError::AlreadyWaited)?
             .recv()
             .await
             .ok_or(WaitError::PreemptedQueue(self.pid))?;
-        self.wait_queue = None;
-        self.wait_cached = Some(wait.clone());
+        *self.wait_cached.lock().unwrap() = Some(wait.clone());
+        *wait_queue = None;
 
         Ok(wait)
     }
 
     /// Sends the specified signal to the child process.
     pub async fn kill(&self, sig: i32) -> std::io::Result<()> {
-        match &self.wait_cached {
+        let wait_cached = self.wait_cached.lock().unwrap().clone();
+        match wait_cached {
             Some(_) => Err(std::io::ErrorKind::NotFound.into()),
             None => kill(self.pid, sig).await,
         }

@@ -3,8 +3,8 @@
 use crate::{app::airupd, ipc::SessionContext};
 use airupfx::{
     config::{system_conf, Security},
-    sdk::Error,
     policy::{Action, Actions},
+    sdk::Error,
     users::current_uid,
 };
 use serde::Serialize;
@@ -17,7 +17,7 @@ pub async fn check_perm(context: &SessionContext, actions: &[Action]) -> Result<
         Security::Simple => match &context.uid {
             Some(uid) => match *uid == current_uid() || *uid == 0 {
                 true => Ok(()),
-                false => Err(Error::permission_denied(["@security_simple"]))
+                false => Err(Error::permission_denied(["@security_simple"])),
             },
             None => no_credentials(),
         },

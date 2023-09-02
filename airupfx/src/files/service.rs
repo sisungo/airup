@@ -23,6 +23,9 @@ pub struct Service {
 
     #[serde(default)]
     pub env: Env,
+
+    #[serde(default)]
+    pub helper: Vec<Helper>,
 }
 impl Service {
     pub const EXTENSION: &'static str = "airs";
@@ -85,10 +88,12 @@ pub struct Env {
     pub clear_vars: bool,
 
     /// This field redirects standard output stream.
-    pub stdout: Option<String>,
+    #[serde(default)]
+    pub stdout: Stdio,
 
     /// This field redirects standard error stream.
-    pub stderr: Option<String>,
+    #[serde(default)]
+    pub stderr: Stdio,
 
     /// Working directory to start the service.
     pub pwd: Option<PathBuf>,
@@ -100,6 +105,21 @@ pub struct Env {
     /// By default, the service runs with the same environment variables as `airupd`.
     #[serde(default)]
     pub vars: BTreeMap<String, Option<String>>,
+}
+
+/// Representation of Standard I/O redirection.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Stdio {
+    /// Inherits `stdio` from the parent process.
+    Inherit,
+
+    /// Stores the output to Airup's logger.
+    #[default]
+    Record,
+
+    /// Redirects `stdio` to the specified file.
+    File(PathBuf),
 }
 
 /// Represents to `[service]` section in a service TOML file.
@@ -215,3 +235,8 @@ impl Exec {
             .map(Duration::from_millis)
     }
 }
+
+/// Represents to `[[helper]]` section in a service TOML file.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Helper {}

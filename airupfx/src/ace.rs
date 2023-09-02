@@ -205,7 +205,7 @@ impl Child {
 
     /// Waits until the task completed.
     #[inline]
-    pub fn wait(&mut self) -> BoxFuture<Result<Wait, Error>> {
+    pub fn wait(&self) -> BoxFuture<Result<Wait, Error>> {
         Box::pin(async move {
             Ok(match self {
                 Self::Async(child) => Wait::new(child.id(), ExitStatus::SUCCESS),
@@ -221,7 +221,7 @@ impl Child {
     }
 
     /// Waits until the task completed. Returns [`Error::TimedOut`] if the specified timeout expired.
-    pub async fn wait_timeout(&mut self, timeout: Option<Duration>) -> Result<Wait, Error> {
+    pub async fn wait_timeout(&self, timeout: Option<Duration>) -> Result<Wait, Error> {
         let timeout = match timeout {
             Some(x) => x,
             None => return self.wait().await,

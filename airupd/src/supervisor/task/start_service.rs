@@ -90,7 +90,9 @@ impl StartService {
                     .await;
 
                 if let Some(pid_file) = &self.context.service.service.pid_file {
-                    tokio::fs::write(pid_file, self.context.pid().await.unwrap().to_string()).await.ok();
+                    tokio::fs::write(pid_file, self.context.pid().await.unwrap().to_string())
+                        .await
+                        .ok();
                 }
             }
             Kind::Forking => {
