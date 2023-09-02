@@ -1,4 +1,5 @@
-//! Services
+//! # Airup Service File Format
+//! This module contains [Service], the main file format of an Airup service and its combinations.
 
 use super::ReadError;
 use crate::users::{Gid, Uid};
@@ -9,7 +10,7 @@ use std::{
     time::Duration,
 };
 
-/// Represents to an Airup service.
+/// An Airup service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Service {
     #[serde(skip)]
@@ -44,9 +45,6 @@ impl Service {
         }
         match &self.service.pid_file {
             Some(_) => match &self.service.kind {
-                Kind::Simple => {
-                    Err("field `pid_file` must not be set with `kind=\"simple\"`".into())
-                }
                 Kind::Oneshot => {
                     Err("field `pid_file` must not be set with `kind=\"oneshot\"`".into())
                 }
@@ -70,7 +68,7 @@ impl Service {
     }
 }
 
-/// Represents to environment of a service.
+/// Representation of environment of a service.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Env {
     /// User to execute for the service.
@@ -130,6 +128,7 @@ pub struct Metadata {
     pub dependencies: Vec<String>,
 }
 
+/// Kind of a service.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Kind {

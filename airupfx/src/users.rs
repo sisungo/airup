@@ -95,8 +95,8 @@ impl Default for UsersDb {
     fn default() -> Self {
         let mut system = sysinfo::System::default();
         system.refresh_users_list();
-        let entry_cache = AdaptiveCache::new(128).unwrap();
-        let req_cache = AdaptiveCache::new(128).unwrap();
+        let entry_cache = AdaptiveCache::new(64).unwrap();
+        let req_cache = AdaptiveCache::new(64).unwrap();
 
         Self {
             system,

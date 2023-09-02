@@ -88,6 +88,10 @@ impl StartService {
                 self.context
                     .set_child(ace.run(&self.context.service.exec.start).await?)
                     .await;
+
+                if let Some(pid_file) = &self.context.service.service.pid_file {
+                    tokio::fs::write(pid_file, self.context.pid().await.unwrap().to_string()).await.ok();
+                }
             }
             Kind::Forking => {
                 let _lock = airupfx::process::child_queue().lock_waiter().await;
