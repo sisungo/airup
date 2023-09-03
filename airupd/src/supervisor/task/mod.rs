@@ -11,7 +11,7 @@ pub use start_service::StartServiceHandle;
 pub use stop_service::StopServiceHandle;
 
 use super::SupervisorContext;
-use airupfx::{ace::Env, prelude::*, sdk::Error};
+use airupfx::{prelude::*, sdk::Error};
 use std::future::Future;
 use tokio::sync::watch;
 
@@ -113,11 +113,11 @@ pub fn task_helper() -> (TaskHelperHandle, TaskHelper) {
 
 /// Creates an [Ace] instance matching the given [SupervisorContext].
 pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
-    let ace = Ace::new();
+    let mut ace = Ace::new();
 
-    ace.set_env(Env::from_service_env(&context.service.env)?);
+    ace.env = context.service.env.into_ace()?;
     if let Some(pid) = context.pid().await {
-        ace.env().var("MAINPID", pid.to_string());
+        ace.env.var("MAINPID", pid.to_string());
     }
 
     Ok(ace)

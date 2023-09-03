@@ -13,7 +13,7 @@ use std::{
 /// An Airup service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Service {
-    #[serde(skip)]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub name: String,
 
     #[serde(default)]
@@ -106,20 +106,41 @@ pub struct Env {
     #[serde(default)]
     pub vars: BTreeMap<String, Option<String>>,
 }
+impl Env {
+    #[cfg(feature = "ace")]
+    pub fn into_ace(&self) -> Result<crate::ace::Env, crate::ace::Error> {
+        let mut result = crate::ace::Env::new();
+
+        result
+            .user(self.user.clone())?
+            .uid(self.uid)
+            .gid(self.gid)
+            .stdout(self.stdout.clone().into_ace())
+            .stderr(self.stderr.clone().into_ace());
+
+        Ok(result)
+    }
+}
 
 /// Representation of Standard I/O redirection.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Stdio {
     /// Inherits `stdio` from the parent process.
-    Inherit,
-
-    /// Stores the output to Airup's logger.
     #[default]
-    Record,
+    Inherit,
 
     /// Redirects `stdio` to the specified file.
     File(PathBuf),
+}
+impl Stdio {
+    #[cfg(feature = "ace")]
+    pub fn into_ace(self) -> crate::ace::Stdio {
+        match self {
+            Self::Inherit => crate::ace::Stdio::Inherit,
+            Self::File(path) => crate::ace::Stdio::File(path),
+        }
+    }
 }
 
 /// Represents to `[service]` section in a service TOML file.

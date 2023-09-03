@@ -1,6 +1,7 @@
 //! # Airup Command Engine
 
 use libc::SIGKILL;
+use tokio::io::AsyncRead;
 
 use crate::{
     process::{ExitStatus, Pid, Wait, WaitError, SIGTERM},
@@ -8,18 +9,14 @@ use crate::{
     util::BoxFuture,
 };
 use std::{
-    borrow::Cow,
-    collections::BTreeMap,
-    ffi::OsString,
-    os::unix::process::CommandExt,
-    sync::{Arc, Mutex, MutexGuard},
-    time::Duration,
+    borrow::Cow, collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt,
+    path::PathBuf, sync::Arc, time::Duration,
 };
 
 /// The Airup Command Engine.
 #[derive(Debug, Default)]
 pub struct Ace {
-    env: Mutex<Env>,
+    pub env: Env,
 }
 impl Ace {
     /// Creates a new [Ace] instance with default settings.
@@ -37,7 +34,7 @@ impl Ace {
         cmd: &str,
         timeout: Option<Duration>,
     ) -> Result<Result<(), CommandExitError>, Error> {
-        let mut child = self.run(cmd).await?;
+        let child = self.run(cmd).await?;
         match child.wait_timeout(timeout).await {
             Ok(wait) => Ok(CommandExitError::from_wait(&wait)),
             Err(err) => match err {
@@ -48,16 +45,6 @@ impl Ace {
                 other => Err(other),
             },
         }
-    }
-
-    /// Returns a reference to the [Env] instance of this Ace engine.
-    pub fn env(&self) -> MutexGuard<Env> {
-        self.env.lock().unwrap()
-    }
-
-    /// Sets [Env] instance of this engine.
-    pub fn set_env(&self, env: Env) {
-        *self.env.lock().unwrap() = env;
     }
 
     fn run_tokenized<'a, I: Iterator<Item = Cow<'a, str>> + Send + Sync + 'a>(
@@ -85,7 +72,7 @@ impl Ace {
         arg0: &str,
         args: I,
     ) -> Result<Child, Error> {
-        let mut command = self.env.lock().unwrap().as_command(arg0);
+        let mut command = self.env.as_command(arg0).await?;
         command.args(args.map(|x| OsString::from(&*x)));
         let _lock = crate::process::child_queue().lock_waiter().await;
         let child = command.spawn()?;
@@ -101,6 +88,8 @@ pub struct Env {
     // groups: Option<Vec<Gid>>, not implemented yet.
     clear_vars: bool,
     vars: BTreeMap<OsString, Option<OsString>>,
+    stdout: Stdio,
+    stderr: Stdio,
 }
 impl Env {
     #[inline]
@@ -150,16 +139,19 @@ impl Env {
         self
     }
 
-    #[cfg(feature = "files")]
-    pub fn from_service_env(env: &crate::files::service::Env) -> Result<Self, Error> {
-        let mut result = Self::new();
-
-        result.user(env.user.clone())?.uid(env.uid).gid(env.gid);
-
-        Ok(result)
+    #[inline]
+    pub fn stdout(&mut self, new: Stdio) -> &mut Self {
+        self.stdout = new;
+        self
     }
 
-    fn as_command(&self, arg0: &str) -> std::process::Command {
+    #[inline]
+    pub fn stderr(&mut self, new: Stdio) -> &mut Self {
+        self.stderr = new;
+        self
+    }
+
+    async fn as_command(&self, arg0: &str) -> Result<std::process::Command, Error> {
         let mut command = std::process::Command::new(arg0);
         if let Some(x) = self.uid {
             command.uid(x as _);
@@ -178,8 +170,11 @@ impl Env {
                 command.env_remove(k);
             }
         });
-
         command
+            .stdout(self.stdout.to_std().await?)
+            .stderr(self.stderr.to_std().await?);
+
+        Ok(command)
     }
 }
 
@@ -261,7 +256,7 @@ impl Child {
     /// forcefully killed using [SIGKILL].
     ///
     /// Note that this may take too long since that `kill()` may be blocking and it is uninterruptable.
-    pub async fn kill_timeout(&mut self, sig: i32, timeout: Option<Duration>) -> Result<(), Error> {
+    pub async fn kill_timeout(&self, sig: i32, timeout: Option<Duration>) -> Result<(), Error> {
         self.kill(sig).await?;
         match self.wait_timeout(timeout).await {
             Ok(_) => Ok(()),
@@ -271,10 +266,55 @@ impl Child {
             },
         }
     }
+
+    pub fn take_stdout(&mut self) -> Option<Box<dyn AsyncRead + Send + Sync>> {
+        match self {
+            Self::AlwaysSuccess(child) => child.take_stdout(),
+            Self::Async(child) => child.take_stdout(),
+            Self::Nop => None,
+            Self::Process(child) => match child.take_stdout() {
+                Some(x) => Some(Box::new(x)),
+                None => None,
+            },
+        }
+    }
+
+    pub fn take_stderr(&mut self) -> Option<Box<dyn AsyncRead + Send + Sync>> {
+        match self {
+            Self::AlwaysSuccess(child) => child.take_stderr(),
+            Self::Async(child) => child.take_stderr(),
+            Self::Nop => None,
+            Self::Process(child) => match child.take_stderr() {
+                Some(x) => Some(Box::new(x)),
+                None => None,
+            },
+        }
+    }
 }
 impl From<crate::process::Child> for Child {
     fn from(value: crate::process::Child) -> Self {
         Self::Process(value)
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub enum Stdio {
+    /// The child inherits from the corresponding parent descriptor.
+    #[default]
+    Inherit,
+
+    /// A new pipe should be arranged to connect the parent and child processes.
+    Piped,
+
+    File(PathBuf),
+}
+impl Stdio {
+    pub async fn to_std(&self) -> std::io::Result<std::process::Stdio> {
+        Ok(match self {
+            Self::Inherit => std::process::Stdio::inherit(),
+            Self::Piped => std::process::Stdio::piped(),
+            Self::File(path) => tokio::fs::File::open(path).await?.into_std().await.into(),
+        })
     }
 }
 

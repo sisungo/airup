@@ -110,6 +110,6 @@ where
 
 pub fn cstring_lossy(s: &str) -> CString {
     let s = s.replace('\0', "\u{fffd}").into_bytes();
-    debug_assert!(s.iter().find(|x| **x == 0).is_none());
+    debug_assert!(!s.iter().any(|x| *x == 0));
     unsafe { CString::from_vec_unchecked(s) }
 }

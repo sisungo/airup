@@ -6,7 +6,7 @@ use std::{
     convert::Infallible,
     future::Future,
     os::unix::process::CommandExt,
-    sync::{OnceLock, RwLock, Mutex},
+    sync::{Mutex, OnceLock, RwLock},
 };
 use tokio::{
     process::{ChildStderr, ChildStdout},
@@ -232,8 +232,8 @@ pub struct Child {
     pid: Pid,
     wait_queue: tokio::sync::Mutex<Option<mpsc::Receiver<Wait>>>,
     wait_cached: Mutex<Option<Wait>>,
-    pub stdout: Option<ChildStdout>,
-    pub stderr: Option<ChildStderr>,
+    stdout: Option<ChildStdout>,
+    stderr: Option<ChildStderr>,
 }
 impl Child {
     /// Returns OS-assign process ID of the child process.
@@ -247,8 +247,8 @@ impl Child {
         unsafe {
             Self::from_pid_unchecked(
                 c.id() as _,
-                c.stdout.map(|x| ChildStdout::from_std(x).ok()).flatten(),
-                c.stderr.map(|x| ChildStderr::from_std(x).ok()).flatten(),
+                c.stdout.and_then(|x| ChildStdout::from_std(x).ok()),
+                c.stderr.and_then(|x| ChildStderr::from_std(x).ok()),
             )
         }
     }
@@ -274,6 +274,9 @@ impl Child {
     }
 
     /// Creates a [Child] instance from PID.
+    ///
+    /// ## Cancel Safety
+    /// This method is cancel safe.
     pub async fn from_pid(pid: Pid) -> std::io::Result<Self> {
         let _lock = child_queue().lock_waiter().await;
         match wait_nonblocking(pid)? {
@@ -293,11 +296,11 @@ impl Child {
     /// ## Cancel Safety
     /// This method is cancel safe.
     pub async fn wait(&self) -> Result<Wait, WaitError> {
+        let mut wait_queue = self.wait_queue.lock().await;
+
         if let Some(wait) = &*self.wait_cached.lock().unwrap() {
             return Ok(wait.clone());
         }
-
-        let mut wait_queue = self.wait_queue.lock().await;
 
         let wait = wait_queue
             .as_mut()
@@ -305,6 +308,7 @@ impl Child {
             .recv()
             .await
             .ok_or(WaitError::PreemptedQueue(self.pid))?;
+
         *self.wait_cached.lock().unwrap() = Some(wait.clone());
         *wait_queue = None;
 
@@ -318,6 +322,14 @@ impl Child {
             Some(_) => Err(std::io::ErrorKind::NotFound.into()),
             None => kill(self.pid, sig).await,
         }
+    }
+
+    pub fn take_stdout(&mut self) -> Option<ChildStdout> {
+        self.stdout.take()
+    }
+
+    pub fn take_stderr(&mut self) -> Option<ChildStderr> {
+        self.stderr.take()
     }
 }
 impl Drop for Child {

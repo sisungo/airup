@@ -17,11 +17,10 @@ async fn main() {
     airupfx::process::ChildQueue::init(); // Initializes the child queue
     self::env::Cmdline::init(); // Parses command-line arguments for use of `crate::env::cmdline()`
     airupfx::config::init().await; // Initializes the main configuration
-    let _guard = airupfx::log::Builder::new()
+    airupfx::log::Builder::new()
         .name("airupd")
         .quiet(self::env::cmdline().quiet)
         .color(!self::env::cmdline().no_color)
-        .location(airupfx::config::system_conf().locations.logs.clone())
         .init(); // Configures and initializes the logger
     app::Airupd::init().await; // Initializes the Airupd app
     let _lock = app::airupd()
@@ -50,7 +49,7 @@ async fn main() {
 
     let mut lifetime = app::airupd().lifetime.subscribe();
     if let Ok(event) = lifetime.recv().await {
-        drop((_guard, _lock));
+        drop(_lock);
         event.deal().await;
     }
 }

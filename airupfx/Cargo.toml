@@ -16,7 +16,7 @@ env = []
 files = ["toml", "users", "fs"]
 fs = []
 ipc = ["serde_json"]
-log = ["tracing-subscriber", "tracing-appender", "env"]
+log = ["tracing-subscriber", "env"]
 policy = ["fs", "users"]
 power = ["process"]
 process = []
@@ -40,7 +40,6 @@ tokio = { workspace = true }
 toml = { version = "0.7", optional = true }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["serde"], optional = true }
-tracing-appender = { version = "0.2", optional = true }
 
 [build-dependencies]
 serde = { version = "1", features = ["derive"] }

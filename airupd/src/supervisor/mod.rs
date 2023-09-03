@@ -303,6 +303,7 @@ impl CurrentTask {
     }
 }
 
+/// Context of a running supervisor.
 #[derive(Debug)]
 pub struct SupervisorContext {
     pub service: Service,
@@ -312,6 +313,7 @@ pub struct SupervisorContext {
     retry: RetryContext,
 }
 impl SupervisorContext {
+    /// Creates a new [SupervisorContext] instance for the given [Service].
     pub fn new(service: Service) -> Arc<Self> {
         Arc::new(Self {
             service,
@@ -322,10 +324,12 @@ impl SupervisorContext {
         })
     }
 
+    /// Returns main PID of the service supervised by the supervisor.
     pub async fn pid(&self) -> Option<Pid> {
         self.child.read().await.as_ref().map(|x| x.id())
     }
 
+    /// Sets new child for the supervisor.
     pub async fn set_child<T: Into<Option<Child>>>(&self, new: T) {
         *self.child.write().await = new.into();
     }

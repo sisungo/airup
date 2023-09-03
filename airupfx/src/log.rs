@@ -2,18 +2,15 @@
 //! Airup uses [tracing] as its logging framework.
 
 use crate::prelude::*;
-use std::path::PathBuf;
 use tracing::metadata::LevelFilter;
-use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::{filter::filter_fn, fmt::writer::OptionalWriter, prelude::*};
+use tracing_subscriber::{filter::filter_fn, prelude::*};
 
-/// Builder of AirupFX's-flavor tracing.
+/// Builder of `AirupFX`-flavor tracing configuration.
 #[derive(Debug, Clone)]
 pub struct Builder {
     name: String,
     quiet: bool,
     color: bool,
-    location: Option<PathBuf>,
 }
 impl Builder {
     /// Creates a new `Builder` with default settings.
@@ -43,25 +40,11 @@ impl Builder {
         self
     }
 
-    /// Sets the location where the logger stores log files.
-    #[inline]
-    pub fn location(&mut self, val: Option<PathBuf>) -> &mut Self {
-        self.location = val;
-        self
-    }
-
     /// Initializes the logger.
     #[inline]
-    pub fn init(&mut self) -> (WorkerGuard, WorkerGuard) {
-        let stdio_appender: OptionalWriter<_> = match self.quiet {
-            true => OptionalWriter::none(),
-            false => OptionalWriter::some(std::io::stderr()),
-        };
-        let file_appender: OptionalWriter<_> = self
-            .location
-            .as_ref()
-            .map(|path| std::fs::File::create(path.join("airupd.log")).unwrap())
-            .into();
+    pub fn init(&mut self) {
+        let quiet = self.quiet;
+
         let syslog_appender = syslog_tracing::Syslog::new(
             cstring_lossy(&self.name),
             Default::default(),
@@ -69,27 +52,15 @@ impl Builder {
         )
         .unwrap();
 
-        let (stdio_appender, stdio_guard) = tracing_appender::non_blocking(stdio_appender);
-        let (file_appender, file_guard) = tracing_appender::non_blocking(file_appender);
-
         let stdio_layer = tracing_subscriber::fmt::layer()
             .without_time()
             .with_ansi(self.color)
             .with_file(false)
-            .with_writer(stdio_appender)
+            .with_writer(std::io::stderr)
             .with_target(false)
             .with_filter(filter_fn(|metadata| metadata.target().contains("console")))
+            .with_filter(filter_fn(move |_| !quiet))
             .with_filter(LevelFilter::INFO);
-        let file_layer = tracing_subscriber::fmt::layer()
-            .with_ansi(false)
-            .with_writer(file_appender)
-            .with_filter(
-                crate::env::take_var("AIRUP_LOG")
-                    .as_deref()
-                    .unwrap_or("info")
-                    .parse::<LevelFilter>()
-                    .unwrap_or(LevelFilter::INFO),
-            );
         let syslog_layer = tracing_subscriber::fmt::layer()
             .with_ansi(false)
             .with_writer(syslog_appender)
@@ -103,11 +74,8 @@ impl Builder {
 
         tracing_subscriber::registry()
             .with(stdio_layer)
-            .with(file_layer)
             .with(syslog_layer)
             .init();
-
-        (stdio_guard, file_guard)
     }
 }
 impl Default for Builder {
@@ -116,7 +84,6 @@ impl Default for Builder {
             name: "airupfx".into(),
             quiet: false,
             color: true,
-            location: None,
         }
     }
 }
