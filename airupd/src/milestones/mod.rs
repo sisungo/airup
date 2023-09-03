@@ -1,26 +1,28 @@
 //! # Airup Milestones
 
 use crate::supervisor::AirupdExt as _;
-use ahash::AHashSet;
 use airupfx::{
     files::{milestone::Kind, Milestone},
     prelude::*,
     sdk::Error,
 };
+use std::collections::BTreeSet;
 
+/// An extension trait of [crate::app::Airupd] for milestone operations.
 pub trait AirupdExt {
+    /// Enters a milestone.
     fn enter_milestone(&self, name: String) -> BoxFuture<Result<(), Error>>;
 }
 impl AirupdExt for crate::app::Airupd {
     fn enter_milestone(&self, name: String) -> BoxFuture<Result<(), Error>> {
-        Box::pin(async { enter_milestone(self, name, &mut AHashSet::with_capacity(8)).await })
+        Box::pin(async { enter_milestone(self, name, &mut BTreeSet::new()).await })
     }
 }
 
 fn enter_milestone<'a>(
     airupd: &'a crate::app::Airupd,
     name: String,
-    hist: &'a mut AHashSet<String>,
+    hist: &'a mut BTreeSet<String>,
 ) -> BoxFuture<'a, Result<(), Error>> {
     Box::pin(async move {
         let name = name.strip_suffix(Milestone::SUFFIX).unwrap_or(&name);
@@ -32,6 +34,8 @@ fn enter_milestone<'a>(
             }
         };
 
+        // Detects if dependency loop exists. If a dependency loop is detected, it's automatically broken, then a warning
+        // event is recorded, and the method immediately returns.
         if !hist.insert(name.into()) {
             tracing::warn!(
                 target: "console",
@@ -47,6 +51,11 @@ fn enter_milestone<'a>(
             enter_milestone(airupd, dep.into(), hist).await.ok();
         }
 
+        // By default, Airup sets `AIRUP_MILESTONE` environment variable to indicate services which milestone is the system
+        // in as it is started.
+        std::env::set_var("AIRUP_MILESTONE", name);
+
+        // Starts services
         for service in def.services().await.iter() {
             match &def.manifest.milestone.kind {
                 Kind::Async => match airupd.start_service(service).await {

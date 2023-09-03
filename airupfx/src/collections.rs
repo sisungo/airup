@@ -1,10 +1,14 @@
+//! # AirupFX Collections
+
 use std::collections::{vec_deque, VecDeque};
 
+/// A fixed-size ring buffer.
 pub struct RingBuffer<T> {
     size: usize,
     data: VecDeque<T>,
 }
 impl<T> RingBuffer<T> {
+    /// Creates a new [RingBuffer] instances.
     pub fn new(size: usize) -> Self {
         Self {
             size,
@@ -12,6 +16,7 @@ impl<T> RingBuffer<T> {
         }
     }
 
+    /// Removes all elements from the ring buffer.
     pub fn clear(&mut self) {
         self.data.clear();
     }
@@ -24,6 +29,7 @@ impl<T> RingBuffer<T> {
         self.data.drain(0..)
     }
 
+    /// Pushes a new element to the ring buffer.
     pub fn push(&mut self, val: T) {
         self.data.push_back(val);
         if self.data.len() > self.size {

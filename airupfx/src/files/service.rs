@@ -96,7 +96,7 @@ pub struct Env {
     pub stderr: Stdio,
 
     /// Working directory to start the service.
-    pub pwd: Option<PathBuf>,
+    pub working_dir: Option<PathBuf>,
 
     /// Environment variables to execute for the service.
     ///
@@ -116,7 +116,10 @@ impl Env {
             .uid(self.uid)
             .gid(self.gid)
             .stdout(self.stdout.clone().into_ace())
-            .stderr(self.stderr.clone().into_ace());
+            .stderr(self.stderr.clone().into_ace())
+            .clear_vars(self.clear_vars)
+            .vars::<_, String, _, String>(self.vars.clone().into_iter())
+            .working_dir::<PathBuf, _>(self.working_dir.clone());
 
         Ok(result)
     }

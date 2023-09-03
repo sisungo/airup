@@ -17,6 +17,7 @@ use airupfx::{
         Error,
     },
 };
+use smallvec::{smallvec, SmallVec};
 use std::{
     cmp,
     collections::HashMap,
@@ -91,11 +92,13 @@ impl Manager {
     }
 }
 
+/// Handle of an Airup supervisor.
 #[derive(Debug)]
 pub struct SupervisorHandle {
     sender: mpsc::Sender<Request>,
 }
 impl SupervisorHandle {
+    /// Creates a new [SupervisorHandle] instance while starting the associated supervisor.
     pub fn new(service: Service) -> Arc<Self> {
         let (sender, receiver) = mpsc::channel(128);
 
@@ -124,6 +127,11 @@ impl SupervisorHandle {
         Request::InterruptTask
     );
 
+    /// If the service is running for `StartService` task, waits until the task completed. Otherwise it will attepmt to start
+    /// the service and waits until it completed.
+    ///
+    /// ## Cancel Safety
+    /// This method is cancel safe.
     pub async fn make_active(&self) -> Result<(), Error> {
         let (task_handle_tx, task_handle_rx) = oneshot::channel();
         let (start_tx, start_rx) = oneshot::channel();
@@ -175,56 +183,62 @@ impl Supervisor {
         }
     }
 
-    fn handle_req(&mut self, req: Request) -> BoxFuture<()> {
-        Box::pin(async move {
-            match req {
-                Request::Query(chan) => {
-                    let query_result = QueryResult {
-                        status: self.context.status.get(),
-                        pid: self.context.pid().await,
-                        task: self
-                            .current_task
-                            .0
-                            .as_ref()
-                            .map(|x| x.task_type().to_owned()),
-                        last_error: self.context.last_error.get(),
-                        service: self.context.service.clone(),
-                    };
-                    chan.send(query_result).ok();
-                }
-                Request::Start(chan) => {
-                    self.context.retry.reset();
-                    chan.send(self.current_task.start_service(self.context.clone()))
-                        .ok();
-                }
-                Request::Stop(chan) => {
-                    self.context.retry.disable();
-                    chan.send(self.current_task.stop_service(self.context.clone()))
-                        .ok();
-                }
-                Request::Reload(chan) => {
-                    chan.send(self.current_task.reload_service(self.context.clone()))
-                        .ok();
-                }
-                Request::GetTaskHandle(chan) => {
-                    chan.send(self.current_task.0.clone().ok_or(Error::TaskNotFound))
-                        .ok();
-                }
-                Request::InterruptTask(chan) => {
-                    let handle = self.current_task.0.clone().ok_or(Error::TaskNotFound);
-                    if let Ok(x) = handle.as_deref() {
-                        x.send_interrupt();
+    async fn handle_req(&mut self, req: Request) {
+        let mut transaction: SmallVec<[_; 1]> = smallvec![req];
+        loop {
+            if transaction.is_empty() {
+                break;
+            }
+
+            let drained: SmallVec<[_; 1]> = transaction.drain(..).collect();
+            for req in drained {
+                match req {
+                    Request::Query(chan) => {
+                        let query_result = QueryResult {
+                            status: self.context.status.get(),
+                            pid: self.context.pid().await,
+                            task: self
+                                .current_task
+                                .0
+                                .as_ref()
+                                .map(|x| x.task_type().to_owned()),
+                            last_error: self.context.last_error.get(),
+                            service: self.context.service.clone(),
+                        };
+                        chan.send(query_result).ok();
                     }
-                    self.context.last_error.set_autosave(false);
-                    chan.send(handle).ok();
-                }
-                Request::Transaction(list) => {
-                    for req in list {
-                        self.handle_req(req).await;
+                    Request::Start(chan) => {
+                        self.context.retry.reset();
+                        chan.send(self.current_task.start_service(self.context.clone()))
+                            .ok();
+                    }
+                    Request::Stop(chan) => {
+                        self.context.retry.disable();
+                        chan.send(self.current_task.stop_service(self.context.clone()))
+                            .ok();
+                    }
+                    Request::Reload(chan) => {
+                        chan.send(self.current_task.reload_service(self.context.clone()))
+                            .ok();
+                    }
+                    Request::GetTaskHandle(chan) => {
+                        chan.send(self.current_task.0.clone().ok_or(Error::TaskNotFound))
+                            .ok();
+                    }
+                    Request::InterruptTask(chan) => {
+                        let handle = self.current_task.0.clone().ok_or(Error::TaskNotFound);
+                        if let Ok(x) = handle.as_deref() {
+                            x.send_interrupt();
+                        }
+                        self.context.last_error.set_autosave(false);
+                        chan.send(handle).ok();
+                    }
+                    Request::Transaction(list) => {
+                        transaction.append::<[Request; 4]>(&mut list.into());
                     }
                 }
             }
-        })
+        }
     }
 
     async fn handle_wait(&mut self, wait: Wait) {

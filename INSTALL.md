@@ -13,10 +13,15 @@ Some build dependencies are optional, but is useful for some workflows:
 
 ## Configuration
 Some Airup functions are configured at build time. The build manifest which is located at `build_manifest.json` stores primitive
-configuration items that cannot be set at runtime. Its example is at `build_manifest.json.example`. Definitions to its items:
- - `config_dir`: Path of Airup's configuration directory, which stores security policy, services, milestones, system configuration, etc.
+configuration items that cannot be set at runtime. Its example is at `docs/resources/build_manifest.json`. Definitions to its
+items:
+ - `os_name`: Name of the OS build.
+ - `config_dir`: Path of Airup's configuration directory, which stores security policy, system configuration, etc.
+ - `service_dir`: Path of Airup's service directory, which stores services.
+ - `milestone_dir`: Path of Airup's milestone directory, which stores milestones.
  - `runtime_dir`: Path of Airup's runtime directory, which stores runtime files like the Unix socket.
- - `default_system_conf`: Default content of `system.conf`, represented in JSON.
+ - `env_vars`: Environment variables for the global system. When a value is explictly set to `null`, the variables is deleted if it exists.
+ - `security`: Determines which security model is used by default.
 
 ## Build
 Build debug version of Airup with command:

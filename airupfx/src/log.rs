@@ -1,5 +1,5 @@
-//! The Airup Logger
-//! Airup uses [tracing] as its logging framework.
+//! # The Airup Logger
+//! AirupFX-flavored presets for the [tracing] framework.
 
 use crate::prelude::*;
 use tracing::metadata::LevelFilter;

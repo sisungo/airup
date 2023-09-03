@@ -90,6 +90,7 @@ pub struct Env {
     vars: BTreeMap<OsString, Option<OsString>>,
     stdout: Stdio,
     stderr: Stdio,
+    working_dir: Option<PathBuf>,
 }
 impl Env {
     #[inline]
@@ -136,6 +137,28 @@ impl Env {
         v: V,
     ) -> &mut Self {
         self.vars.insert(k.into(), v.into().map(Into::into));
+        self
+    }
+
+    #[inline]
+    pub fn vars<
+        I: Iterator<Item = (K, V)>,
+        K: Into<OsString>,
+        V: Into<Option<T>>,
+        T: Into<OsString>,
+    >(
+        &mut self,
+        iter: I,
+    ) -> &mut Self {
+        iter.for_each(|(k, v)| {
+            self.var(k, v);
+        });
+        self
+    }
+
+    #[inline]
+    pub fn working_dir<P: Into<PathBuf>, T: Into<Option<P>>>(&mut self, value: T) -> &mut Self {
+        self.working_dir = value.into().map(Into::into);
         self
     }
 
