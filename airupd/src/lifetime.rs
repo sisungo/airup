@@ -9,7 +9,7 @@ pub struct System(broadcast::Sender<Event>);
 impl System {
     /// Creates a new instance with default settings.
     pub fn new() -> Self {
-        Self(broadcast::channel(4).0)
+        Self(broadcast::channel(2).0)
     }
 
     /// Creates a new [broadcast::Receiver] handle that will receive events sent after this call to `subscribe`.
@@ -72,9 +72,8 @@ pub enum Event {
     ReloadImage,
 }
 impl Event {
-    /// Deals with the event.
-    #[inline]
-    pub async fn deal(&self) -> ! {
+    /// Handles the event.
+    pub fn handle(&self) -> ! {
         match self {
             Self::Exit(code) => std::process::exit(*code),
             Self::Shutdown => power_manager().shutdown().unwrap_log("shutdown() failed"),

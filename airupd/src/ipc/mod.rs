@@ -7,10 +7,7 @@ pub mod api;
 use crate::app::airupd;
 use airupfx::prelude::*;
 use anyhow::anyhow;
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::{path::Path, sync::Arc};
 
 /// An instance of the Airup IPC context.
 #[derive(Debug)]
@@ -34,16 +31,14 @@ impl Default for Context {
 /// Represents to an IPC server.
 #[derive(Debug)]
 pub struct Server {
-    path: PathBuf,
     server: airupfx::ipc::Server,
 }
 impl Server {
     /// Creates a new `Server` instance.
     pub async fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
-        let path: PathBuf = path.as_ref().into();
-        let server = airupfx::ipc::Server::new(&path)?;
+        let server = airupfx::ipc::Server::new(path)?;
 
-        Ok(Self { path, server })
+        Ok(Self { server })
     }
 
     /// Forces to create a new `Server` instance.
@@ -52,16 +47,6 @@ impl Server {
         tokio::fs::remove_file(path).await.ok();
 
         Self::new(path).await
-    }
-
-    /// Resets the server IPC handles.
-    ///
-    /// This is called when the socket file got lost.
-    pub async fn reset_ipc(&mut self) -> anyhow::Result<()> {
-        let new_server = airupfx::ipc::Server::new(&self.path)?;
-        self.server = new_server;
-
-        Ok(())
     }
 
     /// Starts the server task.
@@ -74,12 +59,6 @@ impl Server {
     /// Runs the server in place.
     pub async fn run(&mut self) {
         loop {
-            if !tokio::fs::try_exists(&self.path).await.unwrap_or_default() {
-                self.reset_ipc()
-                    .await
-                    .inspect_err(|e| tracing::warn!("ipc_reset() failed: {}", e))
-                    .ok();
-            }
             if let Ok(conn) = self
                 .server
                 .accept()
@@ -109,14 +88,14 @@ impl Session {
     pub fn start(mut self) {
         tokio::spawn(async move {
             if let Err(err) = self.run().await {
-                tracing::info!("{} exited: {}", self.audit_name(), err);
+                tracing::debug!("{} disconnected: {}", self.audit_name(), err);
             }
         });
     }
 
     /// Runs the session in place.
     pub async fn run(&mut self) -> anyhow::Result<()> {
-        tracing::info!("{} established", self.audit_name());
+        tracing::debug!("{} established", self.audit_name());
         loop {
             let req = self.conn.recv_req().await?;
             if req.method == "debug.disconnect" {

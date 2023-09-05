@@ -1,6 +1,6 @@
 //! The Airupd application
 
-use crate::{ipc, lifetime, storage::Storage, supervisor};
+use crate::{ipc, lifetime, storage::Storage, supervisor, milestones};
 use airupfx::process::*;
 use std::sync::OnceLock;
 
@@ -12,16 +12,17 @@ pub struct Airupd {
     pub storage: Storage,
     pub ipc: ipc::Context,
     pub lifetime: lifetime::System,
+    pub milestones: milestones::Manager,
     pub supervisors: supervisor::Manager,
 }
 impl Airupd {
     /// Initializes the Airupd app for use of [airupd].
-    #[inline]
     pub async fn init() {
         let object = Self {
             storage: Storage::new().await,
             ipc: ipc::Context::new(),
             lifetime: lifetime::System::new(),
+            milestones: milestones::Manager::new(),
             supervisors: supervisor::Manager::new(),
         };
 
@@ -38,7 +39,6 @@ impl Airupd {
 }
 
 /// Gets a reference to the unique, global [Airupd] instance.
-#[inline]
 pub fn airupd() -> &'static Airupd {
     AIRUPD.get().unwrap()
 }

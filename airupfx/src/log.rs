@@ -1,7 +1,6 @@
 //! # The Airup Logger
 //! AirupFX-flavored presets for the [tracing] framework.
 
-use crate::prelude::*;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{filter::filter_fn, prelude::*};
 
@@ -45,13 +44,6 @@ impl Builder {
     pub fn init(&mut self) {
         let quiet = self.quiet;
 
-        let syslog_appender = syslog_tracing::Syslog::new(
-            cstring_lossy(&self.name),
-            Default::default(),
-            syslog_tracing::Facility::Daemon,
-        )
-        .unwrap();
-
         let stdio_layer = tracing_subscriber::fmt::layer()
             .without_time()
             .with_ansi(self.color)
@@ -61,20 +53,9 @@ impl Builder {
             .with_filter(filter_fn(|metadata| metadata.target().contains("console")))
             .with_filter(filter_fn(move |_| !quiet))
             .with_filter(LevelFilter::INFO);
-        let syslog_layer = tracing_subscriber::fmt::layer()
-            .with_ansi(false)
-            .with_writer(syslog_appender)
-            .with_filter(
-                crate::env::take_var("AIRUP_LOG")
-                    .as_deref()
-                    .unwrap_or("info")
-                    .parse::<LevelFilter>()
-                    .unwrap_or(LevelFilter::INFO),
-            );
 
         tracing_subscriber::registry()
             .with(stdio_layer)
-            .with(syslog_layer)
             .init();
     }
 }

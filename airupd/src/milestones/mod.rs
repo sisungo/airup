@@ -8,6 +8,14 @@ use airupfx::{
 };
 use std::collections::BTreeSet;
 
+#[derive(Debug)]
+pub struct Manager {}
+impl Manager {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
 /// An extension trait of [crate::app::Airupd] for milestone operations.
 pub trait AirupdExt {
     /// Enters a milestone.

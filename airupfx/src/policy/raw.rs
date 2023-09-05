@@ -8,7 +8,6 @@ use std::{
     ops::{Deref, DerefMut},
     str::FromStr,
 };
-use strum::{EnumIter, IntoEnumIterator};
 
 /// Represents to a set of policy items.
 #[derive(Debug, Clone, Default)]
@@ -121,7 +120,7 @@ impl FromStr for Subject {
 }
 
 /// Represents to a policy action.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Action {
     Dump,
     Power,
@@ -169,8 +168,9 @@ impl Display for Action {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Actions(HashSet<Action>);
 impl Actions {
+    /// Returns an action set over all [Action]s.
     pub fn all() -> Self {
-        Self(Action::iter().collect())
+        Self(Action::STRING_MAP.iter().map(|x| x.0).collect())
     }
 }
 impl<T: Iterator<Item = Action>> From<T> for Actions {

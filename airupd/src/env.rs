@@ -60,7 +60,6 @@ impl Default for Cmdline {
 }
 
 /// Returns a reference to the unique [Cmdline].
-#[inline]
 pub fn cmdline() -> &'static Cmdline {
     CMDLINE.get().unwrap()
 }

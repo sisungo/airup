@@ -182,6 +182,9 @@ impl Env {
         if let Some(x) = self.gid {
             command.gid(x as _);
         }
+        if let Some(x) = &self.working_dir {
+            command.current_dir(x);
+        }
         if self.clear_vars {
             command.env_clear();
         }

@@ -28,7 +28,7 @@ async fn main() {
         .runtime
         .lock()
         .await
-        .unwrap_log("failed to lock `airupd.lock`"); // Locks `airupd.lock`
+        .unwrap_log("unable to lock database"); // Locks the database
     app::airupd()
         .storage
         .runtime
@@ -50,6 +50,6 @@ async fn main() {
     let mut lifetime = app::airupd().lifetime.subscribe();
     if let Ok(event) = lifetime.recv().await {
         drop(_lock);
-        event.deal().await;
+        event.handle();
     }
 }

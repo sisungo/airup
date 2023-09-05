@@ -234,7 +234,7 @@ impl Supervisor {
                         chan.send(handle).ok();
                     }
                     Request::Transaction(list) => {
-                        transaction.append::<[Request; 4]>(&mut list.into());
+                        transaction.append::<[Request; 0]>(&mut list.into());
                     }
                 }
             }
