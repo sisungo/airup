@@ -85,7 +85,7 @@ fn default_env_vars() -> BTreeMap<String, Option<String>> {
 }
 
 fn default_os_name() -> String {
-    super::build_manifest().os_name.into()
+    super::build_manifest().os_name.clone()
 }
 
 fn default_security() -> Security {
