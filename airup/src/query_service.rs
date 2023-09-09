@@ -1,4 +1,4 @@
-use airupfx::sdk::prelude::*;
+use airup_sdk::prelude::*;
 use clap::Parser;
 use console::style;
 use std::fmt::Display;
@@ -11,7 +11,7 @@ pub struct Cmdline {
 }
 
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = Connection::connect(airupfx::sdk::socket_path()).await?;
+    let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
     match cmdline.service {
         Some(x) => {
             let query_result = conn.query_service(&x).await??;

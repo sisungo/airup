@@ -5,8 +5,8 @@ use std::{collections::BTreeMap, path::PathBuf};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildManifest {
     /// Name of the running operating system.
-    #[serde(default = "default_os_name")]
-    pub os_name: String,
+    #[serde(borrow, default = "default_os_name")]
+    pub os_name: &'static str,
 
     /// Path of Airup's system-wide config directory, e.g. `/etc/airup`.
     pub config_dir: PathBuf,
@@ -41,6 +41,6 @@ pub enum Security {
     Policy,
 }
 
-fn default_os_name() -> String {
-    "\x1b[36;4mAirup\x1b[0m".into()
+fn default_os_name() -> &'static str {
+    "\x1b[36;4mAirup\x1b[0m"
 }

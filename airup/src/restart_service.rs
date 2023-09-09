@@ -1,4 +1,4 @@
-use airupfx::sdk::prelude::*;
+use airup_sdk::prelude::*;
 use clap::Parser;
 
 /// Start services
@@ -9,7 +9,7 @@ pub struct Cmdline {
 }
 
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = Connection::connect(airupfx::sdk::socket_path()).await?;
+    let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
     conn.stop_service(&cmdline.service).await??;
     conn.start_service(&cmdline.service).await??;
     Ok(())

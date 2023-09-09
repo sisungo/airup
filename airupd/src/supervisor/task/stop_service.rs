@@ -1,10 +1,10 @@
 use super::*;
 use crate::supervisor::SupervisorContext;
 use airupfx::{
-    process::SIGTERM,
-    sdk::{system::Status, Error},
+    signal::SIGTERM,
     util::BoxFuture,
 };
+use airup_sdk::{system::Status, Error};
 use std::sync::Arc;
 
 #[derive(Debug)]

@@ -1,8 +1,8 @@
 use airupfx::{
     files::{ReadError, Service},
     prelude::*,
-    sdk::Error,
 };
+use airup_sdk::Error;
 use std::{collections::HashMap, sync::RwLock};
 
 /// Represents to Airup's services directory.

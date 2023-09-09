@@ -1,10 +1,8 @@
 //! # Airup Command Engine
 
-use libc::SIGKILL;
-use tokio::io::AsyncRead;
-
 use crate::{
-    process::{ExitStatus, Pid, Wait, WaitError, SIGTERM},
+    process::{ExitStatus, Pid, Wait, WaitError},
+    signal::{SIGKILL, SIGTERM},
     users::{find_user_by_name, Gid, Uid},
     util::BoxFuture,
 };
@@ -12,6 +10,7 @@ use std::{
     borrow::Cow, collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt,
     path::PathBuf, sync::Arc, time::Duration,
 };
+use tokio::io::AsyncRead;
 
 /// The Airup Command Engine.
 #[derive(Debug, Default)]
@@ -74,7 +73,7 @@ impl Ace {
     ) -> Result<Child, Error> {
         let mut command = self.env.as_command(arg0).await?;
         command.args(args.map(|x| OsString::from(&*x)));
-        let _lock = crate::process::child_queue().lock_waiter().await;
+        let _lock = crate::process::lock_handles().await;
         let child = command.spawn()?;
         Ok(Child::Process(crate::process::Child::from_std(child)))
     }

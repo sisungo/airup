@@ -1,4 +1,5 @@
-use airupfx::{files::Service, sdk::prelude::*};
+use airupfx::files::Service;
+use airup_sdk::prelude::*;
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -13,7 +14,7 @@ pub struct Cmdline {
 }
 
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = Connection::connect(airupfx::sdk::socket_path()).await?;
+    let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
     if let Some(path) = cmdline.sideload {
         conn.sideload_service(&cmdline.service, &Service::read_from(path).await?)
             .await??;

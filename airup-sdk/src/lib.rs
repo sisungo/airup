@@ -1,10 +1,10 @@
 pub mod prelude;
 pub mod system;
 
-pub use crate::ipc::mapi::ApiError as Error;
+pub use airupfx::ipc::mapi::ApiError as Error;
 use serde::{de::DeserializeOwned, ser::Serialize};
 
-use crate::ipc::{self, mapi::Request};
+use airupfx::ipc::{self, mapi::Request};
 use std::{
     ops::{Deref, DerefMut},
     path::Path,
@@ -17,7 +17,7 @@ pub fn socket_path() -> &'static Path {
 
     SOCKET_PATH.get_or_init(|| {
         Box::leak(
-            crate::config::build_manifest()
+            airupfx::config::build_manifest()
                 .runtime_dir
                 .join("airupd.sock")
                 .into(),

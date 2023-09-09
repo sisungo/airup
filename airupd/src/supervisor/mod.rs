@@ -12,10 +12,10 @@ use airupfx::{
     files::Service,
     prelude::*,
     process::Wait,
-    sdk::{
-        system::{QueryResult, Status},
-        Error,
-    },
+};
+use airup_sdk::{
+    system::{QueryResult, Status},
+    Error,
 };
 use smallvec::{smallvec, SmallVec};
 use std::{

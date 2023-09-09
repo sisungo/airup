@@ -1,7 +1,7 @@
 //! The Airupd application
 
-use crate::{ipc, lifetime, storage::Storage, supervisor, milestones};
-use airupfx::process::*;
+use crate::{ipc, lifetime, milestones, storage::Storage, supervisor};
+use airupfx::signal::*;
 use std::sync::OnceLock;
 
 static AIRUPD: OnceLock<Airupd> = OnceLock::new();

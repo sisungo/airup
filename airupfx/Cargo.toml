@@ -9,7 +9,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-full = ["ace", "config", "files", "fs", "ipc", "log", "policy", "power", "process", "sdk", "time", "users"]
+full = ["ace", "config", "files", "fs", "ipc", "log", "policy", "power", "process", "signal", "time", "users"]
 ace = ["users", "process"]
 config = ["toml", "env"]
 env = []
@@ -20,7 +20,7 @@ log = ["tracing-subscriber", "env"]
 policy = ["fs", "users"]
 power = ["process"]
 process = []
-sdk = ["ipc", "config", "files", "process"]
+signal = []
 time = []
 users = ["sysinfo", "caches"]
 

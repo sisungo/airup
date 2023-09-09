@@ -14,7 +14,7 @@ use milestones::AirupdExt;
 /// Entrypoint of the program.
 #[tokio::main]
 async fn main() {
-    airupfx::process::ChildQueue::init(); // Initializes the child queue
+    airupfx::process::init(); // Initializes the process system
     self::env::Cmdline::init(); // Parses command-line arguments for use of `crate::env::cmdline()`
     airupfx::config::init().await; // Initializes the main configuration
     airupfx::log::Builder::new()

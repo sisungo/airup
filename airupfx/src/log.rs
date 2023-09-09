@@ -54,9 +54,7 @@ impl Builder {
             .with_filter(filter_fn(move |_| !quiet))
             .with_filter(LevelFilter::INFO);
 
-        tracing_subscriber::registry()
-            .with(stdio_layer)
-            .init();
+        tracing_subscriber::registry().with(stdio_layer).init();
     }
 }
 impl Default for Builder {

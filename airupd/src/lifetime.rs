@@ -76,7 +76,7 @@ impl Event {
     pub fn handle(&self) -> ! {
         match self {
             Self::Exit(code) => std::process::exit(*code),
-            Self::Shutdown => power_manager().shutdown().unwrap_log("shutdown() failed"),
+            Self::Shutdown => power_manager().poweroff().unwrap_log("poweroff() failed"),
             Self::Reboot => power_manager().reboot().unwrap_log("reboot() failed"),
             Self::Halt => power_manager().halt().unwrap_log("halt() failed"),
             Self::ReloadImage => {

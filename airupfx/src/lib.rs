@@ -16,9 +16,6 @@ pub mod config;
 #[cfg(feature = "ipc")]
 pub mod ipc;
 
-#[cfg(feature = "sdk")]
-pub mod sdk;
-
 #[cfg(feature = "policy")]
 pub mod policy;
 
@@ -40,9 +37,14 @@ pub mod ace;
 #[cfg(feature = "time")]
 pub mod time;
 
+#[cfg(feature = "signal")]
+pub mod signal;
+
 pub mod util;
 
 pub mod std_port;
+
+pub mod sys;
 
 pub mod collections;
 

@@ -1,9 +1,7 @@
 use super::task::TaskHandle;
-use airupfx::{
-    files::Service,
-    sdk::{system::QueryResult, Error},
-};
+use airupfx::files::Service;
 use std::sync::Arc;
+use airup_sdk::{system::QueryResult, Error};
 
 #[async_trait::async_trait]
 pub trait AirupdExt {

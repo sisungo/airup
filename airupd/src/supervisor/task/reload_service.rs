@@ -1,9 +1,7 @@
 use super::*;
 use crate::supervisor::SupervisorContext;
-use airupfx::{
-    prelude::*,
-    sdk::{system::Status, Error},
-};
+use airupfx::prelude::*;
+use airup_sdk::{prelude::*, Error};
 use std::sync::Arc;
 
 #[derive(Debug)]

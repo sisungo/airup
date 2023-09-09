@@ -1,4 +1,5 @@
-use airupfx::{process::SIGTERM, sdk::prelude::*};
+use airupfx::signal::SIGTERM;
+use airup_sdk::prelude::*;
 use clap::Parser;
 
 /// Reboots the system
@@ -70,14 +71,14 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
                 airupfx::power::power_manager().reboot()?;
             }
             if cmdline.poweroff {
-                airupfx::power::power_manager().shutdown()?;
+                airupfx::power::power_manager().poweroff()?;
             }
             if cmdline.halt {
                 airupfx::power::power_manager().halt()?;
             }
         }
         false => {
-            let mut conn = Connection::connect(airupfx::sdk::socket_path()).await?;
+            let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
             if cmdline.reboot {
                 conn.reboot().await??;
             }

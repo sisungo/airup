@@ -4,8 +4,8 @@ use crate::supervisor::AirupdExt as _;
 use airupfx::{
     files::{milestone::Kind, Milestone},
     prelude::*,
-    sdk::Error,
 };
+use airup_sdk::Error;
 use std::collections::BTreeSet;
 
 #[derive(Debug)]

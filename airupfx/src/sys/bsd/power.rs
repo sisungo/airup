@@ -1,13 +1,13 @@
 //! BSD-family (FreeBSD, NetBSD, DragonflyBSD, OpenBSD) power management.
 
-use super::PowerManager;
+use crate::power::PowerManager;
 use libc::{RB_AUTOBOOT, RB_HALT, RB_POWEROFF};
 use std::{convert::Infallible, ptr::NonNull};
 
 #[derive(Default)]
-pub struct Linux;
-impl PowerManager for Linux {
-    fn shutdown(&self) -> std::io::Result<Infallible> {
+pub struct Bsd;
+impl PowerManager for Bsd {
+    fn poweroff(&self) -> std::io::Result<Infallible> {
         bsd_reboot(RB_POWEROFF)
     }
 

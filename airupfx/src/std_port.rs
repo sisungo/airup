@@ -1,4 +1,6 @@
-//! Port of unstable `std` features.
+//! Port of unstable `std` features in stable Rust.
+//!
+//! These will be deleted when the features gets stablized.
 
 /// Port of unstable feature `#[feature(result_option_inspect)]` to stable Rust.
 ///

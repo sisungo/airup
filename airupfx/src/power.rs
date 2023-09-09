@@ -1,24 +1,13 @@
 //! # AirupFX Power Management
 
-#[cfg(target_os = "linux")]
-mod linux;
-
-#[cfg(any(
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd",
-    target_os = "dragonfly"
-))]
-mod bsd;
-
 use std::{convert::Infallible, sync::OnceLock};
 
 static POWER_MANAGER: OnceLock<Box<dyn PowerManager>> = OnceLock::new();
 
 /// Interface of power management.
 pub trait PowerManager: Send + Sync {
-    /// Immediately shuts the device down.
-    fn shutdown(&self) -> std::io::Result<Infallible>;
+    /// Immediately powers the device off.
+    fn poweroff(&self) -> std::io::Result<Infallible>;
 
     /// Immediately reboots the device.
     fn reboot(&self) -> std::io::Result<Infallible>;
@@ -34,7 +23,7 @@ pub trait PowerManager: Send + Sync {
 #[derive(Default)]
 pub struct Fallback;
 impl PowerManager for Fallback {
-    fn shutdown(&self) -> std::io::Result<Infallible> {
+    fn poweroff(&self) -> std::io::Result<Infallible> {
         self.halt_process();
     }
 
@@ -65,16 +54,14 @@ pub fn power_manager() -> &'static dyn PowerManager {
 /// Returns the default [PowerManager] object of current platform.
 #[allow(unreachable_code)]
 pub fn default_power_manager() -> Box<dyn PowerManager> {
-    #[cfg(target_os = "linux")]
-    return Box::<linux::Linux>::default();
-
     #[cfg(any(
+        target_os = "linux",
         target_os = "freebsd",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "dragonfly"
     ))]
-    return Box::<bsd::Bsd>::default();
+    return Box::<crate::sys::PowerManager>::default();
 
     Box::<Fallback>::default()
 }

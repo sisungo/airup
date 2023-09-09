@@ -1,4 +1,4 @@
-use airupfx::sdk::Connection;
+use airup_sdk::prelude::*;
 use anyhow::anyhow;
 use clap::Parser;
 use console::style;
@@ -20,7 +20,7 @@ pub struct Cmdline {
 pub async fn main(mut cmdline: Cmdline) -> anyhow::Result<()> {
     let path = match cmdline.path.take() {
         Some(x) => Box::leak(x.into_boxed_path()),
-        None => airupfx::sdk::socket_path(),
+        None => airup_sdk::socket_path(),
     };
 
     let mut raw_io = RawIo {

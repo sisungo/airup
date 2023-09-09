@@ -4,9 +4,9 @@ use crate::{app::airupd, ipc::SessionContext};
 use airupfx::{
     config::{system_conf, Security},
     policy::{Action, Actions},
-    sdk::Error,
     users::current_uid,
 };
+use airup_sdk::Error;
 use serde::Serialize;
 
 /// Returns `Ok(())` if given context is permitted to perform the operation, other wise returns `Err(_)`.

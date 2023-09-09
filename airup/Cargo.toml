@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 airupfx = { path = "../airupfx", features = ["full"] }
+airup-sdk = { path = "../airup-sdk" }
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 console = "0.15"
