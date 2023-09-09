@@ -15,18 +15,18 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     match cmdline.service {
         Some(x) => {
             let queried = conn.query_service(&x).await??;
-            print_query_one(&queried);
+            print_query_service(&queried);
         }
         None => {
-            let supervisors = conn.query_system().await??;
-            println!("{:?}", supervisors);
+            let queried = conn.query_system().await??;
+            println!("{:?}", queried);
         }
     }
     Ok(())
 }
 
 /// Prints a [QueryService] to console, in human-friendly format.
-fn print_query_one(query_result: &QueryService) {
+fn print_query_service(query_result: &QueryService) {
     let status = PrintedStatus::of(query_result);
 
     println!(
