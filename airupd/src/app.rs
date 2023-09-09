@@ -1,6 +1,7 @@
 //! The Airupd application
 
 use crate::{ipc, lifetime, milestones, storage::Storage, supervisor};
+use airup_sdk::system::QuerySystem;
 use airupfx::signal::*;
 use std::sync::OnceLock;
 
@@ -27,6 +28,13 @@ impl Airupd {
         };
 
         AIRUPD.set(object).unwrap();
+    }
+
+    /// Queries information about the whole system.
+    pub async fn query_system(&self) -> QuerySystem {
+        QuerySystem {
+            services: self.supervisors.list().await,
+        }
     }
 
     /// Starts tasks to listen to UNIX signals.

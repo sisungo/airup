@@ -1,5 +1,5 @@
-use airupfx::signal::SIGTERM;
 use airup_sdk::prelude::*;
+use airupfx::signal::SIGTERM;
 use clap::Parser;
 
 /// Reboots the system

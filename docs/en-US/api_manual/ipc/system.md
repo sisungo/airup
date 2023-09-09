@@ -12,8 +12,8 @@ Module `system` provides methods for managing the system.
 - Name: `system.query_service`
 - Parameters: `string (name of service to query)` (optional)
 - Required Permissions: `query_services`
-- Return Value: `QueryResult` object OR `string array`
-- Description: If the parameter is `null`, returns a list of names of all loaded services. If not, returns queried status of the service.
+- Return Value: `QueryService` object OR `QuerySystem`
+- Description: If the parameter is `null`, returns queried macro information about the whole system. If not, returns queried information of the service.
 
 ## Method: `system.start_service`
 - Name: `system.start_service`

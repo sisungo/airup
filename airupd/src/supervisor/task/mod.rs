@@ -11,8 +11,8 @@ pub use start_service::StartServiceHandle;
 pub use stop_service::StopServiceHandle;
 
 use super::SupervisorContext;
-use airupfx::prelude::*;
 use airup_sdk::Error;
+use airupfx::prelude::*;
 use std::future::Future;
 use tokio::sync::watch;
 

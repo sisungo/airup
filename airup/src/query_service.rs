@@ -14,20 +14,19 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
     match cmdline.service {
         Some(x) => {
-            let query_result = conn.query_service(&x).await??;
-            print_query_result(&query_result);
+            let queried = conn.query_service(&x).await??;
+            print_query_one(&queried);
         }
         None => {
-            let supervisors = conn.supervisors().await??;
-            for supervisor in supervisors {
-                println!("{supervisor}");
-            }
+            let supervisors = conn.query_system().await??;
+            println!("{:?}", supervisors);
         }
     }
     Ok(())
 }
 
-fn print_query_result(query_result: &QueryResult) {
+/// Prints a [QueryService] to console, in human-friendly format.
+fn print_query_one(query_result: &QueryService) {
     let status = PrintedStatus::of(query_result);
 
     println!(
@@ -56,7 +55,7 @@ enum PrintedStatus {
     Stopping,
 }
 impl PrintedStatus {
-    pub fn of(query_result: &QueryResult) -> Self {
+    pub fn of(query_result: &QueryService) -> Self {
         let mut result = match query_result.status {
             Status::Active => Self::Active,
             Status::Stopped => Self::Stopped,

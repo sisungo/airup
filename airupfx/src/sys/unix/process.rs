@@ -2,6 +2,8 @@ use crate::process::{ExitStatus, Pid, Wait};
 use ahash::AHashMap;
 use std::{
     cmp::Ordering,
+    convert::Infallible,
+    os::unix::process::CommandExt,
     sync::{Mutex, OnceLock, RwLock},
 };
 use tokio::{
@@ -22,6 +24,13 @@ fn wait_nonblocking(pid: Pid) -> std::io::Result<Option<Wait>> {
         Ordering::Less => Err(std::io::Error::last_os_error()),
         Ordering::Greater => Ok(Some(Wait::new(pid, ExitStatus::from_unix(status)))),
     }
+}
+
+/// Reloads the process image with the version on the filesystem.
+pub fn reload_image() -> std::io::Result<Infallible> {
+    Err(std::process::Command::new(std::env::current_exe()?)
+        .args(std::env::args_os().skip(1))
+        .exec())
 }
 
 /// Sends the given signal to the specified process.
@@ -178,10 +187,9 @@ impl ChildQueue {
             loop {
                 signal.recv().await;
                 loop {
-                    let _lock = self.waiter_lock.write().await;
                     let wait = match wait_nonblocking(-1) {
                         Ok(Some(x)) => x,
-                        Ok(None) => continue,
+                        Ok(None) => break,
                         Err(x) => {
                             tracing::warn!("waitpid() failed: {}", x);
                             break;
@@ -189,8 +197,9 @@ impl ChildQueue {
                     };
 
                     if wait.code().is_some() || wait.signal().is_some() {
+                        let _lock = self.waiter_lock.write().await;
                         self.send(wait).await;
-                        break;
+                        continue;
                     }
                 }
             }

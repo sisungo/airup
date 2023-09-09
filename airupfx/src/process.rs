@@ -1,7 +1,7 @@
 //! A module for working with processes.
 
 use crate::sys;
-use std::{convert::Infallible, os::unix::process::CommandExt, sync::OnceLock};
+use std::{convert::Infallible, sync::OnceLock};
 use tokio::process::{ChildStderr, ChildStdout};
 
 /// Represents to an OS-assigned process identifier.
@@ -16,9 +16,7 @@ pub fn id() -> Pid {
 
 /// Reloads the process image with the version on the filesystem.
 pub fn reload_image() -> std::io::Result<Infallible> {
-    Err(std::process::Command::new(std::env::current_exe()?)
-        .args(std::env::args_os().skip(1))
-        .exec())
+    sys::process::reload_image()
 }
 
 /// Called when a fatal error occured.
@@ -101,6 +99,9 @@ pub enum ExitStatus {
 
     /// The process was terminated due to receipt of a signal.
     Signaled(libc::c_int),
+
+    /// The process was not terminated.
+    Other,
 }
 impl ExitStatus {
     /// Represents to a successful exit.
@@ -113,7 +114,7 @@ impl ExitStatus {
         } else if libc::WIFSIGNALED(status) {
             Self::Signaled(libc::WTERMSIG(status))
         } else {
-            unreachable!()
+            Self::Other
         }
     }
 

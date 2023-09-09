@@ -1,11 +1,11 @@
 //! # Airup Milestones
 
 use crate::supervisor::AirupdExt as _;
+use airup_sdk::Error;
 use airupfx::{
     files::{milestone::Kind, Milestone},
     prelude::*,
 };
-use airup_sdk::Error;
 use std::collections::BTreeSet;
 
 #[derive(Debug)]

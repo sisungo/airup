@@ -1,4 +1,4 @@
 //! The Airup SDK prelude
 
-pub use crate::system::{ConnectionExt, QueryResult, Status};
+pub use crate::system::{ConnectionExt, QueryService, QuerySystem, Status};
 pub use crate::Connection;

@@ -22,9 +22,9 @@ impl System {
         self.send(Event::Exit(code));
     }
 
-    /// Shuts the device down.
-    pub fn shutdown(&self) {
-        self.send(Event::Shutdown);
+    /// Powers the device off.
+    pub fn poweroff(&self) {
+        self.send(Event::Poweroff);
     }
 
     /// Reboots the device.
@@ -59,8 +59,8 @@ pub enum Event {
     /// Makes `airupd` exit.
     Exit(i32),
 
-    /// Shuts the device down.
-    Shutdown,
+    /// Powers the device off.
+    Poweroff,
 
     /// Reboots the device.
     Reboot,
@@ -76,7 +76,7 @@ impl Event {
     pub fn handle(&self) -> ! {
         match self {
             Self::Exit(code) => std::process::exit(*code),
-            Self::Shutdown => power_manager().poweroff().unwrap_log("poweroff() failed"),
+            Self::Poweroff => power_manager().poweroff().unwrap_log("poweroff() failed"),
             Self::Reboot => power_manager().reboot().unwrap_log("reboot() failed"),
             Self::Halt => power_manager().halt().unwrap_log("halt() failed"),
             Self::ReloadImage => {

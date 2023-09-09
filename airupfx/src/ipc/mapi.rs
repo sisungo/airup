@@ -67,91 +67,91 @@ impl Response {
 #[serde(rename_all = "SCREAMING_SNAKE_CASE", tag = "code")]
 pub enum ApiError {
     /// The client lacks necessary permission to perform the operation.
-    #[error("Permission denied (requires={requires:?})")]
+    #[error("permission denied (requires={requires:?})")]
     PermissionDenied { requires: Vec<String> },
 
     /// The requested method was not found.
-    #[error("No such method")]
+    #[error("not implemented")]
     NoSuchMethod,
 
     /// The requested method's parameter requirements wasn't satisfied.
-    #[error("Invalid parameters: {message}")]
+    #[error("invalid parameters: {message}")]
     InvalidParams { message: String },
 
     /// The request format is not considered.
-    #[error("Bad request ({kind}): {message}")]
+    #[error("bad request ({kind}): {message}")]
     BadRequest { kind: String, message: String },
 
     /// The response format is not considered.
-    #[error("Bad response ({kind}): {message}")]
+    #[error("bad response ({kind}): {message}")]
     BadResponse { kind: String, message: String },
 
     /// The requested object already exists.
-    #[error("Object already exists")]
+    #[error("object already exists")]
     ObjectAlreadyExists,
 
     /// The requested object was not found.
-    #[error("Object not found")]
+    #[error("object not found")]
     ObjectNotFound,
 
     /// The requested object has not been configured yet.
-    #[error("Object not configured")]
+    #[error("object not configured")]
     ObjectNotConfigured,
 
     /// The requested object is already configured.
-    #[error("Object already configured")]
+    #[error("object already configured")]
     ObjectAlreadyConfigured,
 
     /// The requested object cannot be accessed due to an I/O error.
-    #[error("Cannot access object: {message}")]
+    #[error("cannot access object: {message}")]
     ObjectIo { message: String },
 
     /// The requested object format is not considered.
-    #[error("Invalid object: {message}")]
+    #[error("invalid object: {message}")]
     InvalidObject { message: Cow<'static, str> },
 
     /// The requested user was not found.
-    #[error("User not found")]
+    #[error("user not found")]
     UserNotFound,
 
     /// The requested command was not found.
-    #[error("Command not found")]
+    #[error("command not found")]
     CommandNotFound,
 
     /// The child process unexpectedly exited.
-    #[error("Process exited with code {exit_code}")]
+    #[error("process exited with code {exit_code}")]
     Exited { exit_code: i32 },
 
     /// The child process was terminated by a signal.
-    #[error("Process terminated by signal {signum}")]
+    #[error("process terminated by signal {signum}")]
     Signaled { signum: i32 },
 
     /// Failed to read or parse the PID file.
-    #[error("Failed to read pidfile: {message}")]
+    #[error("failed to read pidfile: {message}")]
     PidFile { message: String },
 
     /// There is already a task running.
-    #[error("Already exists a task running")]
+    #[error("already exists a task running")]
     TaskAlreadyExists,
 
     /// There is no task running.
-    #[error("Task not found")]
+    #[error("task not found")]
     TaskNotFound,
 
     /// The running task is uninterruptable.
-    #[error("Task interrupted")]
+    #[error("task interrupted")]
     TaskInterrupted,
 
     /// The operation timed out.
-    #[error("Operation timed out")]
+    #[error("operation timed out")]
     TimedOut,
 
     /// The requested operation in unsupported.
-    #[error("Operation not supported: {message}")]
+    #[error("operation not supported: {message}")]
     Unsupported { message: Cow<'static, str> },
 
     /// The operation failed because some dependencies cannot be satisfied.
-    #[error("Dependency cannot be satisfied: {name}")]
+    #[error("dependency cannot be satisfied: {name}")]
     DependencyNotSatisfied { name: String },
 
     /// An I/O error occured.
@@ -159,7 +159,7 @@ pub enum ApiError {
     Io { message: String },
 
     /// An internal error.
-    #[error("Internal error: {message}")]
+    #[error("internal error: {message}")]
     Internal { message: Cow<'static, str> },
 }
 impl ApiError {

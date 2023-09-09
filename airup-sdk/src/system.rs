@@ -16,14 +16,14 @@ pub enum Status {
 
 /// Result of querying a service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QueryResult {
+pub struct QueryService {
     pub status: Status,
     pub pid: Option<Pid>,
     pub task: Option<String>,
     pub last_error: Option<Error>,
     pub service: Service,
 }
-impl QueryResult {
+impl QueryService {
     pub fn default_of(service: Service) -> Self {
         Self {
             status: Status::Stopped,
@@ -33,6 +33,12 @@ impl QueryResult {
             service,
         }
     }
+}
+
+/// Result of querying information about the whole system.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QuerySystem {
+    pub services: Vec<String>,
 }
 
 #[async_trait::async_trait]
@@ -54,10 +60,10 @@ pub trait ConnectionExt {
     async fn reload_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>>;
 
     /// Queries the specified service.
-    async fn query_service(&mut self, name: &str) -> anyhow::Result<Result<QueryResult, Error>>;
+    async fn query_service(&mut self, name: &str) -> anyhow::Result<Result<QueryService, Error>>;
 
-    /// Gets a list of all running supervisors.
-    async fn supervisors(&mut self) -> anyhow::Result<Result<Vec<String>, Error>>;
+    /// Queries information about the whole system.
+    async fn query_system(&mut self) -> anyhow::Result<Result<QuerySystem, Error>>;
 
     /// Shuts the system down.
     async fn shutdown(&mut self) -> anyhow::Result<Result<(), Error>>;
@@ -91,12 +97,12 @@ impl<'a> ConnectionExt for super::Connection<'a> {
         self.invoke("system.reload_service", name).await
     }
 
-    async fn query_service(&mut self, name: &str) -> anyhow::Result<Result<QueryResult, Error>> {
+    async fn query_service(&mut self, name: &str) -> anyhow::Result<Result<QueryService, Error>> {
         self.invoke("system.query_service", name).await
     }
 
-    async fn supervisors(&mut self) -> anyhow::Result<Result<Vec<String>, Error>> {
-        self.invoke("system.query_service", ()).await
+    async fn query_system(&mut self) -> anyhow::Result<Result<QuerySystem, Error>> {
+        self.invoke("system.query_system", ()).await
     }
 
     async fn shutdown(&mut self) -> anyhow::Result<Result<(), Error>> {

@@ -3,11 +3,8 @@ use crate::{
     app::airupd,
     supervisor::{AirupdExt, SupervisorContext},
 };
-use airupfx::{
-    files::service::Kind,
-    prelude::*,
-};
 use airup_sdk::{system::Status, Error};
+use airupfx::{files::service::Kind, prelude::*};
 use std::sync::Arc;
 
 #[derive(Debug)]

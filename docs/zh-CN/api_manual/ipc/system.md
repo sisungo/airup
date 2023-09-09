@@ -12,8 +12,8 @@
 - 名称：`system.query_service`
 - 参数：`字符串（要查询的服务名称）`（可选）
 - 需要的权限：`query_services`
-- 返回值：`QueryResult` 对象 *或* `字符串数组`
-- 描述：若参数为 `null`，返回包含所有已加载的服务名称的列表。如果不，则返回该服务查询到的状态。
+- 返回值：`QueryService` 对象 *或* `QuerySystem`
+- 描述：若参数为 `null`，返回查询到的关于整个系统的宏观信息。如果不，则返回查询到的该服务的信息。
 
 ## `system.start_service` 方法
 - 名称：`system.start_service`

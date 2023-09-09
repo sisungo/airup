@@ -7,16 +7,11 @@ use self::task::{
     CleanupServiceHandle, ReloadServiceHandle, StartServiceHandle, StopServiceHandle, TaskFeedback,
     TaskHandle,
 };
-use airupfx::{
-    ace::Child,
-    files::Service,
-    prelude::*,
-    process::Wait,
-};
 use airup_sdk::{
-    system::{QueryResult, Status},
+    system::{QueryService, Status},
     Error,
 };
+use airupfx::{ace::Child, files::Service, prelude::*, process::Wait};
 use smallvec::{smallvec, SmallVec};
 use std::{
     cmp,
@@ -41,18 +36,17 @@ macro_rules! supervisor_req {
 /// A manager of Airup supervisors.
 #[derive(Debug, Default)]
 pub struct Manager {
-    supervisors: RwLock<HashMap<String, Arc<SupervisorHandle>>>,
+    supervisors: tokio::sync::RwLock<HashMap<String, Arc<SupervisorHandle>>>,
 }
 impl Manager {
     /// Creates a new, empty [Manager] instance.
-    #[inline]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Supervises the given service in the supervisor set. Returns `(false, _)` if the supervisor already exists.
     pub async fn supervise(&self, service: Service) -> Result<Arc<SupervisorHandle>, Error> {
-        let mut lock = self.supervisors.write().unwrap();
+        let mut lock = self.supervisors.write().await;
 
         if let Some(x) = lock.get(&service.name).cloned() {
             return Ok(x);
@@ -67,28 +61,33 @@ impl Manager {
     }
 
     /// Gets a supervisor in the set.
-    pub fn get(&self, name: &str) -> Option<Arc<SupervisorHandle>> {
-        self.supervisors.read().unwrap().get(name).cloned()
-    }
-
-    /// Safely removes a supervisor from the set.
-    pub async fn quit(&self, name: &str) -> Result<(), Error> {
-        self.supervisors
-            .write()
-            .unwrap()
-            .remove(name)
-            .map(|_| ())
-            .ok_or(Error::ObjectNotFound)
+    pub async fn get(&self, name: &str) -> Option<Arc<SupervisorHandle>> {
+        self.supervisors.read().await.get(name).cloned()
     }
 
     /// Gets a list of names of supervisors.
-    pub fn list(&self) -> Vec<String> {
+    pub async fn list(&self) -> Vec<String> {
         self.supervisors
             .read()
-            .unwrap()
+            .await
             .keys()
             .map(|x| x.into())
             .collect()
+    }
+
+    /// Removes supervisors that are in idle.
+    pub async fn gc(&self) {
+        let mut lock = self.supervisors.write().await;
+        let mut removable = Vec::with_capacity(lock.len() / 2);
+        for (k, v) in lock.iter() {
+            let queried = v.query().await;
+            if queried.status == Status::Stopped && queried.last_error.is_none() && queried.task.is_none() {
+                removable.push(k.clone());
+            }
+        }
+        for i in removable {
+            lock.remove(&i);
+        }
     }
 }
 
@@ -112,7 +111,7 @@ impl SupervisorHandle {
         Arc::new(Self { sender })
     }
 
-    supervisor_req!(query, QueryResult, Request::Query);
+    supervisor_req!(query, QueryService, Request::Query);
     supervisor_req!(start, Result<Arc<dyn TaskHandle>, Error>, Request::Start);
     supervisor_req!(stop, Result<Arc<dyn TaskHandle>, Error>, Request::Stop);
     supervisor_req!(reload, Result<Arc<dyn TaskHandle>, Error>, Request::Reload);
@@ -194,7 +193,7 @@ impl Supervisor {
             for req in drained {
                 match req {
                     Request::Query(chan) => {
-                        let query_result = QueryResult {
+                        let query_result = QueryService {
                             status: self.context.status.get(),
                             pid: self.context.pid().await,
                             task: self
@@ -440,7 +439,7 @@ impl RetryContext {
 }
 
 enum Request {
-    Query(oneshot::Sender<QueryResult>),
+    Query(oneshot::Sender<QueryService>),
     Start(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     Stop(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     Reload(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
