@@ -12,7 +12,7 @@ use std::path::Path;
 pub struct Milestone {
     pub name: String,
     pub manifest: Manifest,
-    pub base_chain: DirChain,
+    pub base_chain: DirChain<'static>,
 }
 impl Milestone {
     pub const EXTENSION: &'static str = "airm";
@@ -39,7 +39,7 @@ impl Milestone {
                 .to_string_lossy()
                 .into())
         };
-        let base_chain = DirChain::new(path);
+        let base_chain = DirChain::new(path.to_owned());
         let manifest = Manifest::read_from(path.join(Manifest::FILE_NAME)).await?;
         let mut name = get_name(path)?;
         if name == "default" {

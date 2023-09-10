@@ -1,12 +1,12 @@
 //! # Airup Milestones
 
 use crate::supervisor::AirupdExt as _;
+use ahash::AHashSet;
 use airup_sdk::Error;
 use airupfx::{
     files::{milestone::Kind, Milestone},
     prelude::*,
 };
-use std::collections::BTreeSet;
 
 #[derive(Debug, Default)]
 pub struct Manager {}
@@ -23,14 +23,14 @@ pub trait AirupdExt {
 }
 impl AirupdExt for crate::app::Airupd {
     fn enter_milestone(&self, name: String) -> BoxFuture<Result<(), Error>> {
-        Box::pin(async { enter_milestone(self, name, &mut BTreeSet::new()).await })
+        Box::pin(async { enter_milestone(self, name, &mut AHashSet::with_capacity(8)).await })
     }
 }
 
 fn enter_milestone<'a>(
     airupd: &'a crate::app::Airupd,
     name: String,
-    hist: &'a mut BTreeSet<String>,
+    hist: &'a mut AHashSet<String>,
 ) -> BoxFuture<'a, Result<(), Error>> {
     Box::pin(async move {
         let name = name.strip_suffix(Milestone::SUFFIX).unwrap_or(&name);

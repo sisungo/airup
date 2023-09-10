@@ -12,8 +12,8 @@ Some build dependencies are optional, but is useful for some workflows:
  - [cbindgen](https://github.com/mozilla/cbindgen): Generates C headers.
 
 ## Configuration
-Some Airup functions are configured at build time. The build manifest which is located at `build_manifest.json` stores primitive
-configuration items that cannot be set at runtime. Its example is at `docs/resources/build_manifest.json`. Definitions to its
+Some Airup functions are configured at build time. The build manifest which is located at `build_manifest.rs` stores primitive
+configuration items that cannot be set at runtime. Its example is at `docs/resources/build_manifest.rs`. Definitions to its
 items:
  - `os_name`: Name of the OS build.
  - `config_dir`: Path of Airup's configuration directory, which stores security policy, system configuration, etc.

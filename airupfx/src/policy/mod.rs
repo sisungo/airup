@@ -14,12 +14,12 @@ use std::sync::RwLock;
 /// Represents to a policy database on the filesystem.
 #[derive(Debug)]
 pub struct Db {
-    base_chain: DirChain,
+    base_chain: DirChain<'static>,
     compiled: RwLock<Compiled>,
 }
 impl Db {
     /// Creates a new `Db` from provided chain.
-    pub async fn new<C: Into<DirChain>>(chain: C) -> Self {
+    pub async fn new<C: Into<DirChain<'static>>>(chain: C) -> Self {
         let base_chain = chain.into();
         let policy = Self::read_policy(&base_chain).await;
         let compiled = RwLock::new(policy.into());
@@ -35,7 +35,7 @@ impl Db {
     }
 
     /// Reads a policy from a directory chain.
-    pub async fn read_policy(base_chain: &DirChain) -> Policy {
+    pub async fn read_policy(base_chain: &DirChain<'static>) -> Policy {
         let mut policy = Policy::with_preset();
 
         if let Ok(read_chain) = base_chain

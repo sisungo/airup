@@ -2,6 +2,7 @@
 
 use crate::util::IterExt;
 use std::{
+    borrow::Cow,
     collections::HashSet,
     ffi::OsString,
     path::{Path, PathBuf},
@@ -23,10 +24,10 @@ use std::{
 /// matching file or directory is found. For example, in the chain above, finding `file1.txt` returns `/dir_chain/file1.txt`,
 /// and finding `file3.txt` returns `/dir_chain1/file3.txt`.
 #[derive(Debug, Clone)]
-pub struct DirChain(PathBuf);
-impl DirChain {
-    pub fn new<P: Into<PathBuf>>(path: P) -> Self {
-        Self::from(path.into())
+pub struct DirChain<'a>(Cow<'a, Path>);
+impl<'a> DirChain<'a> {
+    pub fn new<P: Into<Cow<'a, Path>>>(path: P) -> Self {
+        Self(path.into())
     }
 
     /// Find a file by filename.
@@ -41,7 +42,7 @@ impl DirChain {
             } else {
                 let path = pwd.join("chain_next");
                 if tokio::fs::try_exists(&path).await.unwrap_or_default() {
-                    pwd = path;
+                    pwd = path.into();
                 } else {
                     return None;
                 }
@@ -56,9 +57,9 @@ impl DirChain {
         loop {
             let chain_next = pwd.join("chain_next");
             if tokio::fs::try_exists(&chain_next).await.unwrap_or_default() {
-                pwd = chain_next;
+                pwd = chain_next.into();
             } else {
-                break pwd;
+                break pwd.into();
             }
         }
     }
@@ -88,7 +89,7 @@ impl DirChain {
             result.append(&mut unsorted);
 
             if should_continue {
-                pwd = pwd.join("chain_next");
+                pwd = pwd.join("chain_next").into();
             } else {
                 break;
             }
@@ -110,9 +111,9 @@ impl DirChain {
         }
     }
 }
-impl From<PathBuf> for DirChain {
+impl From<PathBuf> for DirChain<'static> {
     fn from(value: PathBuf) -> Self {
-        Self(value)
+        Self::new(value)
     }
 }
 

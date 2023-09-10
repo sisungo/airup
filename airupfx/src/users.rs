@@ -10,7 +10,6 @@ pub type Gid = i64;
 /// Represents to a user database.
 pub struct UserDb {
     entry_cache: AdaptiveCache<String, Arc<UserEntry>>,
-    uid: Option<Uid>,
     req_cache: AdaptiveCache<Request, String>,
 }
 impl UserDb {
@@ -22,7 +21,6 @@ impl UserDb {
 
         Self {
             entry_cache,
-            uid: None,
             req_cache,
         }
     }
@@ -55,24 +53,6 @@ impl UserDb {
         }
     }
 
-    /// Returns the user entry of current user.
-    pub fn current_user(&mut self) -> Option<Arc<UserEntry>> {
-        let uid = self.current_uid();
-        self.find_user_by_uid(uid)
-    }
-
-    /// Returns UID of current user.
-    pub fn current_uid(&mut self) -> Uid {
-        match self.uid {
-            Some(x) => x,
-            None => {
-                let uid = Uid::try_from(unsafe { libc::getuid() } as usize).unwrap();
-                self.uid = Some(uid);
-                uid
-            }
-        }
-    }
-
     /// Refreshes the user database.
     pub fn refresh(&mut self) {
         crate::env::sysinfo().write().unwrap().refresh_users_list();
@@ -81,7 +61,9 @@ impl UserDb {
     }
 
     fn find_user_by_uid_uncached(&self, uid: Uid) -> Option<UserEntry> {
-        crate::env::sysinfo().read().unwrap()
+        crate::env::sysinfo()
+            .read()
+            .unwrap()
             .get_user_by_id(&sysinfo::Uid::try_from(uid as usize).ok()?)
             .map(|u| UserEntry {
                 uid,
@@ -91,7 +73,9 @@ impl UserDb {
             })
     }
     fn find_user_by_name_uncached(&self, name: String) -> Option<UserEntry> {
-        crate::env::sysinfo().read().unwrap()
+        crate::env::sysinfo()
+            .read()
+            .unwrap()
             .users()
             .iter()
             .find(|u| u.name() == name)
@@ -146,11 +130,11 @@ pub fn find_user_by_name(name: &String) -> Option<Arc<UserEntry>> {
 /// Returns the user entry of current user.
 #[inline]
 pub fn current_user() -> Option<Arc<UserEntry>> {
-    user_db().lock().unwrap().current_user()
+    find_user_by_uid(current_uid())
 }
 
 /// Returns UID of current user.
 #[inline]
 pub fn current_uid() -> Uid {
-    user_db().lock().unwrap().current_uid()
+    unsafe { libc::getuid() as _ }
 }

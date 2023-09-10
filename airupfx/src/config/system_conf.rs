@@ -3,9 +3,13 @@
 use super::Security;
 use serde::{Deserialize, Serialize};
 use std::{
+    borrow::Cow,
     collections::BTreeMap,
     path::{Path, PathBuf},
+    sync::OnceLock,
 };
+
+static SYSTEM_CONF: OnceLock<SystemConf> = OnceLock::new();
 
 /// Represents to Airup's system config.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -33,12 +37,24 @@ impl SystemConf {
         let s = tokio::fs::read_to_string(path).await?;
         Ok(toml::from_str(&s)?)
     }
+
+    pub async fn init() {
+        SYSTEM_CONF.set(SystemConf::new().await).unwrap();
+    }
+
+    /// Returns a reference to the global unique [SystemConf] instance.
+    ///
+    /// ## Panic
+    /// Panics if [init] hasn't been called.
+    pub fn get() -> &'static SystemConf {
+        SYSTEM_CONF.get().unwrap()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct System {
     #[serde(default = "default_os_name")]
-    pub os_name: String,
+    pub os_name: Cow<'static, str>,
 
     #[serde(default = "default_security")]
     pub security: Security,
@@ -81,11 +97,15 @@ impl Default for Env {
 }
 
 fn default_env_vars() -> BTreeMap<String, Option<String>> {
-    super::build_manifest().env_vars.clone()
+    super::build_manifest()
+        .env_vars
+        .iter()
+        .map(|(k, v)| (String::from(*k), v.map(Into::into)))
+        .collect()
 }
 
-fn default_os_name() -> String {
-    super::build_manifest().os_name.clone()
+fn default_os_name() -> Cow<'static, str> {
+    super::build_manifest().os_name.into()
 }
 
 fn default_security() -> Security {

@@ -1,6 +1,9 @@
 //! Inspection and manipulation of the process's environment.
 
-use std::{ffi::{OsStr, OsString}, sync::{OnceLock, RwLock}};
+use std::{
+    ffi::{OsStr, OsString},
+    sync::{OnceLock, RwLock},
+};
 use sysinfo::SystemExt;
 
 /// Sets environment variables in the iterator for the currently running process, removing environment variables with value

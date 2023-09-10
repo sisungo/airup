@@ -49,7 +49,11 @@ fn print_query_service(query_result: &QueryService) {
 /// Prints a [QuerySystem] to console, in human-friendly format.
 fn print_query_system(query_system: &QuerySystem) {
     let status = PrintedStatus::Active;
-    println!("{} {}", status.theme_dot(), query_system.hostname.as_deref().unwrap_or("localhost"));
+    println!(
+        "{} {}",
+        status.theme_dot(),
+        query_system.hostname.as_deref().unwrap_or("localhost")
+    );
     println!("{:>12} {}", "Status:", status);
     println!("{:>12} /", "Services:");
     for i in &query_system.services {

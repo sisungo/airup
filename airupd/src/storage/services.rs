@@ -8,11 +8,11 @@ use std::{collections::HashMap, sync::RwLock};
 /// Represents to Airup's services directory.
 #[derive(Debug)]
 pub struct Services {
-    base_chain: DirChain,
+    base_chain: DirChain<'static>,
     sideloaded: RwLock<HashMap<String, Service>>,
 }
-impl From<DirChain> for Services {
-    fn from(val: DirChain) -> Self {
+impl From<DirChain<'static>> for Services {
+    fn from(val: DirChain<'static>) -> Self {
         Self {
             base_chain: val,
             sideloaded: RwLock::default(),
@@ -22,7 +22,7 @@ impl From<DirChain> for Services {
 impl Services {
     pub fn new() -> Self {
         Self {
-            base_chain: DirChain::from(airupfx::config::build_manifest().service_dir.clone()),
+            base_chain: DirChain::new(airupfx::config::build_manifest().service_dir),
             sideloaded: RwLock::default(),
         }
     }

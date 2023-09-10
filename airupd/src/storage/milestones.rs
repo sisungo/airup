@@ -6,17 +6,17 @@ use airupfx::{
 /// Represents to Airup's milestones directory.
 #[derive(Debug)]
 pub struct Milestones {
-    base_chain: DirChain,
+    base_chain: DirChain<'static>,
 }
-impl From<DirChain> for Milestones {
-    fn from(val: DirChain) -> Self {
+impl From<DirChain<'static>> for Milestones {
+    fn from(val: DirChain<'static>) -> Self {
         Self { base_chain: val }
     }
 }
 impl Milestones {
     pub fn new() -> Self {
         Self {
-            base_chain: DirChain::from(airupfx::config::build_manifest().milestone_dir.clone()),
+            base_chain: DirChain::new(airupfx::config::build_manifest().milestone_dir),
         }
     }
 

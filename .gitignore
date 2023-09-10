@@ -1,4 +1,4 @@
 /target
 /Cargo.lock
-/build_manifest.json
+/build_manifest.rs
 /.DS_Store

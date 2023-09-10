@@ -2,18 +2,18 @@
 
 use crate::ipc;
 use anyhow::anyhow;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Main navigator of Airup's runtime directory.
 #[derive(Debug)]
 pub struct Runtime {
-    base_dir: PathBuf,
+    base_dir: &'static Path,
 }
 impl Runtime {
     /// Creates a new [Runtime] instance.
     #[inline]
     pub async fn new() -> Self {
-        let base_dir = airupfx::config::build_manifest().runtime_dir.clone();
+        let base_dir = airupfx::config::build_manifest().runtime_dir;
         tokio::fs::create_dir_all(&base_dir).await.ok();
 
         Self { base_dir }

@@ -1,20 +1,29 @@
 mod build;
 mod system_conf;
 
-pub use build::Security;
 pub use system_conf::SystemConf;
 
 use build::BuildManifest;
-use std::sync::OnceLock;
+use serde::{Deserialize, Serialize};
 
-static SYSTEM_CONF: OnceLock<SystemConf> = OnceLock::new();
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Security {
+    /// Additional security checks are disabled
+    Disabled,
+
+    /// Use a simple security checker which allows access from `root` only
+    Simple,
+
+    /// Use Airup security policy
+    #[default]
+    Policy,
+}
 
 /// Initializes the main configuration
 #[inline]
 pub async fn init() {
-    let system_conf = SystemConf::new().await;
-    system_conf.env.override_env();
-    SYSTEM_CONF.set(system_conf).unwrap();
+    SystemConf::init().await;
 }
 
 /// Returns a reference to the global unique [SystemConf] instance.
@@ -23,16 +32,11 @@ pub async fn init() {
 /// Panics if [init] hasn't been called.
 #[inline]
 pub fn system_conf() -> &'static SystemConf {
-    SYSTEM_CONF.get().unwrap()
+    SystemConf::get()
 }
 
-/// Returns a reference to the unique [Manifest].
-///
-/// ## Panic
-/// Panics if `Manifest::init()` hasn't been called.
+/// Returns a reference to the unique [BuildManifest].
 #[inline]
 pub fn build_manifest() -> &'static BuildManifest {
-    static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
-
-    MANIFEST.get_or_init(|| include!(concat!(env!("OUT_DIR"), "/build_manifest.rs")))
+    BuildManifest::get()
 }

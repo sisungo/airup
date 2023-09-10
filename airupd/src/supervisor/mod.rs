@@ -58,7 +58,7 @@ impl Manager {
         let provided = service.service.provides.clone();
         let handle = SupervisorHandle::new(service);
         lock.insert(name, handle.clone());
-        
+
         let mut lock = self.provided.write().await;
         for i in provided {
             lock.insert(i, handle.clone());
@@ -93,12 +93,14 @@ impl Manager {
         let mut removable = Vec::with_capacity(supervisors.len() / 2);
         for (k, v) in supervisors.iter() {
             let queried = v.query().await;
-            if queried.status == Status::Stopped && queried.last_error.is_none() && queried.task.is_none() {
+            if queried.status == Status::Stopped
+                && queried.last_error.is_none()
+                && queried.task.is_none()
+            {
                 removable.push(k.clone());
             }
         }
 
-        
         for i in removable {
             let handle = supervisors.remove(&i).unwrap();
             for i in handle.query().await.service.service.provides {
