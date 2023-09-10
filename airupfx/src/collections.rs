@@ -21,10 +21,12 @@ impl<T> RingBuffer<T> {
         self.data.clear();
     }
 
+    /// Returns an iterator over reference of all elements in the ring buffer.
     pub fn iter(&self) -> vec_deque::Iter<'_, T> {
         self.data.iter()
     }
 
+    /// Returns an iterator over all elements in the ring buffer while removing them.
     pub fn drain(&mut self) -> vec_deque::Drain<'_, T> {
         self.data.drain(0..)
     }

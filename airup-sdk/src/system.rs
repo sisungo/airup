@@ -66,6 +66,9 @@ pub trait ConnectionExt {
     /// Queries information about the whole system.
     async fn query_system(&mut self) -> anyhow::Result<Result<QuerySystem, Error>>;
 
+    /// Refreshes cached system information in the `airupd` daemon.
+    async fn refresh(&mut self) -> anyhow::Result<Result<(), Error>>;
+
     /// Shuts the system down.
     async fn shutdown(&mut self) -> anyhow::Result<Result<(), Error>>;
 
@@ -104,6 +107,10 @@ impl<'a> ConnectionExt for super::Connection<'a> {
 
     async fn query_system(&mut self) -> anyhow::Result<Result<QuerySystem, Error>> {
         self.invoke("system.query_system", ()).await
+    }
+
+    async fn refresh(&mut self) -> anyhow::Result<Result<(), Error>> {
+        self.invoke("system.refresh", ()).await
     }
 
     async fn shutdown(&mut self) -> anyhow::Result<Result<(), Error>> {

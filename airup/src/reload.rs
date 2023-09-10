@@ -1,4 +1,5 @@
 use airup_sdk::prelude::*;
+use airupfx::files::Service;
 use clap::Parser;
 
 /// Start services
@@ -10,6 +11,10 @@ pub struct Cmdline {
 
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
-    conn.reload_service(&cmdline.service).await??;
+    if cmdline.service.strip_suffix(Service::SUFFIX).unwrap_or(&cmdline.service) == "airupd" {
+        conn.refresh().await??;
+    } else {
+        conn.reload_service(&cmdline.service).await??;
+    }
     Ok(())
 }

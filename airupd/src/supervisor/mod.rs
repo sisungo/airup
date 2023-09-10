@@ -37,7 +37,7 @@ macro_rules! supervisor_req {
 #[derive(Debug, Default)]
 pub struct Manager {
     supervisors: tokio::sync::RwLock<HashMap<String, Arc<SupervisorHandle>>>,
-    provided: RwLock<HashMap<String, Arc<SupervisorHandle>>>,
+    provided: tokio::sync::RwLock<HashMap<String, Arc<SupervisorHandle>>>,
 }
 impl Manager {
     /// Creates a new, empty [Manager] instance.
@@ -59,7 +59,7 @@ impl Manager {
         let handle = SupervisorHandle::new(service);
         lock.insert(name, handle.clone());
         
-        let mut lock = self.provided.write().unwrap();
+        let mut lock = self.provided.write().await;
         for i in provided {
             lock.insert(i, handle.clone());
         }
@@ -69,6 +69,10 @@ impl Manager {
 
     /// Gets a supervisor in the set.
     pub async fn get(&self, name: &str) -> Option<Arc<SupervisorHandle>> {
+        if let Some(name) = name.strip_suffix(".provided") {
+            return self.provided.read().await.get(name).cloned();
+        }
+
         self.supervisors.read().await.get(name).cloned()
     }
 
@@ -84,16 +88,26 @@ impl Manager {
 
     /// Removes supervisors that are in idle.
     pub async fn gc(&self) {
-        let mut lock = self.supervisors.write().await;
-        let mut removable = Vec::with_capacity(lock.len() / 2);
-        for (k, v) in lock.iter() {
+        let mut supervisors = self.supervisors.write().await;
+        let mut provided = self.provided.write().await;
+        let mut removable = Vec::with_capacity(supervisors.len() / 2);
+        for (k, v) in supervisors.iter() {
             let queried = v.query().await;
             if queried.status == Status::Stopped && queried.last_error.is_none() && queried.task.is_none() {
                 removable.push(k.clone());
             }
         }
+
+        
         for i in removable {
-            lock.remove(&i);
+            let handle = supervisors.remove(&i).unwrap();
+            for i in handle.query().await.service.service.provides {
+                if let Some(provided_handle) = provided.get(&i) {
+                    if Arc::ptr_eq(&handle, provided_handle) {
+                        provided.remove(&i);
+                    }
+                }
+            }
         }
     }
 }

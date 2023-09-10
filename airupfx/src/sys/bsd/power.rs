@@ -6,6 +6,9 @@ use std::{convert::Infallible, ptr::NonNull};
 
 #[derive(Default)]
 pub struct Bsd;
+impl Bsd {
+    pub const GLOBAL: &'static Self = &Self;
+}
 impl PowerManager for Bsd {
     fn poweroff(&self) -> std::io::Result<Infallible> {
         bsd_reboot(RB_POWEROFF)

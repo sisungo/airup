@@ -1,8 +1,6 @@
 //! # AirupFX Power Management
 
-use std::{convert::Infallible, sync::OnceLock};
-
-static POWER_MANAGER: OnceLock<Box<dyn PowerManager>> = OnceLock::new();
+use std::convert::Infallible;
 
 /// Interface of power management.
 pub trait PowerManager: Send + Sync {
@@ -18,27 +16,29 @@ pub trait PowerManager: Send + Sync {
 
 /// A fallback implementation of AirupFX power management.
 ///
-/// On this implementation, when a power management method is called, it simply prints "It's now safe to turn off the device."
-/// to `stderr` and parks the thread.
+/// On this implementation, when power management methods are called, it simply prints "It's now safe to turn off the device."
+/// to standard error stream and parks the thread.
 #[derive(Default)]
 pub struct Fallback;
+impl Fallback {
+    pub const GLOBAL: &'static Self = &Self;
+}
 impl PowerManager for Fallback {
     fn poweroff(&self) -> std::io::Result<Infallible> {
-        self.halt_process();
+        Self::halt_process();
     }
 
     fn reboot(&self) -> std::io::Result<Infallible> {
-        self.halt_process();
+        Self::halt_process();
     }
 
     fn halt(&self) -> std::io::Result<Infallible> {
-        self.halt_process();
+        Self::halt_process();
     }
 }
 impl Fallback {
-    /// Prints "It's now safe to turn off the device." to `stderr` and parks current thread.
-    #[inline]
-    fn halt_process(&self) -> ! {
+    /// Prints "It's now safe to turn off the device." to standard error stream and parks current thread.
+    fn halt_process() -> ! {
         eprintln!("It's now safe to turn off the device.");
         loop {
             std::thread::park();
@@ -48,20 +48,5 @@ impl Fallback {
 
 /// Returns a reference to the global unique [PowerManager] instance.
 pub fn power_manager() -> &'static dyn PowerManager {
-    &**POWER_MANAGER.get_or_init(default_power_manager)
-}
-
-/// Returns the default [PowerManager] object of current platform.
-#[allow(unreachable_code)]
-pub fn default_power_manager() -> Box<dyn PowerManager> {
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "dragonfly"
-    ))]
-    return Box::<crate::sys::PowerManager>::default();
-
-    Box::<Fallback>::default()
+    crate::sys::power_manager()
 }
