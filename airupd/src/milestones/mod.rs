@@ -8,11 +8,11 @@ use airupfx::{
 };
 use std::collections::BTreeSet;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Manager {}
 impl Manager {
     pub fn new() -> Self {
-        Self {}
+        Self::default()
     }
 }
 

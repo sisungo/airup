@@ -1,6 +1,7 @@
 //! Inspection and manipulation of the process's environment.
 
-use std::ffi::{OsStr, OsString};
+use std::{ffi::{OsStr, OsString}, sync::{OnceLock, RwLock}};
+use sysinfo::SystemExt;
 
 /// Sets environment variables in the iterator for the currently running process, removing environment variables with value
 /// `None`.
@@ -23,4 +24,16 @@ pub fn take_var<K: AsRef<OsStr>>(key: K) -> Result<String, std::env::VarError> {
     let value = std::env::var(key.as_ref())?;
     std::env::remove_var(key);
     Ok(value)
+}
+
+/// Returns a reference to the global unique locked [sysinfo::System] instance.
+pub fn sysinfo() -> &'static RwLock<sysinfo::System> {
+    static SYSINFO: OnceLock<RwLock<sysinfo::System>> = OnceLock::new();
+
+    SYSINFO.get_or_init(|| RwLock::new(sysinfo::System::default()))
+}
+
+/// Returns host name of the machine currently running the process.
+pub fn host_name() -> Option<String> {
+    sysinfo().read().unwrap().host_name()
 }

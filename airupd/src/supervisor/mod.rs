@@ -37,6 +37,7 @@ macro_rules! supervisor_req {
 #[derive(Debug, Default)]
 pub struct Manager {
     supervisors: tokio::sync::RwLock<HashMap<String, Arc<SupervisorHandle>>>,
+    provided: RwLock<HashMap<String, Arc<SupervisorHandle>>>,
 }
 impl Manager {
     /// Creates a new, empty [Manager] instance.
@@ -54,8 +55,14 @@ impl Manager {
 
         let name = service.name.clone();
 
+        let provided = service.service.provides.clone();
         let handle = SupervisorHandle::new(service);
         lock.insert(name, handle.clone());
+        
+        let mut lock = self.provided.write().unwrap();
+        for i in provided {
+            lock.insert(i, handle.clone());
+        }
 
         Ok(handle)
     }

@@ -8,13 +8,25 @@ pub type Uid = i64;
 pub type Gid = i64;
 
 /// Represents to a user database.
-pub struct UsersDb {
-    system: sysinfo::System,
+pub struct UserDb {
     entry_cache: AdaptiveCache<String, Arc<UserEntry>>,
     uid: Option<Uid>,
     req_cache: AdaptiveCache<Request, String>,
 }
-impl UsersDb {
+impl UserDb {
+    /// Creates a new [UserDb] instance.
+    pub fn new() -> Self {
+        crate::env::sysinfo().write().unwrap().refresh_users_list();
+        let entry_cache = AdaptiveCache::new(64).unwrap();
+        let req_cache = AdaptiveCache::new(64).unwrap();
+
+        Self {
+            entry_cache,
+            uid: None,
+            req_cache,
+        }
+    }
+
     /// Finds a [UserEntry] by username.
     pub fn find_user_by_name(&mut self, name: &String) -> Option<Arc<UserEntry>> {
         self.entry_cache.get(name).cloned().or_else(|| {
@@ -63,13 +75,13 @@ impl UsersDb {
 
     /// Refreshes the user database.
     pub fn refresh(&mut self) {
-        self.system.refresh_users_list();
+        crate::env::sysinfo().write().unwrap().refresh_users_list();
         self.entry_cache.purge();
         self.req_cache.purge();
     }
 
     fn find_user_by_uid_uncached(&self, uid: Uid) -> Option<UserEntry> {
-        self.system
+        crate::env::sysinfo().read().unwrap()
             .get_user_by_id(&sysinfo::Uid::try_from(uid as usize).ok()?)
             .map(|u| UserEntry {
                 uid,
@@ -79,7 +91,7 @@ impl UsersDb {
             })
     }
     fn find_user_by_name_uncached(&self, name: String) -> Option<UserEntry> {
-        self.system
+        crate::env::sysinfo().read().unwrap()
             .users()
             .iter()
             .find(|u| u.name() == name)
@@ -91,19 +103,9 @@ impl UsersDb {
             })
     }
 }
-impl Default for UsersDb {
+impl Default for UserDb {
     fn default() -> Self {
-        let mut system = sysinfo::System::default();
-        system.refresh_users_list();
-        let entry_cache = AdaptiveCache::new(64).unwrap();
-        let req_cache = AdaptiveCache::new(64).unwrap();
-
-        Self {
-            system,
-            entry_cache,
-            uid: None,
-            req_cache,
-        }
+        Self::new()
     }
 }
 
@@ -123,32 +125,32 @@ pub struct UserEntry {
 
 /// Returns a reference to the global user database.
 #[inline]
-pub fn users_db() -> &'static Mutex<UsersDb> {
-    static USERS_DB: OnceLock<Mutex<UsersDb>> = OnceLock::new();
+pub fn user_db() -> &'static Mutex<UserDb> {
+    static USER_DB: OnceLock<Mutex<UserDb>> = OnceLock::new();
 
-    USERS_DB.get_or_init(Default::default)
+    USER_DB.get_or_init(Default::default)
 }
 
 /// Finds a user entry by UID.
 #[inline]
 pub fn find_user_by_uid(uid: Uid) -> Option<Arc<UserEntry>> {
-    users_db().lock().unwrap().find_user_by_uid(uid)
+    user_db().lock().unwrap().find_user_by_uid(uid)
 }
 
 /// Finds a user entry by username.
 #[inline]
 pub fn find_user_by_name(name: &String) -> Option<Arc<UserEntry>> {
-    users_db().lock().unwrap().find_user_by_name(name)
+    user_db().lock().unwrap().find_user_by_name(name)
 }
 
 /// Returns the user entry of current user.
 #[inline]
 pub fn current_user() -> Option<Arc<UserEntry>> {
-    users_db().lock().unwrap().current_user()
+    user_db().lock().unwrap().current_user()
 }
 
 /// Returns UID of current user.
 #[inline]
 pub fn current_uid() -> Uid {
-    users_db().lock().unwrap().current_uid()
+    user_db().lock().unwrap().current_uid()
 }

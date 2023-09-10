@@ -38,6 +38,7 @@ impl QueryService {
 /// Result of querying information about the whole system.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuerySystem {
+    pub hostname: Option<String>,
     pub services: Vec<String>,
 }
 

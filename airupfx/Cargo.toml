@@ -12,7 +12,7 @@ publish = false
 full = ["ace", "config", "files", "fs", "ipc", "log", "policy", "power", "process", "signal", "time", "users"]
 ace = ["users", "process"]
 config = ["toml", "env"]
-env = []
+env = ["sysinfo"]
 files = ["toml", "users", "fs"]
 fs = []
 ipc = ["serde_json"]
@@ -22,7 +22,7 @@ power = ["process"]
 process = []
 signal = []
 time = []
-users = ["sysinfo", "caches"]
+users = ["env", "caches"]
 
 [dependencies]
 async-trait = "0.1"

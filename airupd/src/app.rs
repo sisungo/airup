@@ -33,6 +33,7 @@ impl Airupd {
     /// Queries information about the whole system.
     pub async fn query_system(&self) -> QuerySystem {
         QuerySystem {
+            hostname: airupfx::env::host_name(),
             services: self.supervisors.list().await,
         }
     }

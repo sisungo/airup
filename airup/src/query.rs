@@ -1,9 +1,9 @@
 use airup_sdk::prelude::*;
 use clap::Parser;
-use console::style;
+use console::{style, Emoji};
 use std::fmt::Display;
 
-/// Query service information
+/// Query system information
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
@@ -19,7 +19,7 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         }
         None => {
             let queried = conn.query_system().await??;
-            println!("{:?}", queried);
+            print_query_system(&queried);
         }
     }
     Ok(())
@@ -44,6 +44,17 @@ fn print_query_service(query_result: &QueryService) {
             .map(|x| x.to_string())
             .unwrap_or_else(|| String::from("null"))
     );
+}
+
+/// Prints a [QuerySystem] to console, in human-friendly format.
+fn print_query_system(query_system: &QuerySystem) {
+    let status = PrintedStatus::Active;
+    println!("{} {}", status.theme_dot(), query_system.hostname.as_deref().unwrap_or("localhost"));
+    println!("{:>12} {}", "Status:", status);
+    println!("{:>12} /", "Services:");
+    for i in &query_system.services {
+        println!("{1:>0$}", 14 + i.len(), i);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -75,11 +86,12 @@ impl PrintedStatus {
     }
 
     pub fn theme_dot(&self) -> String {
+        let theme_dot = style(Emoji("●", "*"));
         match self {
-            PrintedStatus::Active => style("●").green(),
-            PrintedStatus::Stopped => style("●"),
-            PrintedStatus::Failed => style("●").red(),
-            PrintedStatus::Starting | PrintedStatus::Stopping => style("●").blue(),
+            PrintedStatus::Active => theme_dot.green(),
+            PrintedStatus::Stopped => theme_dot,
+            PrintedStatus::Failed => theme_dot.red(),
+            PrintedStatus::Starting | PrintedStatus::Stopping => theme_dot.blue(),
         }
         .to_string()
     }

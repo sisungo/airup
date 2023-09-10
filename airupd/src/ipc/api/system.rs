@@ -27,7 +27,7 @@ fn refresh(context: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move {
         check_perm(&context, &[Action::Refresh]).await?;
         airupd().storage.config.policy.get().await.refresh().await;
-        airupfx::users::users_db().lock().unwrap().refresh();
+        airupfx::users::user_db().lock().unwrap().refresh();
         airupd().supervisors.gc().await;
         ok_null()
     })
