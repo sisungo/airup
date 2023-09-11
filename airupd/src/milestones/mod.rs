@@ -1,5 +1,7 @@
 //! # Airup Milestones
 
+mod early_boot;
+
 use crate::supervisor::AirupdExt as _;
 use ahash::AHashSet;
 use airup_sdk::Error;
@@ -23,7 +25,11 @@ pub trait AirupdExt {
 }
 impl AirupdExt for crate::app::Airupd {
     fn enter_milestone(&self, name: String) -> BoxFuture<Result<(), Error>> {
-        Box::pin(async { enter_milestone(self, name, &mut AHashSet::with_capacity(8)).await })
+        if name == "early_boot" {
+            Box::pin(early_boot::enter())
+        } else {
+            Box::pin(async { enter_milestone(self, name, &mut AHashSet::with_capacity(8)).await })
+        }
     }
 }
 

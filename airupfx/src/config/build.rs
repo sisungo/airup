@@ -10,17 +10,11 @@ macro_rules! map {
     (@$key:literal : null) => {
         ($key, None)
     };
-    ($($key:literal : $val:literal),* ,) => (
-        map!($($key => $val),*)
-    );
-    ($($key:literal : $val:tt),*) => ({
-        &[$(map!(@$key => $val))*]
-    });
     ({ $($key:literal : $val:tt),* }) => {
-        map!($($key => $val),*)
+        &[$(map!(@$key : $val))*]
     };
     ({ $($key:literal : $val:tt),* ,}) => {
-        map!($($key => $val),*)
+        map!({ $($key : $val),* })
     };
 }
 macro_rules! build_manifest {
@@ -38,6 +32,9 @@ macro_rules! build_manifest {
     };
     (@$result:expr, runtime_dir : $val:literal) => {
         $result.runtime_dir = ::std::path::Path::new($val);
+    };
+    (@$result:expr, early_cmds : $val:expr) => {
+        $result.early_cmds = &$val;
     };
     (@$result:expr, env_vars : $val:tt) => {
         $result.env_vars = map!($val);
@@ -80,6 +77,10 @@ pub struct BuildManifest {
     /// Table of initial environment variables.
     pub env_vars: &'static [(&'static str, Option<&'static str>)],
 
+    /// Commands executed in `early_boot` pseudo-milestone.
+    pub early_cmds: &'static [&'static str],
+
+    /// Default security model to use.
     pub security: Security,
 }
 impl BuildManifest {
@@ -98,11 +99,12 @@ impl Default for BuildManifest {
     fn default() -> Self {
         Self {
             os_name: "\x1b[36;4mAirup\x1b[0m",
-            config_dir: Path::new(""),
-            service_dir: Path::new(""),
-            milestone_dir: Path::new(""),
-            runtime_dir: Path::new(""),
+            config_dir: Path::new("/etc/airup"),
+            service_dir: Path::new("/etc/airup/services"),
+            milestone_dir: Path::new("/etc/airup/milestones"),
+            runtime_dir: Path::new("/run/airup"),
             env_vars: &[],
+            early_cmds: &[],
             security: Security::Policy,
         }
     }

@@ -71,7 +71,7 @@ pub enum ApiError {
     PermissionDenied { requires: Vec<String> },
 
     /// The requested method was not found.
-    #[error("not implemented")]
+    #[error("no such method")]
     NoSuchMethod,
 
     /// The requested method's parameter requirements wasn't satisfied.

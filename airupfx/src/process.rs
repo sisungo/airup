@@ -19,31 +19,31 @@ pub fn reload_image() -> std::io::Result<Infallible> {
     sys::process::reload_image()
 }
 
-/// Called when a fatal error occured.
+/// Called when a fatal error has occured.
 ///
 /// If the process has `pid==1`, this will start a shell and reloads the process image. Otherwise this will make current
 /// process exit.
 pub fn emergency() -> ! {
-    tracing::error!(target: "console", "A fatal error occured.");
     if id() == 1 {
         loop {
-            tracing::error!(target: "console", "Launching shell...");
-            if let Err(e) = launch_shell() {
+            tracing::error!(target: "console", "A fatal error has occured. Starting shell...");
+            if let Err(e) = shell() {
                 tracing::error!(target: "console", "failed to start shell: {e}");
             }
 
-            tracing::error!(target: "console", "Reloading `airupd` process image...");
+            tracing::error!(target: "console", "Rebooting the userspace...");
             if let Err(e) = reload_image() {
-                tracing::error!(target: "console", "failed to reload `airupd` image: {e}");
+                tracing::error!(target: "console", "Failed to reboot the userspace: {e}");
             }
         }
     } else {
+        tracing::error!(target: "console", "A fatal error has occured. Exiting...");
         std::process::exit(1);
     }
 }
 
 /// Opens a shell and waits for it to exit.
-fn launch_shell() -> std::io::Result<()> {
+fn shell() -> std::io::Result<()> {
     std::process::Command::new("sh").spawn()?.wait().map(|_| ())
 }
 

@@ -14,28 +14,37 @@ use milestones::AirupdExt;
 /// Entrypoint of the program.
 #[tokio::main]
 async fn main() {
-    airupfx::process::init(); // Initializes the process system
-    self::env::Cmdline::init(); // Parses command-line arguments for use of `crate::env::cmdline()`
-    airupfx::config::init().await; // Initializes the main configuration
+    // Initializes Airup subsystems
+    airupfx::process::init();
+    env::Cmdline::init();
+    airupfx::config::init().await;
     airupfx::log::Builder::new()
         .name("airupd")
         .quiet(self::env::cmdline().quiet)
         .color(!self::env::cmdline().no_color)
-        .init(); // Configures and initializes the logger
-    app::Airupd::init().await; // Initializes the Airupd app
+        .init();
+    app::Airupd::init().await;
+
+    // Enters the `early_boot` pseudo-milestone
+    app::airupd()
+        .enter_milestone("early_boot".into())
+        .await
+        .unwrap();
+
+    // Creates Airup runtime primitives
     let _lock = app::airupd()
         .storage
         .runtime
         .lock()
         .await
-        .unwrap_log("unable to lock database"); // Locks the database
+        .unwrap_log("unable to lock database");
     app::airupd()
         .storage
         .runtime
         .ipc_server()
         .await
         .unwrap_log("failed to create airupd ipc socket")
-        .start(); // Starts the IPC server
+        .start();
     app::airupd().listen_signals();
 
     if !env::cmdline().quiet {

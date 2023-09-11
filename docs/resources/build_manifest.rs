@@ -5,5 +5,6 @@ build_manifest! {
     milestone_dir: "/etc/airup/milestones",
     runtime_dir: "/run/airup",
     env_vars: {},
+    early_cmds: [],
     security: Policy,
 }

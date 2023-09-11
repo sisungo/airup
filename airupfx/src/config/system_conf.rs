@@ -11,7 +11,7 @@ use std::{
 
 static SYSTEM_CONF: OnceLock<SystemConf> = OnceLock::new();
 
-/// Represents to Airup's system config.
+/// Representation of Airup's system config.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SystemConf {
     #[serde(default)]
@@ -24,7 +24,7 @@ pub struct SystemConf {
     pub env: Env,
 }
 impl SystemConf {
-    /// Creates a new `SystemConf` instance. This firstly reads from `$config_dir/system.conf`, or returns the default value
+    /// Creates a new [SystemConf] instance. This firstly reads from `$config_dir/system.conf`, or returns the default value
     /// if fails.
     pub async fn new() -> Self {
         Self::read_from(&super::build_manifest().config_dir.join("system.conf"))
@@ -32,7 +32,7 @@ impl SystemConf {
             .unwrap_or_default()
     }
 
-    /// Parses TOML format `SystemConf` from `path`.
+    /// Parses TOML format [SystemConf] from given `path`.
     async fn read_from(path: &Path) -> anyhow::Result<Self> {
         let s = tokio::fs::read_to_string(path).await?;
         Ok(toml::from_str(&s)?)
@@ -45,7 +45,7 @@ impl SystemConf {
     /// Returns a reference to the global unique [SystemConf] instance.
     ///
     /// ## Panic
-    /// Panics if [init] hasn't been called.
+    /// Panics if the instance has not be initialized yet.
     pub fn get() -> &'static SystemConf {
         SYSTEM_CONF.get().unwrap()
     }

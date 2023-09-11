@@ -2,3 +2,4 @@
 /Cargo.lock
 /build_manifest.rs
 /.DS_Store
+/.vscode
