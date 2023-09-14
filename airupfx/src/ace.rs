@@ -28,6 +28,11 @@ impl Ace {
         self.run_tokenized(tokens.map(Cow::Borrowed)).await
     }
 
+    pub async fn run_wait(&self, cmd: &str) -> Result<Result<(), CommandExitError>, Error> {
+        self.run(cmd).await?.wait().await?;
+        Ok(Ok(()))
+    }
+
     pub async fn run_timeout(
         &self,
         cmd: &str,
@@ -73,7 +78,7 @@ impl Ace {
     ) -> Result<Child, Error> {
         let mut command = self.env.as_command(arg0).await?;
         command.args(args.map(|x| OsString::from(&*x)));
-        let _lock = crate::process::lock_handles().await;
+        let _lock = crate::process::prepare_ops().await;
         let child = command.spawn()?;
         Ok(Child::Process(crate::process::Child::from_std(child)))
     }

@@ -257,6 +257,6 @@ pub fn init() {
     ChildQueue::init();
 }
 
-pub async fn lock_handles() -> tokio::sync::RwLockReadGuard<'static, ()> {
+pub async fn prepare_ops() -> tokio::sync::RwLockReadGuard<'static, ()> {
     child_queue().lock_waiter().await
 }

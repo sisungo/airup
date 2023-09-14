@@ -17,7 +17,7 @@ pub async fn enter() -> Result<(), Error> {
     Ok(())
 }
 
-async fn run_wait(ace: &Ace, cmd: &str) -> Result<(), Error> {
-    ace.run(cmd).await?.wait().await?;
+async fn run_wait(ace: &Ace, cmd: &str) -> anyhow::Result<()> {
+    ace.run_wait(cmd).await??;
     Ok(())
 }

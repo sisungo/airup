@@ -186,8 +186,8 @@ pub fn init() {
     sys::process::init();
 }
 
-pub async fn lock_handles() -> tokio::sync::RwLockReadGuard<'static, ()> {
-    sys::process::lock_handles().await
+pub async fn prepare_ops() -> impl Send + Sync {
+    sys::process::prepare_ops().await
 }
 
 #[derive(Debug, Clone, thiserror::Error)]
