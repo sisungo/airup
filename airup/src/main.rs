@@ -1,6 +1,7 @@
 //! # Airup CLI
 
 mod debug;
+mod edit;
 mod query;
 mod reboot;
 mod reload;
@@ -14,7 +15,6 @@ use console::style;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 pub enum Cmdline {
-    Debug(debug::Cmdline),
     Start(start::Cmdline),
     Stop(stop::Cmdline),
     Reload(reload::Cmdline),
@@ -23,13 +23,14 @@ pub enum Cmdline {
     Poweroff(reboot::Cmdline),
     Reboot(reboot::Cmdline),
     Halt(reboot::Cmdline),
+    Edit(edit::Cmdline),
+    Debug(debug::Cmdline),
 }
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     let cmdline = Cmdline::parse();
     let result = match cmdline {
-        Cmdline::Debug(cmdline) => debug::main(cmdline).await,
         Cmdline::Start(cmdline) => start::main(cmdline).await,
         Cmdline::Stop(cmdline) => stop::main(cmdline).await,
         Cmdline::Reload(cmdline) => reload::main(cmdline).await,
@@ -38,6 +39,8 @@ async fn main() {
         Cmdline::Poweroff(cmdline) => reboot::main(cmdline).await,
         Cmdline::Reboot(cmdline) => reboot::main(cmdline).await,
         Cmdline::Halt(cmdline) => reboot::main(cmdline).await,
+        Cmdline::Edit(cmdline) => edit::main(cmdline).await,
+        Cmdline::Debug(cmdline) => debug::main(cmdline).await,
     };
     if let Err(e) = result {
         eprintln!("{} {}", style("error:").red().bold(), e);

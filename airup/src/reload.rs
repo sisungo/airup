@@ -18,6 +18,7 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         == "airupd"
     {
         conn.refresh().await??;
+        conn.gc().await??;
     } else {
         conn.reload_service(&cmdline.service).await??;
     }

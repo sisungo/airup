@@ -23,6 +23,9 @@ pub trait AirupdExt {
     /// Caches a service.
     async fn cache_service(&self, name: &str) -> Result<(), Error>;
 
+    /// Uncaches a service.
+    async fn uncache_service(&self, name: &str) -> Result<(), Error>;
+
     /// Interrupts current running task for the specified service.
     async fn interrupt_service_task(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error>;
 }
@@ -87,6 +90,10 @@ impl AirupdExt for crate::app::Airupd {
             .supervise(self.storage.services.get(name).await?)
             .await;
         Ok(())
+    }
+
+    async fn uncache_service(&self, name: &str) -> Result<(), Error> {
+        self.supervisors.remove(name).await
     }
 
     async fn interrupt_service_task(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {

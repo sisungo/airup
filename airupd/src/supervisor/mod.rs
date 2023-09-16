@@ -3,10 +3,8 @@ pub mod task;
 
 pub use app_integration::AirupdExt;
 
-use self::task::{
-    CleanupServiceHandle, ReloadServiceHandle, StartServiceHandle, StopServiceHandle, TaskFeedback,
-    TaskHandle,
-};
+use self::task::*;
+use ahash::AHashMap;
 use airup_sdk::{
     system::{QueryService, Status},
     Error,
@@ -14,7 +12,7 @@ use airup_sdk::{
 use airupfx::{ace::Child, files::Service, prelude::*, process::Wait};
 use std::{
     cmp,
-    collections::HashMap,
+    ops::DerefMut,
     sync::{
         atomic::{self, AtomicBool, AtomicI32},
         Arc, Mutex, RwLock,
@@ -35,8 +33,8 @@ macro_rules! supervisor_req {
 /// A manager of Airup supervisors.
 #[derive(Debug, Default)]
 pub struct Manager {
-    supervisors: tokio::sync::RwLock<HashMap<String, Arc<SupervisorHandle>>>,
-    provided: tokio::sync::RwLock<HashMap<String, Arc<SupervisorHandle>>>,
+    supervisors: tokio::sync::RwLock<AHashMap<String, Arc<SupervisorHandle>>>,
+    provided: tokio::sync::RwLock<AHashMap<String, Arc<SupervisorHandle>>>,
 }
 impl Manager {
     /// Creates a new, empty [Manager] instance.
@@ -87,29 +85,51 @@ impl Manager {
             .collect()
     }
 
-    /// Removes supervisors that are in idle.
+    /// Removes the specified supervisor.
+    pub async fn remove(&self, name: &str) -> Result<(), Error> {
+        let mut supervisors = self.supervisors.write().await;
+        let mut provided = self.provided.write().await;
+        self.remove_from(name, &mut supervisors, &mut provided).await
+    }
+
+    /// Removes supervisors that are not used.
     pub async fn gc(&self) {
         let mut supervisors = self.supervisors.write().await;
         let mut provided = self.provided.write().await;
-        let mut removable = Vec::with_capacity(supervisors.len() / 2);
-        for (k, v) in supervisors.iter() {
-            let queried = v.query().await;
-            if queried.status == Status::Stopped
-                && queried.last_error.is_none()
-                && queried.task.is_none()
-            {
-                removable.push(k.clone());
-            }
+        let all: Vec<_> = supervisors.keys().map(ToString::to_string).collect();
+        for k in all {
+            self.remove_from(&k, &mut supervisors, &mut provided).await.ok();
         }
+    }
 
-        for i in removable {
-            let handle = supervisors.remove(&i).unwrap();
-            for i in handle.query().await.service.service.provides {
+    async fn remove_from(
+        &self,
+        name: &str,
+        supervisors: &mut (dyn DerefMut<Target = AHashMap<String, Arc<SupervisorHandle>>> + Send + Sync),
+        provided: &mut (dyn DerefMut<Target = AHashMap<String, Arc<SupervisorHandle>>> + Send + Sync),
+    ) -> Result<(), Error> {
+        let handle = supervisors
+            .get(name)
+            .ok_or(Error::ObjectNotConfigured)?
+            .clone();
+        let queried = handle.query().await;
+        if queried.status == Status::Stopped && queried.task.is_none() {
+            supervisors.remove(name).unwrap();
+            for i in queried.service.service.provides {
                 if let Some(provided_handle) = provided.get(&i) {
                     if Arc::ptr_eq(&handle, provided_handle) {
                         provided.remove(&i);
                     }
                 }
+            }
+            Ok(())
+        } else {
+            if queried.status != Status::Stopped {
+                Err(Error::UnitStarted)
+            } else if queried.task.is_some() {
+                Err(Error::TaskExists)
+            } else {
+                unreachable!()
             }
         }
     }
@@ -157,7 +177,7 @@ impl SupervisorHandle {
 
     pub async fn make_active(&self) -> Result<(), Error> {
         match self.make_active_raw().await?.wait().await {
-            Ok(_) | Err(Error::ObjectAlreadyConfigured) => Ok(()),
+            Ok(_) | Err(Error::UnitStarted) => Ok(()),
             Err(err) => Err(err),
         }
     }
@@ -227,13 +247,10 @@ impl Supervisor {
                 match &self.current_task.0 {
                     Some(task) => match task.task_type() {
                         "StartService" => chan.send(Ok(task.clone())).ok(),
-                        _ => chan.send(Err(Error::TaskAlreadyExists)).ok(),
+                        _ => chan.send(Err(Error::TaskExists)).ok(),
                     },
                     None => match self.user_start_service() {
                         Ok(handle) => chan.send(Ok(handle)).ok(),
-                        Err(Error::ObjectAlreadyConfigured) => {
-                            chan.send(Ok(Arc::new(task::EmptyTaskHandle))).ok()
-                        }
                         Err(err) => chan.send(Err(err)).ok(),
                     },
                 };
@@ -318,7 +335,7 @@ impl CurrentTask {
         task_new: F,
     ) -> Result<Arc<dyn TaskHandle>, Error> {
         if self.0.is_some() {
-            return Err(Error::TaskAlreadyExists);
+            return Err(Error::TaskExists);
         }
         context.last_error.set_autosave(false);
         let task = task_new(context.clone());

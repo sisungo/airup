@@ -20,6 +20,7 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     methods.insert("system.sideload_service", sideload_service);
     methods.insert("system.unsideload_service", unsideload_service);
     methods.insert("system.cache_service", cache_service);
+    methods.insert("system.uncache_service", uncache_service);
     methods.insert("system.interrupt_service_task", interrupt_service_task);
     methods.insert("system.poweroff", poweroff);
     methods.insert("system.reboot", reboot);
@@ -122,6 +123,15 @@ fn cache_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
         let service: String = req.extract_params()?;
         check_perm(&context, &[Action::ManageServices]).await?;
         airupd().cache_service(&service).await?;
+        ok_null()
+    })
+}
+
+fn uncache_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+    Box::pin(async move {
+        let service: String = req.extract_params()?;
+        check_perm(&context, &[Action::ManageServices]).await?;
+        airupd().uncache_service(&service).await?;
         ok_null()
     })
 }

@@ -69,6 +69,9 @@ pub trait ConnectionExt {
     /// Refreshes cached system information in the `airupd` daemon.
     async fn refresh(&mut self) -> anyhow::Result<Result<(), Error>>;
 
+    /// Deletes cached system information in the `airupd` daemon.
+    async fn gc(&mut self) -> anyhow::Result<Result<(), Error>>;
+
     /// Shuts the system down.
     async fn shutdown(&mut self) -> anyhow::Result<Result<(), Error>>;
 
@@ -111,6 +114,10 @@ impl<'a> ConnectionExt for super::Connection<'a> {
 
     async fn refresh(&mut self) -> anyhow::Result<Result<(), Error>> {
         self.invoke("system.refresh", ()).await
+    }
+
+    async fn gc(&mut self) -> anyhow::Result<Result<(), Error>> {
+        self.invoke("system.gc", ()).await
     }
 
     async fn shutdown(&mut self) -> anyhow::Result<Result<(), Error>> {

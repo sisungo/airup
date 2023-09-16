@@ -39,8 +39,8 @@ pub enum ApiError {
     ObjectNotConfigured,
 
     /// The requested object is already configured.
-    #[error("object already configured")]
-    ObjectAlreadyConfigured,
+    #[error("unit already started")]
+    UnitStarted,
 
     /// The requested object cannot be accessed due to an I/O error.
     #[error("cannot access object: {message}")]
@@ -72,7 +72,7 @@ pub enum ApiError {
 
     /// There is already a task running.
     #[error("already exists a task running")]
-    TaskAlreadyExists,
+    TaskExists,
 
     /// There is no task running.
     #[error("task not found")]

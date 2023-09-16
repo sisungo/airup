@@ -51,7 +51,7 @@ impl StartService {
 
     pub async fn run(&mut self) -> Result<(), Error> {
         if self.context.status.get() == Status::Active {
-            return Err(Error::ObjectAlreadyConfigured);
+            return Err(Error::UnitStarted);
         }
 
         self.context.last_error.set(None);

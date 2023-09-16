@@ -1,4 +1,4 @@
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 use airup_sdk::prelude::*;
 use anyhow::anyhow;

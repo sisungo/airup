@@ -73,7 +73,7 @@ fn enter_milestone<'a>(
         for service in def.services().await.iter() {
             match &def.manifest.milestone.kind {
                 Kind::Async => match airupd.start_service(service).await {
-                    Ok(_) | Err(Error::ObjectAlreadyConfigured) => {
+                    Ok(_) | Err(Error::UnitStarted) => {
                         tracing::info!(target: "console", "Starting {}", display_name(airupd, service).await)
                     }
                     Err(err) => {
