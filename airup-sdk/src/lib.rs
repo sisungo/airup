@@ -1,10 +1,12 @@
+pub mod ipc;
+pub mod error;
 pub mod prelude;
 pub mod system;
 
-pub use airupfx::ipc::mapi::ApiError as Error;
+pub use error::ApiError as Error;
 use serde::{de::DeserializeOwned, ser::Serialize};
 
-use airupfx::ipc::{self, mapi::Request};
+use ipc::Request;
 use std::{
     ops::{Deref, DerefMut},
     path::Path,

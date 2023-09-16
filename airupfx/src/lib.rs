@@ -13,9 +13,6 @@ pub mod log;
 #[cfg(feature = "config")]
 pub mod config;
 
-#[cfg(feature = "ipc")]
-pub mod ipc;
-
 #[cfg(feature = "policy")]
 pub mod policy;
 

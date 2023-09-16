@@ -59,6 +59,14 @@ impl StartService {
 
         let ace = super::ace(&self.context).await?;
 
+        for i in self.context.service.service.conflicts_with.iter() {
+            if let Some(handle) = airupd().supervisors.get(i).await {
+                if handle.query().await.status == Status::Active {
+                    return Err(Error::ConflictsWith { name: i.to_string() });
+                }
+            }
+        }
+
         self.helper
             .interruptable_scope::<Result<(), Error>, _>(async {
                 for dep in self.context.service.service.dependencies.iter() {

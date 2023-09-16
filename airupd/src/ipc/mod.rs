@@ -31,12 +31,12 @@ impl Default for Context {
 /// Represents to an IPC server.
 #[derive(Debug)]
 pub struct Server {
-    server: airupfx::ipc::Server,
+    server: airup_sdk::ipc::Server,
 }
 impl Server {
     /// Creates a new `Server` instance.
     pub async fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
-        let server = airupfx::ipc::Server::new(path)?;
+        let server = airup_sdk::ipc::Server::new(path)?;
 
         Ok(Self { server })
     }
@@ -74,12 +74,12 @@ impl Server {
 /// Represents to an Airupd IPC session.
 #[derive(Debug)]
 pub struct Session {
-    conn: airupfx::ipc::Connection,
+    conn: airup_sdk::ipc::Connection,
     context: Arc<SessionContext>,
 }
 impl Session {
     /// Creates a new `Session` with the given [airupfx::ipc::Connection].
-    pub async fn new(conn: airupfx::ipc::Connection) -> Self {
+    pub async fn new(conn: airup_sdk::ipc::Connection) -> Self {
         let context = Arc::new(SessionContext::with_conn(&conn));
         Self { conn, context }
     }
@@ -132,7 +132,7 @@ pub struct SessionContext {
     pub pid: Option<i64>,
 }
 impl SessionContext {
-    pub fn with_conn(conn: &airupfx::ipc::Connection) -> Self {
+    pub fn with_conn(conn: &airup_sdk::ipc::Connection) -> Self {
         let cred = conn.cred().ok();
         let uid = cred
             .as_ref()

@@ -5,7 +5,8 @@ use super::{
     Method, MethodFuture,
 };
 use crate::{app::airupd, ipc::SessionContext, supervisor::AirupdExt};
-use airupfx::{ipc::mapi::Request, policy::Action};
+use airupfx::policy::Action;
+use airup_sdk::ipc::Request;
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {

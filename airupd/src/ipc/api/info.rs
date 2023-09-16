@@ -2,7 +2,7 @@
 
 use super::{Method, MethodFuture};
 use crate::ipc::{api::util::ok, SessionContext};
-use airupfx::ipc::mapi::Request;
+use airup_sdk::ipc::Request;
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {

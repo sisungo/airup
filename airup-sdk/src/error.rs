@@ -1,66 +1,6 @@
-//! # Airup IPC Protocol - Message-level API
-
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::borrow::Cow;
 use thiserror::Error;
-
-/// Represents to an Airup IPC request.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Request {
-    pub method: String,
-
-    #[serde(alias = "param")]
-    pub params: Option<serde_json::Value>,
-}
-impl Request {
-    /// Creates a new [Request] with given method name and parameters.
-    pub fn new<M: Into<String>, C: Serialize, P: Into<Option<C>>>(
-        method: M,
-        params: P,
-    ) -> serde_json::Result<Self> {
-        let method = method.into();
-        let params = params.into().map(|x| serde_json::to_value(x).unwrap());
-
-        Ok(Self { method, params })
-    }
-
-    /// Extracts parameters from the request.
-    pub fn extract_params<T: DeserializeOwned>(self) -> Result<T, ApiError> {
-        let value: serde_json::Value = self.params.into();
-        serde_json::from_value(value).map_err(ApiError::invalid_params)
-    }
-}
-
-/// Represents to an Airup IPC response.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case", tag = "status", content = "payload")]
-pub enum Response {
-    Ok(serde_json::Value),
-    Err(ApiError),
-}
-impl Response {
-    /// Creates a new `Response` from given `Result`.
-    ///
-    /// ## Panic
-    /// Panics when `serde_json::to_value` fails.
-    pub fn new<T: Serialize>(result: Result<T, ApiError>) -> Self {
-        match result {
-            Ok(val) => Self::Ok(serde_json::to_value(&val).unwrap()),
-            Err(err) => Self::Err(err),
-        }
-    }
-
-    /// Converts from `Response` to a `Result`.
-    pub fn into_result<T: DeserializeOwned>(self) -> Result<T, ApiError> {
-        match self {
-            Self::Ok(val) => {
-                Ok(serde_json::from_value(val)
-                    .map_err(|_| ApiError::bad_response("TypeError", ""))?)
-            }
-            Self::Err(err) => Err(err),
-        }
-    }
-}
+use serde::{Serialize, Deserialize};
+use std::borrow::Cow;
 
 /// Represents to an API error.
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
@@ -154,6 +94,10 @@ pub enum ApiError {
     #[error("dependency cannot be satisfied: {name}")]
     DependencyNotSatisfied { name: String },
 
+    /// The operation failed because some conflicts exists.
+    #[error("the unit conflicts with a running unit: {name}")]
+    ConflictsWith { name: String },
+
     /// An I/O error occured.
     #[error("I/O error: {message}")]
     Io { message: String },
@@ -221,39 +165,37 @@ impl ApiError {
         }
     }
 }
-#[cfg(feature = "files")]
-impl From<crate::files::ReadError> for ApiError {
-    fn from(value: crate::files::ReadError) -> Self {
+impl From<airupfx::files::ReadError> for ApiError {
+    fn from(value: airupfx::files::ReadError) -> Self {
         match value {
-            crate::files::ReadError::Io(err) => match err.kind() {
+            airupfx::files::ReadError::Io(err) => match err.kind() {
                 std::io::ErrorKind::NotFound => Self::ObjectNotFound,
                 _ => Self::ObjectIo {
                     message: err.to_string(),
                 },
             },
-            crate::files::ReadError::Parse(x) => Self::InvalidObject { message: x.into() },
-            crate::files::ReadError::Validation(x) => Self::InvalidObject { message: x },
+            airupfx::files::ReadError::Parse(x) => Self::InvalidObject { message: x.into() },
+            airupfx::files::ReadError::Validation(x) => Self::InvalidObject { message: x },
         }
     }
 }
-#[cfg(feature = "ace")]
-impl From<crate::ace::Error> for ApiError {
-    fn from(value: crate::ace::Error) -> Self {
+
+impl From<airupfx::ace::Error> for ApiError {
+    fn from(value: airupfx::ace::Error) -> Self {
         match value {
-            crate::ace::Error::UserNotFound => Self::UserNotFound,
-            crate::ace::Error::CommandNotFound => Self::CommandNotFound,
-            crate::ace::Error::Wait(err) => Self::internal(err.to_string()),
-            crate::ace::Error::Io(err) => Self::io(&err),
-            crate::ace::Error::TimedOut => Self::TimedOut,
+            airupfx::ace::Error::UserNotFound => Self::UserNotFound,
+            airupfx::ace::Error::CommandNotFound => Self::CommandNotFound,
+            airupfx::ace::Error::Wait(err) => Self::internal(err.to_string()),
+            airupfx::ace::Error::Io(err) => Self::io(&err),
+            airupfx::ace::Error::TimedOut => Self::TimedOut,
         }
     }
 }
-#[cfg(feature = "ace")]
-impl From<crate::ace::CommandExitError> for ApiError {
-    fn from(value: crate::ace::CommandExitError) -> Self {
+impl From<airupfx::ace::CommandExitError> for ApiError {
+    fn from(value: airupfx::ace::CommandExitError) -> Self {
         match value {
-            crate::ace::CommandExitError::Exited(exit_code) => Self::Exited { exit_code },
-            crate::ace::CommandExitError::Signaled(signum) => Self::Signaled { signum },
+            airupfx::ace::CommandExitError::Exited(exit_code) => Self::Exited { exit_code },
+            airupfx::ace::CommandExitError::Signaled(signum) => Self::Signaled { signum },
         }
     }
 }

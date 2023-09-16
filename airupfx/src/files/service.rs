@@ -170,6 +170,10 @@ pub struct Metadata {
     /// List of dependencies of the service.
     #[serde(default)]
     pub dependencies: Vec<String>,
+
+    /// List of services that conflicts with this service.
+    #[serde(default)]
+    pub conflicts_with: Vec<String>,
 }
 
 /// Kind of a service.

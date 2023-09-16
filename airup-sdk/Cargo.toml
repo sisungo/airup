@@ -14,5 +14,8 @@ crate-type = ["rlib", "cdylib"]
 [dependencies]
 anyhow = "1"
 async-trait = "0.1"
-airupfx = { path = "../airupfx", features = ["ipc", "config", "files", "process"] }
+airupfx = { path = "../airupfx", features = ["ace", "config", "files", "process"] }
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { workspace = true }
+thiserror = "1"
