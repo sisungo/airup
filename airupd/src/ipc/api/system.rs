@@ -11,6 +11,7 @@ use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     methods.insert("system.refresh", refresh);
+    methods.insert("system.gc", gc);
     methods.insert("system.start_service", start_service);
     methods.insert("system.query_service", query_service);
     methods.insert("system.query_system", query_system);
@@ -18,6 +19,7 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     methods.insert("system.reload_service", reload_service);
     methods.insert("system.sideload_service", sideload_service);
     methods.insert("system.unsideload_service", unsideload_service);
+    methods.insert("system.cache_service", cache_service);
     methods.insert("system.interrupt_service_task", interrupt_service_task);
     methods.insert("system.poweroff", poweroff);
     methods.insert("system.reboot", reboot);
@@ -29,6 +31,13 @@ fn refresh(context: Arc<SessionContext>, _: Request) -> MethodFuture {
         check_perm(&context, &[Action::Refresh]).await?;
         airupd().storage.config.policy.get().await.refresh().await;
         airupfx::users::user_db().lock().unwrap().refresh();
+        ok_null()
+    })
+}
+
+fn gc(context: Arc<SessionContext>, _: Request) -> MethodFuture {
+    Box::pin(async move {
+        check_perm(&context, &[Action::Refresh]).await?;
         airupd().supervisors.gc().await;
         ok_null()
     })
@@ -55,7 +64,6 @@ fn start_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
         check_perm(&context, &[Action::ManageServices]).await?;
         let handle = airupd().start_service(&service).await?;
         handle.wait().await?;
-
         ok_null()
     })
 }
@@ -105,6 +113,15 @@ fn unsideload_service(context: Arc<SessionContext>, req: Request) -> MethodFutur
         let name: String = req.extract_params()?;
         check_perm(&context, &[Action::SideloadServices]).await?;
         airupd().storage.services.unload(&name)?;
+        ok_null()
+    })
+}
+
+fn cache_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+    Box::pin(async move {
+        let service: String = req.extract_params()?;
+        check_perm(&context, &[Action::ManageServices]).await?;
+        airupd().cache_service(&service).await?;
         ok_null()
     })
 }

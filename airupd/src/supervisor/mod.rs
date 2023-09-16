@@ -44,12 +44,12 @@ impl Manager {
         Self::default()
     }
 
-    /// Supervises the given service in the supervisor set. Returns `(false, _)` if the supervisor already exists.
-    pub async fn supervise(&self, service: Service) -> Result<Arc<SupervisorHandle>, Error> {
+    /// Supervises the given service in the supervisor set.
+    pub async fn supervise(&self, service: Service) -> Arc<SupervisorHandle> {
         let mut lock = self.supervisors.write().await;
 
         if let Some(x) = lock.get(&service.name).cloned() {
-            return Ok(x);
+            return x;
         }
 
         let name = service.name.clone();
@@ -63,11 +63,13 @@ impl Manager {
             lock.insert(i, handle.clone());
         }
 
-        Ok(handle)
+        handle
     }
 
     /// Gets a supervisor in the set.
     pub async fn get(&self, name: &str) -> Option<Arc<SupervisorHandle>> {
+        let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
+
         if let Some(name) = name.strip_suffix(".provided") {
             return self.provided.read().await.get(name).cloned();
         }
@@ -148,10 +150,17 @@ impl SupervisorHandle {
         Request::InterruptTask
     );
     supervisor_req!(
-        make_active,
+        make_active_raw,
         Result<Arc<dyn TaskHandle>, Error>,
         Request::MakeActive
     );
+
+    pub async fn make_active(&self) -> Result<(), Error> {
+        match self.make_active_raw().await?.wait().await {
+            Ok(_) | Err(Error::ObjectAlreadyConfigured) => Ok(()),
+            Err(err) => Err(err),
+        }
+    }
 }
 
 struct Supervisor {

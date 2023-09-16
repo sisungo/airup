@@ -1,7 +1,7 @@
 //! # Airup CLI
 
+mod debug;
 mod query;
-mod raw_io;
 mod reboot;
 mod reload;
 mod restart;
@@ -14,7 +14,7 @@ use console::style;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 pub enum Cmdline {
-    RawIo(raw_io::Cmdline),
+    Debug(debug::Cmdline),
     Start(start::Cmdline),
     Stop(stop::Cmdline),
     Reload(reload::Cmdline),
@@ -29,7 +29,7 @@ pub enum Cmdline {
 async fn main() {
     let cmdline = Cmdline::parse();
     let result = match cmdline {
-        Cmdline::RawIo(cmdline) => raw_io::main(cmdline).await,
+        Cmdline::Debug(cmdline) => debug::main(cmdline).await,
         Cmdline::Start(cmdline) => start::main(cmdline).await,
         Cmdline::Stop(cmdline) => stop::main(cmdline).await,
         Cmdline::Reload(cmdline) => reload::main(cmdline).await,

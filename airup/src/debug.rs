@@ -1,30 +1,35 @@
+use std::path::{PathBuf, Path};
+
 use airup_sdk::prelude::*;
 use anyhow::anyhow;
 use clap::Parser;
 use console::style;
 use rustyline::{error::ReadlineError, history::DefaultHistory};
-use std::path::{Path, PathBuf};
 
+/// Query system information
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
-    path: Option<PathBuf>,
+    #[arg(long)]
+    sock_repl: bool,
 
     #[arg(long)]
     auto_reconnect: bool,
 
-    #[arg(short)]
+    #[arg(short, long)]
     command: Option<String>,
 }
 
-pub async fn main(mut cmdline: Cmdline) -> anyhow::Result<()> {
-    let path = match cmdline.path.take() {
-        Some(x) => Box::leak(x.into_boxed_path()),
-        None => airup_sdk::socket_path(),
-    };
+pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    if cmdline.sock_repl {
+        main_sock_repl(cmdline).await?;
+    }
+    Ok(())
+}
 
+async fn main_sock_repl(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut raw_io = RawIo {
-        conn: Connection::connect(path).await?,
+        conn: Connection::connect(airup_sdk::socket_path()).await?,
         rl: rustyline::DefaultEditor::with_config(
             rustyline::Config::builder().auto_add_history(true).build(),
         )?,

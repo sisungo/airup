@@ -20,6 +20,9 @@ pub trait AirupdExt {
     /// Reloads a service.
     async fn reload_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error>;
 
+    /// Caches a service.
+    async fn cache_service(&self, name: &str) -> Result<(), Error>;
+
     /// Interrupts current running task for the specified service.
     async fn interrupt_service_task(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error>;
 }
@@ -31,10 +34,10 @@ impl AirupdExt for crate::app::Airupd {
             None => {
                 self.supervisors
                     .supervise(self.storage.services.get(name).await?)
-                    .await?
+                    .await
             }
         };
-        supervisor.make_active().await?.wait().await.map(|_| ())
+        supervisor.make_active().await
     }
 
     async fn start_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
@@ -44,14 +47,13 @@ impl AirupdExt for crate::app::Airupd {
                 let supervisor = self
                     .supervisors
                     .supervise(self.storage.services.get(name).await?)
-                    .await?;
+                    .await;
                 Ok(supervisor.start().await?)
             }
         }
     }
 
     async fn query_service(&self, name: &str) -> Result<QueryService, Error> {
-        let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
         match self.supervisors.get(name).await {
             Some(supervisor) => Ok(supervisor.query().await),
             None => Ok(QueryService::default_of(
@@ -61,7 +63,6 @@ impl AirupdExt for crate::app::Airupd {
     }
 
     async fn stop_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
-        let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
         match self.supervisors.get(name).await {
             Some(supervisor) => Ok(supervisor.stop().await?),
             None => {
@@ -72,7 +73,6 @@ impl AirupdExt for crate::app::Airupd {
     }
 
     async fn reload_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
-        let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
         match self.supervisors.get(name).await {
             Some(supervisor) => Ok(supervisor.reload().await?),
             None => {
@@ -80,6 +80,13 @@ impl AirupdExt for crate::app::Airupd {
                 Err(Error::ObjectNotConfigured)
             }
         }
+    }
+
+    async fn cache_service(&self, name: &str) -> Result<(), Error> {
+        self.supervisors
+            .supervise(self.storage.services.get(name).await?)
+            .await;
+        Ok(())
     }
 
     async fn interrupt_service_task(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
