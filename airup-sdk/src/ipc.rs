@@ -1,6 +1,6 @@
 //! # Airup IPC Protocol
 //! Airup's protocol for IPC.
-//! 
+//!
 //! ## Stream to Datagram
 //! Airup uses a very simple protocol to wrap streaming protocols to datagram protocols.
 //!
@@ -13,11 +13,17 @@
 //! should be less than 6MiB and cannot be zero, or a serious protocol error will be occured. Then follows content of the
 //! datagram.
 
-use anyhow::anyhow;
-use tokio::{net::{UnixListener, UnixStream, unix::UCred}, io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt}};
 use crate::error::ApiError;
-use std::{path::Path, ops::{DerefMut, Deref}};
-use serde::{Serialize, Deserialize, de::DeserializeOwned};
+use anyhow::anyhow;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::{
+    ops::{Deref, DerefMut},
+    path::Path,
+};
+use tokio::{
+    io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
+    net::{unix::UCred, UnixListener, UnixStream},
+};
 
 /// Represents to a connection.
 #[derive(Debug)]

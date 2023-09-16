@@ -34,6 +34,18 @@ pub trait TaskHandle: Send + Sync + 'static {
     fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>>;
 }
 
+/// An [TaskHandle] implementation that immediately successfully completes.
+pub struct EmptyTaskHandle;
+impl TaskHandle for EmptyTaskHandle {
+    fn task_type(&self) -> &'static str {
+        "Empty"
+    }
+    fn send_interrupt(&self) {}
+    fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>> {
+        Box::pin(async { Ok(().into()) })
+    }
+}
+
 /// A helper type for implementing [TaskHandle].
 #[derive(Debug)]
 pub struct TaskHelperHandle {

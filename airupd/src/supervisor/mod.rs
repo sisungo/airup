@@ -12,7 +12,6 @@ use airup_sdk::{
     Error,
 };
 use airupfx::{ace::Child, files::Service, prelude::*, process::Wait};
-use smallvec::{smallvec, SmallVec};
 use std::{
     cmp,
     collections::HashMap,
@@ -148,39 +147,11 @@ impl SupervisorHandle {
         Result<Arc<dyn TaskHandle>, Error>,
         Request::InterruptTask
     );
-
-    /// If the service is running for `StartService` task, waits until the task completed. Otherwise it will attepmt to start
-    /// the service and waits until it completed.
-    ///
-    /// ## Cancel Safety
-    /// This method is cancel safe.
-    pub async fn make_active(&self) -> Result<(), Error> {
-        let (task_handle_tx, task_handle_rx) = oneshot::channel();
-        let (start_tx, start_rx) = oneshot::channel();
-        self.sender
-            .send(Request::Transaction(vec![
-                Request::GetTaskHandle(task_handle_tx),
-                Request::Start(start_tx),
-            ]))
-            .await
-            .unwrap();
-
-        let task_handle = task_handle_rx.await.unwrap();
-        let start = start_rx.await.unwrap();
-
-        if let Ok(task_handle) = task_handle {
-            if task_handle.task_type() == "StartService" {
-                return task_handle.wait().await.map(|_| ());
-            } else {
-                return Err(Error::TaskAlreadyExists);
-            }
-        }
-
-        match start.unwrap().wait().await {
-            Ok(_) | Err(Error::ObjectAlreadyConfigured) => Ok(()),
-            Err(err) => Err(err),
-        }
-    }
+    supervisor_req!(
+        make_active,
+        Result<Arc<dyn TaskHandle>, Error>,
+        Request::MakeActive
+    );
 }
 
 struct Supervisor {
@@ -206,59 +177,57 @@ impl Supervisor {
     }
 
     async fn handle_req(&mut self, req: Request) {
-        let mut transaction: SmallVec<[_; 1]> = smallvec![req];
-        loop {
-            if transaction.is_empty() {
-                break;
+        match req {
+            Request::Query(chan) => {
+                let query_result = QueryService {
+                    status: self.context.status.get(),
+                    pid: self.context.pid().await,
+                    task: self
+                        .current_task
+                        .0
+                        .as_ref()
+                        .map(|x| x.task_type().to_owned()),
+                    last_error: self.context.last_error.get(),
+                    service: self.context.service.clone(),
+                };
+                chan.send(query_result).ok();
             }
-
-            let drained: SmallVec<[_; 1]> = transaction.drain(..).collect();
-            for req in drained {
-                match req {
-                    Request::Query(chan) => {
-                        let query_result = QueryService {
-                            status: self.context.status.get(),
-                            pid: self.context.pid().await,
-                            task: self
-                                .current_task
-                                .0
-                                .as_ref()
-                                .map(|x| x.task_type().to_owned()),
-                            last_error: self.context.last_error.get(),
-                            service: self.context.service.clone(),
-                        };
-                        chan.send(query_result).ok();
-                    }
-                    Request::Start(chan) => {
-                        self.context.retry.reset();
-                        chan.send(self.current_task.start_service(self.context.clone()))
-                            .ok();
-                    }
-                    Request::Stop(chan) => {
-                        self.context.retry.disable();
-                        chan.send(self.current_task.stop_service(self.context.clone()))
-                            .ok();
-                    }
-                    Request::Reload(chan) => {
-                        chan.send(self.current_task.reload_service(self.context.clone()))
-                            .ok();
-                    }
-                    Request::GetTaskHandle(chan) => {
-                        chan.send(self.current_task.0.clone().ok_or(Error::TaskNotFound))
-                            .ok();
-                    }
-                    Request::InterruptTask(chan) => {
-                        let handle = self.current_task.0.clone().ok_or(Error::TaskNotFound);
-                        if let Ok(x) = handle.as_deref() {
-                            x.send_interrupt();
-                        }
-                        self.context.last_error.set_autosave(false);
-                        chan.send(handle).ok();
-                    }
-                    Request::Transaction(list) => {
-                        transaction.append::<[Request; 0]>(&mut list.into());
-                    }
+            Request::Start(chan) => {
+                chan.send(self.user_start_service()).ok();
+            }
+            Request::Stop(chan) => {
+                chan.send(self.user_stop_service()).ok();
+            }
+            Request::Reload(chan) => {
+                chan.send(self.current_task.reload_service(self.context.clone()))
+                    .ok();
+            }
+            Request::GetTaskHandle(chan) => {
+                chan.send(self.current_task.0.clone().ok_or(Error::TaskNotFound))
+                    .ok();
+            }
+            Request::InterruptTask(chan) => {
+                let handle = self.current_task.0.clone().ok_or(Error::TaskNotFound);
+                if let Ok(x) = handle.as_deref() {
+                    x.send_interrupt();
                 }
+                self.context.last_error.set_autosave(false);
+                chan.send(handle).ok();
+            }
+            Request::MakeActive(chan) => {
+                match &self.current_task.0 {
+                    Some(task) => match task.task_type() {
+                        "StartService" => chan.send(Ok(task.clone())).ok(),
+                        _ => chan.send(Err(Error::TaskAlreadyExists)).ok(),
+                    },
+                    None => match self.user_start_service() {
+                        Ok(handle) => chan.send(Ok(handle)).ok(),
+                        Err(Error::ObjectAlreadyConfigured) => {
+                            chan.send(Ok(Arc::new(task::EmptyTaskHandle))).ok()
+                        }
+                        Err(err) => chan.send(Err(err)).ok(),
+                    },
+                };
             }
         }
     }
@@ -279,6 +248,16 @@ impl Supervisor {
                 self.context.last_error.set(err);
             }
         }
+    }
+
+    fn user_start_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        self.context.retry.reset();
+        self.current_task.start_service(self.context.clone())
+    }
+
+    fn user_stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        self.context.retry.disable();
+        self.current_task.stop_service(self.context.clone())
     }
 }
 
@@ -468,7 +447,7 @@ enum Request {
     Reload(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     GetTaskHandle(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     InterruptTask(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
-    Transaction(Vec<Self>),
+    MakeActive(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
 }
 
 async fn wait(context: &SupervisorContext, has_task: bool) -> Option<Wait> {

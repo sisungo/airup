@@ -7,8 +7,11 @@ pub mod util;
 
 use super::SessionContext;
 use ahash::AHashMap;
+use airup_sdk::{
+    error::ApiError,
+    ipc::{Request, Response},
+};
 use airupfx::prelude::*;
-use airup_sdk::{error::ApiError, ipc::{Request, Response}};
 use std::sync::{Arc, RwLock};
 
 /// The Airup IPC API (implementation) manager.

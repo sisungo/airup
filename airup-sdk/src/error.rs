@@ -1,6 +1,6 @@
-use thiserror::Error;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+use thiserror::Error;
 
 /// Represents to an API error.
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]

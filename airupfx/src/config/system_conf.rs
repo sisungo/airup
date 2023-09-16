@@ -39,7 +39,9 @@ impl SystemConf {
     }
 
     pub async fn init() {
-        SYSTEM_CONF.set(SystemConf::new().await).unwrap();
+        let obj = SystemConf::new().await;
+        obj.env.override_env();
+        SYSTEM_CONF.set(obj).unwrap();
     }
 
     /// Returns a reference to the global unique [SystemConf] instance.
@@ -74,34 +76,26 @@ pub struct Locations {
 }
 
 /// Represents to Airup's environment.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Env {
     /// Table of initial environment variables.
     ///
     /// If a value is set to `null`, the environment variable gets removed if it exists.
-    #[serde(default = "default_env_vars")]
-    pub vars: BTreeMap<String, Option<String>>,
+    #[serde(default)]
+    vars: BTreeMap<String, Option<String>>,
 }
 impl Env {
     /// Overrides the environment with this [Env] object.
-    pub fn override_env(&self) {
-        crate::env::set_vars(self.vars.clone());
-    }
-}
-impl Default for Env {
-    fn default() -> Self {
-        Self {
-            vars: default_env_vars(),
+    fn override_env(&self) {
+        let mut vars: BTreeMap<String, Option<String>> = BTreeMap::new();
+        for (k, v) in super::build_manifest().env_vars {
+            vars.insert(k.to_string(), v.map(Into::into));
         }
+        for (k, v) in self.vars.iter() {
+            vars.insert(k.into(), v.clone());
+        }
+        crate::env::set_vars(vars);
     }
-}
-
-fn default_env_vars() -> BTreeMap<String, Option<String>> {
-    super::build_manifest()
-        .env_vars
-        .iter()
-        .map(|(k, v)| (String::from(*k), v.map(Into::into)))
-        .collect()
 }
 
 fn default_os_name() -> Cow<'static, str> {

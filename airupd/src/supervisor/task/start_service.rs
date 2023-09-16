@@ -62,7 +62,9 @@ impl StartService {
         for i in self.context.service.service.conflicts_with.iter() {
             if let Some(handle) = airupd().supervisors.get(i).await {
                 if handle.query().await.status == Status::Active {
-                    return Err(Error::ConflictsWith { name: i.to_string() });
+                    return Err(Error::ConflictsWith {
+                        name: i.to_string(),
+                    });
                 }
             }
         }

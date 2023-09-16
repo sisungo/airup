@@ -34,7 +34,7 @@ impl AirupdExt for crate::app::Airupd {
                     .await?
             }
         };
-        supervisor.make_active().await
+        supervisor.make_active().await?.wait().await.map(|_| ())
     }
 
     async fn start_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
