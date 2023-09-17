@@ -2,11 +2,11 @@
 
 mod early_boot;
 
-use crate::supervisor::AirupdExt as _;
+use crate::{supervisor::AirupdExt as _, app::Airupd};
 use ahash::AHashSet;
 use airup_sdk::Error;
 use airupfx::{
-    files::{milestone::Kind, Milestone},
+    files::{milestone::{Kind, Item}, Milestone},
     prelude::*,
 };
 
@@ -70,29 +70,41 @@ fn enter_milestone<'a>(
         std::env::set_var("AIRUP_MILESTONE", name);
 
         // Starts services
-        for service in def.services().await.iter() {
-            match &def.manifest.milestone.kind {
-                Kind::Async => match airupd.start_service(service).await {
-                    Ok(_) | Err(Error::UnitStarted) => {
-                        tracing::info!(target: "console", "Starting {}", display_name(airupd, service).await)
-                    }
-                    Err(err) => {
-                        tracing::error!(target: "console", "Failed to start \"{}\": {}", service, err)
-                    }
-                },
-                Kind::Serial => match airupd.make_service_active(service).await {
-                    Ok(_) => {
-                        tracing::info!(target: "console", "Starting {}", display_name(airupd, service).await)
-                    }
-                    Err(err) => {
-                        tracing::error!(target: "console", "Failed to start {}: {}", display_name(airupd, service).await, err);
-                    }
-                },
-            }
+        for item in def.services().await.iter() {
+            exec_item(airupd, &def.manifest.milestone.kind, item).await;
         }
 
         Ok(())
     })
+}
+
+async fn exec_item(airupd: &Airupd, kind: &Kind, item: &Item) {
+    match item {
+        Item::Cache(service) => {
+            if let Err(err) = airupd.cache_service(service).await {
+                tracing::error!(target: "console", "Failed to load \"{}\": {}", service, err);
+            }
+        },
+        Item::Start(service) => match kind {
+            Kind::Async => match airupd.start_service(service).await {
+                Ok(_) | Err(Error::UnitStarted) => {
+                    tracing::info!(target: "console", "Starting {}", display_name(airupd, service).await)
+                }
+                Err(err) => {
+                    tracing::error!(target: "console", "Failed to start \"{}\": {}", service, err)
+                }
+            },
+            Kind::Sync => {}
+            Kind::Serial => match airupd.make_service_active(service).await {
+                Ok(_) => {
+                    tracing::info!(target: "console", "Starting {}", display_name(airupd, service).await)
+                }
+                Err(err) => {
+                    tracing::error!(target: "console", "Failed to start {}: {}", display_name(airupd, service).await, err);
+                }
+            },
+        },
+    }
 }
 
 async fn display_name(airupd: &crate::app::Airupd, name: &str) -> String {

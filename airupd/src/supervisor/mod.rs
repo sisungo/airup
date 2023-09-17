@@ -89,7 +89,8 @@ impl Manager {
     pub async fn remove(&self, name: &str) -> Result<(), Error> {
         let mut supervisors = self.supervisors.write().await;
         let mut provided = self.provided.write().await;
-        self.remove_from(name, &mut supervisors, &mut provided).await
+        self.remove_from(name, &mut supervisors, &mut provided, true)
+            .await
     }
 
     /// Removes supervisors that are not used.
@@ -98,22 +99,44 @@ impl Manager {
         let mut provided = self.provided.write().await;
         let all: Vec<_> = supervisors.keys().map(ToString::to_string).collect();
         for k in all {
-            self.remove_from(&k, &mut supervisors, &mut provided).await.ok();
+            self.remove_from(&k, &mut supervisors, &mut provided, false)
+                .await
+                .ok();
         }
     }
 
     async fn remove_from(
         &self,
         name: &str,
-        supervisors: &mut (dyn DerefMut<Target = AHashMap<String, Arc<SupervisorHandle>>> + Send + Sync),
-        provided: &mut (dyn DerefMut<Target = AHashMap<String, Arc<SupervisorHandle>>> + Send + Sync),
+        supervisors: &mut (dyn DerefMut<Target = AHashMap<String, Arc<SupervisorHandle>>>
+                  + Send
+                  + Sync),
+        provided: &mut (dyn DerefMut<Target = AHashMap<String, Arc<SupervisorHandle>>>
+                  + Send
+                  + Sync),
+        permissive: bool,
     ) -> Result<(), Error> {
-        let handle = supervisors
-            .get(name)
-            .ok_or(Error::UnitNotStarted)?
-            .clone();
+        let handle = supervisors.get(name).ok_or(Error::UnitNotStarted)?.clone();
         let queried = handle.query().await;
-        if queried.status == Status::Stopped && queried.task.is_none() {
+        let removable = queried.status == Status::Stopped
+            && queried.task.is_none()
+            && match permissive {
+                true => true,
+                false => {
+                    queried.last_error.is_none()
+                        && || -> bool {
+                            for i in queried.service.service.provides.iter() {
+                                if let Some(provided_handle) = provided.get(i) {
+                                    if Arc::ptr_eq(&handle, provided_handle) {
+                                        return false;
+                                    }
+                                }
+                            }
+                            true
+                        }()
+                }
+            };
+        if removable {
             supervisors.remove(name).unwrap();
             for i in queried.service.service.provides {
                 if let Some(provided_handle) = provided.get(&i) {
@@ -123,14 +146,14 @@ impl Manager {
                 }
             }
             Ok(())
+        } else if queried.status != Status::Stopped {
+            Err(Error::UnitStarted)
+        } else if queried.task.is_some() {
+            Err(Error::TaskExists)
         } else {
-            if queried.status != Status::Stopped {
-                Err(Error::UnitStarted)
-            } else if queried.task.is_some() {
-                Err(Error::TaskExists)
-            } else {
-                unreachable!()
-            }
+            Err(Error::Internal {
+                message: "something is provided by this or `last_error` is set".into(),
+            })
         }
     }
 }

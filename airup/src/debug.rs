@@ -6,7 +6,7 @@ use clap::Parser;
 use console::style;
 use rustyline::{error::ReadlineError, history::DefaultHistory};
 
-/// Query system information
+/// Debug Airup
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {

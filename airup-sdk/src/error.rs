@@ -87,11 +87,11 @@ pub enum ApiError {
     Unsupported { message: Cow<'static, str> },
 
     /// The operation failed because some dependencies cannot be satisfied.
-    #[error("dependency cannot be satisfied: {name}")]
+    #[error("dependency `{name}` cannot be satisfied")]
     DependencyNotSatisfied { name: String },
 
     /// The operation failed because some conflicts exists.
-    #[error("the unit conflicts with a running unit: {name}")]
+    #[error("the unit conflicts with unit `{name}`")]
     ConflictsWith { name: String },
 
     /// An I/O error occured.

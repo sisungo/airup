@@ -4,8 +4,9 @@
 
 use super::ReadError;
 use crate::prelude::*;
+use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::{path::Path, str::FromStr};
 
 /// Represents to an Airup milestone.
 #[derive(Debug, Clone)]
@@ -53,7 +54,7 @@ impl Milestone {
         })
     }
 
-    pub async fn services(&self) -> Vec<String> {
+    pub async fn services(&self) -> Vec<Item> {
         let mut services = Vec::new();
 
         if let Ok(read_chain) = self
@@ -76,7 +77,13 @@ impl Milestone {
                                     e
                                 )
                             })
-                            .map(|x| x.lines().for_each(|y| services.push(String::from(y))))
+                            .map(|x| {
+                                x.lines().for_each(|y| {
+                                    if let Ok(item) = y.parse() {
+                                        services.push(item);
+                                    }
+                                })
+                            })
                             .ok();
                     }
                 }
@@ -126,6 +133,35 @@ pub enum Kind {
     #[default]
     Async,
 
+    /// Services are asynchronously started, but the milestone is completed when they are active.
+    Sync,
+
     /// Latter services must be executed after the former service is active.
     Serial,
+}
+
+#[derive(Debug, Clone)]
+pub enum Item {
+    Cache(String),
+    Start(String),
+}
+impl FromStr for Item {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut splited = s.splitn(2, ' ');
+        let verb = splited
+            .next()
+            .ok_or_else(|| anyhow!("missing verb for milestone items"))?;
+        let entity = splited
+            .next()
+            .ok_or_else(|| anyhow!("missing entity for milestone items"))?;
+        match verb {
+            "cache" => Ok(Self::Cache(entity.into())),
+            "start" => Ok(Self::Start(entity.into())),
+            _ => Err(anyhow!(
+                "verb `{verb}` is not considered for milestone items"
+            )),
+        }
+    }
 }

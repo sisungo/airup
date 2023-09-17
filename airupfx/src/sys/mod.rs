@@ -15,7 +15,7 @@ pub mod linux;
 ))]
 pub mod bsd;
 
-#[cfg(any(target_os = "macos"))]
+#[cfg(target_os = "macos")]
 pub mod macos;
 
 /// Returns a reference to the global default [crate::power::PowerManager] instance.

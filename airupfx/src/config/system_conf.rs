@@ -103,5 +103,5 @@ fn default_os_name() -> Cow<'static, str> {
 }
 
 fn default_security() -> Security {
-    super::build_manifest().security.clone()
+    super::build_manifest().security
 }

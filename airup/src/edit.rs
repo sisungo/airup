@@ -1,7 +1,7 @@
 use airup_sdk::prelude::*;
 use clap::Parser;
 
-/// Start services
+/// Edits files
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
