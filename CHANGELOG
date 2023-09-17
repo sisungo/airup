@@ -1,0 +1,9 @@
+Changes in 0.3.0:
+ * [BREAKING] Milestone v2 Format
+ * [BREAKING] New build manifest format with better performance
+ * [Feature] Service caching & uncaching
+ * [Feature] Service conflicts
+ * [Feature] The `early_boot` pseudo-milestone
+ * [Feature] Support of service providers
+ * Support of power management on Apple platforms
+ * Some bug fixes and performance improvements

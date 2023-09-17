@@ -2,11 +2,14 @@
 
 mod early_boot;
 
-use crate::{supervisor::AirupdExt as _, app::Airupd};
+use crate::{app::Airupd, supervisor::AirupdExt as _};
 use ahash::AHashSet;
 use airup_sdk::Error;
 use airupfx::{
-    files::{milestone::{Kind, Item}, Milestone},
+    files::{
+        milestone::{Item, Kind},
+        Milestone,
+    },
     prelude::*,
 };
 
@@ -84,7 +87,7 @@ async fn exec_item(airupd: &Airupd, kind: &Kind, item: &Item) {
             if let Err(err) = airupd.cache_service(service).await {
                 tracing::error!(target: "console", "Failed to load \"{}\": {}", service, err);
             }
-        },
+        }
         Item::Start(service) => match kind {
             Kind::Async => match airupd.start_service(service).await {
                 Ok(_) | Err(Error::UnitStarted) => {
