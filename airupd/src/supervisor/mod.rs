@@ -110,7 +110,7 @@ impl Manager {
     ) -> Result<(), Error> {
         let handle = supervisors
             .get(name)
-            .ok_or(Error::ObjectNotConfigured)?
+            .ok_or(Error::UnitNotStarted)?
             .clone();
         let queried = handle.query().await;
         if queried.status == Status::Stopped && queried.task.is_none() {

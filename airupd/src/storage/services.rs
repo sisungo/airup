@@ -32,7 +32,7 @@ impl Services {
         let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
         let mut lock = self.sideloaded.write().unwrap();
         if lock.contains_key(name) {
-            return Err(Error::ObjectAlreadyExists);
+            return Err(Error::UnitExists);
         }
         service.validate()?;
         service.name = name.into();
@@ -48,7 +48,7 @@ impl Services {
             .write()
             .unwrap()
             .remove(name)
-            .ok_or(Error::ObjectNotFound)
+            .ok_or(Error::UnitNotFound)
             .map(|_| ())
     }
 

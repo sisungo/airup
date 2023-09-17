@@ -60,6 +60,12 @@ pub trait ConnectionExt {
     /// Reloads the specified service.
     async fn reload_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>>;
 
+    /// Caches the specified service.
+    async fn cache_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>>;
+
+    /// Uncaches the specified service.
+    async fn uncache_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>>;
+
     /// Queries the specified service.
     async fn query_service(&mut self, name: &str) -> anyhow::Result<Result<QueryService, Error>>;
 
@@ -98,6 +104,14 @@ impl<'a> ConnectionExt for super::Connection<'a> {
 
     async fn stop_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
         self.invoke("system.stop_service", name).await
+    }
+
+    async fn cache_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
+        self.invoke("system.cache_service", name).await
+    }
+
+    async fn uncache_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
+        self.invoke("system.uncache_service", name).await
     }
 
     async fn reload_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {

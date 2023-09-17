@@ -50,7 +50,7 @@ impl StopService {
         let service = &self.context.service;
 
         if self.context.status.get() != Status::Active {
-            return Err(Error::ObjectNotConfigured);
+            return Err(Error::UnitNotStarted);
         }
 
         self.context.last_error.set(None);

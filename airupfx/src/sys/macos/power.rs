@@ -1,17 +1,24 @@
 //! BSD-family (FreeBSD, NetBSD, DragonflyBSD, OpenBSD) power management.
 
+#[link(name = "System")]
+extern "C" {
+    fn reboot(howto: libc::c_int) -> libc::c_int;
+}
+
 use crate::power::PowerManager;
-use libc::{RB_AUTOBOOT, RB_HALT, RB_POWEROFF};
 use std::convert::Infallible;
 
+const RB_AUTOBOOT: libc::c_int = 0;
+const RB_HALT: libc::c_int = 0x08;
+
 #[derive(Default)]
-pub struct Bsd;
-impl Bsd {
+pub struct MacOS;
+impl MacOS {
     pub const GLOBAL: &'static Self = &Self;
 }
-impl PowerManager for Bsd {
+impl PowerManager for MacOS {
     fn poweroff(&self) -> std::io::Result<Infallible> {
-        bsd_reboot(RB_POWEROFF)
+        bsd_reboot(RB_HALT)
     }
 
     fn reboot(&self) -> std::io::Result<Infallible> {

@@ -48,7 +48,7 @@ impl ReloadService {
 
     pub async fn run(&mut self) -> Result<(), Error> {
         if self.context.status.get() != Status::Active {
-            return Err(Error::ObjectNotConfigured);
+            return Err(Error::UnitNotStarted);
         }
 
         let service = &self.context.service;

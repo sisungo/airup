@@ -70,7 +70,7 @@ impl AirupdExt for crate::app::Airupd {
             Some(supervisor) => Ok(supervisor.stop().await?),
             None => {
                 self.storage.services.get(name).await?;
-                Err(Error::ObjectNotConfigured)
+                Err(Error::UnitNotStarted)
             }
         }
     }
@@ -80,7 +80,7 @@ impl AirupdExt for crate::app::Airupd {
             Some(supervisor) => Ok(supervisor.reload().await?),
             None => {
                 self.storage.services.get(name).await?;
-                Err(Error::ObjectNotConfigured)
+                Err(Error::UnitNotStarted)
             }
         }
     }
@@ -102,7 +102,7 @@ impl AirupdExt for crate::app::Airupd {
             Some(supervisor) => Ok(supervisor.interrupt_task().await?),
             None => {
                 self.storage.services.get(name).await?;
-                Err(Error::ObjectNotConfigured)
+                Err(Error::UnitNotStarted)
             }
         }
     }

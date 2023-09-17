@@ -27,28 +27,24 @@ pub enum ApiError {
     BadResponse { kind: String, message: String },
 
     /// The requested object already exists.
-    #[error("object already exists")]
-    ObjectAlreadyExists,
+    #[error("unit already exists")]
+    UnitExists,
 
     /// The requested object was not found.
-    #[error("object not found")]
-    ObjectNotFound,
+    #[error("unit not found")]
+    UnitNotFound,
 
     /// The requested object has not been configured yet.
-    #[error("object not configured")]
-    ObjectNotConfigured,
+    #[error("unit not started")]
+    UnitNotStarted,
 
     /// The requested object is already configured.
     #[error("unit already started")]
     UnitStarted,
 
-    /// The requested object cannot be accessed due to an I/O error.
-    #[error("cannot access object: {message}")]
-    ObjectIo { message: String },
-
     /// The requested object format is not considered.
-    #[error("invalid object: {message}")]
-    InvalidObject { message: Cow<'static, str> },
+    #[error("unit ill formatted: {message}")]
+    BadUnit { message: Cow<'static, str> },
 
     /// The requested user was not found.
     #[error("user not found")]
@@ -169,13 +165,13 @@ impl From<airupfx::files::ReadError> for ApiError {
     fn from(value: airupfx::files::ReadError) -> Self {
         match value {
             airupfx::files::ReadError::Io(err) => match err.kind() {
-                std::io::ErrorKind::NotFound => Self::ObjectNotFound,
-                _ => Self::ObjectIo {
+                std::io::ErrorKind::NotFound => Self::UnitNotFound,
+                _ => Self::Io {
                     message: err.to_string(),
                 },
             },
-            airupfx::files::ReadError::Parse(x) => Self::InvalidObject { message: x.into() },
-            airupfx::files::ReadError::Validation(x) => Self::InvalidObject { message: x },
+            airupfx::files::ReadError::Parse(x) => Self::BadUnit { message: x.into() },
+            airupfx::files::ReadError::Validation(x) => Self::BadUnit { message: x },
         }
     }
 }
