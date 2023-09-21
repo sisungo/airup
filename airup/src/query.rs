@@ -35,9 +35,12 @@ fn print_query_service(query_result: &QueryService) {
         query_result.service.display_name(),
         &query_result.service.name
     );
-    println!("{:>12} {}", "Status:", status);
+    if let Some(x) = &query_result.service.service.description {
+        println!("{:>16} {}", "Description:", x);
+    }
+    println!("{:>16} {}", "Status:", status);
     println!(
-        "{:>12} {}",
+        "{:>16} {}",
         "Main PID:",
         query_result
             .pid
@@ -65,7 +68,7 @@ fn print_query_system(query_system: &QuerySystem) {
 enum PrintedStatus {
     Active,
     Stopped,
-    Failed,
+    Failed(String),
     Starting,
     Stopping,
 }
@@ -75,8 +78,8 @@ impl PrintedStatus {
             Status::Active => Self::Active,
             Status::Stopped => Self::Stopped,
         };
-        if let Some(_) = &query_result.last_error {
-            result = Self::Failed;
+        if let Some(x) = &query_result.last_error {
+            result = Self::Failed(x.to_string());
         }
         if let Some(x) = query_result.task.as_deref() {
             match x {
@@ -94,7 +97,7 @@ impl PrintedStatus {
         match self {
             PrintedStatus::Active => theme_dot.green(),
             PrintedStatus::Stopped => theme_dot,
-            PrintedStatus::Failed => theme_dot.red(),
+            PrintedStatus::Failed(_) => theme_dot.red(),
             PrintedStatus::Starting | PrintedStatus::Stopping => theme_dot.blue(),
         }
         .to_string()
@@ -105,7 +108,7 @@ impl Display for PrintedStatus {
         match self {
             Self::Active => write!(f, "{}", style("active").bold().green()),
             Self::Stopped => write!(f, "{}", style("stopped").bold()),
-            Self::Failed => write!(f, "{}", style("failed").bold().red()),
+            Self::Failed(why) => write!(f, "{} ({})", style("failed").bold().red(), why),
             Self::Starting => write!(f, "{}", style("starting").bold().blue()),
             Self::Stopping => write!(f, "{}", style("stopping").bold().blue()),
         }
