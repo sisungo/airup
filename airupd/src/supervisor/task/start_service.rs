@@ -86,7 +86,8 @@ impl StartService {
 
         if let Some(x) = &self.context.service.exec.pre_start {
             for line in x.lines() {
-                ace.run_timeout(line.trim(), countdown.left()).await??;
+                ace.run_wait_timeout(line.trim(), countdown.left())
+                    .await??;
             }
         }
 
@@ -104,7 +105,7 @@ impl StartService {
             }
             Kind::Forking => {
                 let _lock = airupfx::process::prepare_ops().await;
-                ace.run_timeout(&self.context.service.exec.start, countdown.left())
+                ace.run_wait_timeout(&self.context.service.exec.start, countdown.left())
                     .await??;
                 let pid: Pid = tokio::fs::read_to_string(
                     &self.context.service.service.pid_file.as_ref().unwrap(),
@@ -123,7 +124,7 @@ impl StartService {
                     .await;
             }
             Kind::Oneshot => {
-                ace.run_timeout(&self.context.service.exec.start, countdown.left())
+                ace.run_wait_timeout(&self.context.service.exec.start, countdown.left())
                     .await??;
             }
             Kind::Notify => {}
@@ -131,7 +132,8 @@ impl StartService {
 
         if let Some(x) = &self.context.service.exec.post_start {
             for line in x.lines() {
-                ace.run_timeout(line.trim(), countdown.left()).await??;
+                ace.run_wait_timeout(line.trim(), countdown.left())
+                    .await??;
             }
         }
 

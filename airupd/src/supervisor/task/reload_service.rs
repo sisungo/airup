@@ -56,7 +56,7 @@ impl ReloadService {
         let ace = super::ace(&self.context).await?;
 
         if let Some(reload_cmd) = &service.exec.reload {
-            ace.run_timeout(reload_cmd, service.exec.reload_timeout())
+            ace.run_wait_timeout(reload_cmd, service.exec.reload_timeout())
                 .await??;
         }
 

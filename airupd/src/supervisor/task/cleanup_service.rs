@@ -94,7 +94,8 @@ pub async fn cleanup_service(
 ) -> Result<(), Error> {
     if let Some(x) = &service.exec.post_stop {
         for line in x.lines() {
-            ace.run_timeout(line.trim(), countdown.left()).await??;
+            ace.run_wait_timeout(line.trim(), countdown.left())
+                .await??;
         }
     }
 

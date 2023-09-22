@@ -62,7 +62,8 @@ impl StopService {
 
         if let Some(x) = &self.context.service.exec.pre_stop {
             for line in x.lines() {
-                ace.run_timeout(line.trim(), countdown.left()).await??;
+                ace.run_wait_timeout(line.trim(), countdown.left())
+                    .await??;
             }
         }
 

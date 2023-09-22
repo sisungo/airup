@@ -1,5 +1,8 @@
 //! # Airup Command Engine
 
+pub mod parser;
+pub mod builtins;
+
 use crate::{
     process::{ExitStatus, Pid, Wait, WaitError},
     signal::{SIGKILL, SIGTERM},
@@ -7,7 +10,7 @@ use crate::{
     util::BoxFuture,
 };
 use std::{
-    borrow::Cow, collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt,
+    collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt,
     path::PathBuf, sync::Arc, time::Duration,
 };
 use tokio::io::AsyncRead;
@@ -24,8 +27,7 @@ impl Ace {
     }
 
     pub async fn run(&self, cmd: &str) -> Result<Child, Error> {
-        let tokens = cmd.split(' '); // placeholder impl, to be replaced
-        self.run_tokenized(tokens.map(Cow::Borrowed)).await
+        self.run_tokenized(parser::tokenize(cmd).into_iter()).await
     }
 
     pub async fn run_wait(&self, cmd: &str) -> Result<Result<(), CommandExitError>, Error> {
@@ -33,7 +35,7 @@ impl Ace {
         Ok(Ok(()))
     }
 
-    pub async fn run_timeout(
+    pub async fn run_wait_timeout(
         &self,
         cmd: &str,
         timeout: Option<Duration>,
@@ -51,33 +53,32 @@ impl Ace {
         }
     }
 
-    fn run_tokenized<'a, I: Iterator<Item = Cow<'a, str>> + Send + Sync + 'a>(
+    fn run_tokenized<'a, I: Iterator<Item = String> + Send + Sync + 'a>(
         &'a self,
-        mut tokens: I,
+        tokens: I,
     ) -> BoxFuture<'_, Result<Child, Error>> {
         Box::pin(async {
-            let cmd = tokens.next().ok_or(Error::CommandNotFound)?;
-            if cmd == "always-success" {
+            let cmd: parser::Command = tokens.into();
+            if cmd.module == "always-success" {
                 Ok(Child::AlwaysSuccess(Box::new(
-                    self.run_tokenized(tokens)
+                    self.run_tokenized(cmd.args.into_iter())
                         .await
                         .unwrap_or_else(|_| Child::AlwaysSuccess(Box::new(Child::Nop))),
                 )))
-            } else if cmd == "async" {
-                Ok(Child::Async(Box::new(self.run_tokenized(tokens).await?)))
+            } else if cmd.module == "async" {
+                Ok(Child::Async(Box::new(self.run_tokenized(cmd.args.into_iter()).await?)))
             } else {
-                self.run_bin_command(&cmd, tokens).await
+                self.run_bin_command(&cmd).await
             }
         })
     }
 
-    async fn run_bin_command<'a, I: Iterator<Item = Cow<'a, str>> + Send + Sync>(
+    async fn run_bin_command(
         &self,
-        arg0: &str,
-        args: I,
+        cmd: &parser::Command,
     ) -> Result<Child, Error> {
-        let mut command = self.env.as_command(arg0).await?;
-        command.args(args.map(|x| OsString::from(&*x)));
+        let mut command = self.env.as_command(&cmd.module).await?;
+        command.args(cmd.args.iter().map(|x| OsString::from(&*x)));
         let _lock = crate::process::prepare_ops().await;
         let child = command.spawn()?;
         Ok(Child::Process(crate::process::Child::from_std(child)))
