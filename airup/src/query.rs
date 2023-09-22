@@ -18,31 +18,33 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
             print_query_service(&queried);
         }
         None => {
-            let queried = conn.query_system().await??;
-            print_query_system(&queried);
+            let query_system = conn.query_system().await??;
+            let printed_query_system =
+                PrintedQuerySystem::from_query_system(&mut conn, query_system).await?;
+            print_query_system(&printed_query_system);
         }
     }
     Ok(())
 }
 
 /// Prints a [QueryService] to console, in human-friendly format.
-fn print_query_service(query_result: &QueryService) {
-    let status = PrintedStatus::of(query_result);
+fn print_query_service(query_service: &QueryService) {
+    let status = PrintedStatus::of(query_service);
 
     println!(
         "{} {} ({})",
         status.theme_dot(),
-        query_result.service.display_name(),
-        &query_result.service.name
+        query_service.service.display_name(),
+        &query_service.service.name
     );
-    if let Some(x) = &query_result.service.service.description {
+    if let Some(x) = &query_service.service.service.description {
         println!("{:>16} {}", "Description:", x);
     }
     println!("{:>16} {}", "Status:", status);
     println!(
         "{:>16} {}",
         "Main PID:",
-        query_result
+        query_service
             .pid
             .map(|x| x.to_string())
             .unwrap_or_else(|| String::from("null"))
@@ -50,17 +52,53 @@ fn print_query_service(query_result: &QueryService) {
 }
 
 /// Prints a [QuerySystem] to console, in human-friendly format.
-fn print_query_system(query_system: &QuerySystem) {
+fn print_query_system(printed: &PrintedQuerySystem) {
     let status = PrintedStatus::Active;
     println!(
         "{} {}",
         status.theme_dot(),
-        query_system.hostname.as_deref().unwrap_or("localhost")
+        printed
+            .query_system
+            .hostname
+            .as_deref()
+            .unwrap_or("localhost")
     );
-    println!("{:>12} {}", "Status:", status);
-    println!("{:>12} /", "Services:");
-    for i in &query_system.services {
-        println!("{1:>0$}", 14 + i.len(), i);
+    println!("{:>16} {}", "Status:", status);
+    println!("{:>16} /", "Services:");
+    for (name, status) in &printed.services {
+        match status {
+            Some(status) => println!("{1:>0$} ({2})", 18 + name.len(), name, status.fmt_simple()),
+            None => println!(
+                "{1:>0$} ({2})",
+                18 + name.len(),
+                style(name).strikethrough(),
+                style("deleted").dim()
+            ),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct PrintedQuerySystem {
+    query_system: QuerySystem,
+    services: Vec<(String, Option<PrintedStatus>)>,
+}
+impl PrintedQuerySystem {
+    async fn from_query_system(
+        conn: &mut Connection<'_>,
+        query_system: QuerySystem,
+    ) -> anyhow::Result<Self> {
+        let mut services = Vec::with_capacity(query_system.services.len());
+
+        for i in query_system.services.iter() {
+            let query_service = conn.query_service(&i).await?.ok();
+            services.push((i.clone(), query_service.map(|x| PrintedStatus::of(&x))));
+        }
+
+        Ok(Self {
+            query_system,
+            services,
+        })
     }
 }
 
@@ -73,7 +111,7 @@ enum PrintedStatus {
     Stopping,
 }
 impl PrintedStatus {
-    pub fn of(query_result: &QueryService) -> Self {
+    fn of(query_result: &QueryService) -> Self {
         let mut result = match query_result.status {
             Status::Active => Self::Active,
             Status::Stopped => Self::Stopped,
@@ -92,7 +130,7 @@ impl PrintedStatus {
         result
     }
 
-    pub fn theme_dot(&self) -> String {
+    fn theme_dot(&self) -> String {
         let theme_dot = style(Emoji("●", "*"));
         match self {
             PrintedStatus::Active => theme_dot.green(),
@@ -102,15 +140,23 @@ impl PrintedStatus {
         }
         .to_string()
     }
+
+    fn fmt_simple(&self) -> impl Display {
+        match self {
+            Self::Active => style("active").bold().green(),
+            Self::Stopped => style("stopped").bold(),
+            Self::Failed(_) => style("failed").bold().red(),
+            Self::Starting => style("starting").bold().blue(),
+            Self::Stopping => style("starting").bold().blue(),
+        }
+    }
 }
 impl Display for PrintedStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Active => write!(f, "{}", style("active").bold().green()),
-            Self::Stopped => write!(f, "{}", style("stopped").bold()),
-            Self::Failed(why) => write!(f, "{} ({})", style("failed").bold().red(), why),
-            Self::Starting => write!(f, "{}", style("starting").bold().blue()),
-            Self::Stopping => write!(f, "{}", style("stopping").bold().blue()),
+        write!(f, "{}", self.fmt_simple())?;
+        if let Self::Failed(why) = self {
+            write!(f, " {}", why)?;
         }
+        Ok(())
     }
 }
