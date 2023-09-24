@@ -1,3 +1,4 @@
+use airup_sdk::{Connection, system::ConnectionExt};
 use airupfx::signal::SIGTERM;
 use clap::Parser;
 
@@ -61,14 +62,16 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         airupfx::fs::sync();
     }
 
+    let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
+
     if cmdline.reboot {
-        airupfx::power::power_manager().reboot()?;
+        conn.reboot().await??;
     }
     if cmdline.poweroff {
-        airupfx::power::power_manager().poweroff()?;
+        conn.poweroff().await??;
     }
     if cmdline.halt {
-        airupfx::power::power_manager().halt()?;
+        conn.halt().await??;
     }
 
     Ok(())
