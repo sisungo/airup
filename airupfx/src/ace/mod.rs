@@ -33,8 +33,7 @@ impl Ace {
     }
 
     pub async fn run_wait(&self, cmd: &str) -> Result<Result<(), CommandExitError>, Error> {
-        self.run(cmd).await?.wait().await?;
-        Ok(Ok(()))
+        self.run_wait_timeout(cmd, None).await
     }
 
     pub async fn run_wait_timeout(
@@ -67,7 +66,7 @@ impl Ace {
                         .await
                         .unwrap_or_else(|_| {
                             Child::AlwaysSuccess(Box::new(Child::Builtin(
-                                builtins::noop(&[]).into(),
+                                builtins::noop(vec![]).into(),
                             )))
                         }),
                 )))
@@ -76,7 +75,7 @@ impl Ace {
                     self.run_tokenized(cmd.args.into_iter()).await?,
                 )))
             } else if let Some(x) = self.modules.builtins.get(&cmd.module[..]) {
-                Ok(Child::Builtin(tokio::sync::Mutex::new(x(&cmd.args))))
+                Ok(Child::Builtin(tokio::sync::Mutex::new(x(cmd.args))))
             } else {
                 self.run_bin_command(&cmd).await
             }

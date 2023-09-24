@@ -1,8 +1,5 @@
 use super::*;
-use crate::{
-    app::airupd,
-    supervisor::SupervisorContext,
-};
+use crate::{app::airupd, supervisor::SupervisorContext};
 use airup_sdk::{system::Status, Error};
 use airupfx::{files::service::Kind, prelude::*};
 use std::sync::Arc;
