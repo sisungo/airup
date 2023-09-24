@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     app::airupd,
-    supervisor::{AirupdExt, SupervisorContext},
+    supervisor::SupervisorContext,
 };
 use airup_sdk::{system::Status, Error};
 use airupfx::{files::service::Kind, prelude::*};

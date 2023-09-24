@@ -9,7 +9,6 @@ pub mod storage;
 pub mod supervisor;
 
 use airupfx::prelude::*;
-use milestones::AirupdExt;
 
 /// Entrypoint of the program.
 #[tokio::main]

@@ -4,7 +4,7 @@ use super::{
     util::{check_perm, ok, ok_null},
     Method, MethodFuture,
 };
-use crate::{app::airupd, ipc::SessionContext, supervisor::AirupdExt};
+use crate::{app::airupd, ipc::SessionContext};
 use airup_sdk::ipc::Request;
 use airupfx::policy::Action;
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};

@@ -1,7 +1,7 @@
 //! # Airup Command Engine
 
-pub mod parser;
 pub mod builtins;
+pub mod parser;
 
 use crate::{
     process::{ExitStatus, Pid, Wait, WaitError},
@@ -9,16 +9,18 @@ use crate::{
     users::{find_user_by_name, Gid, Uid},
     util::BoxFuture,
 };
+use ahash::AHashMap;
 use std::{
-    collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt,
-    path::PathBuf, sync::Arc, time::Duration,
+    collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt, path::PathBuf, sync::Arc,
+    time::Duration,
 };
-use tokio::io::AsyncRead;
+use tokio::{io::AsyncRead, sync::mpsc};
 
 /// The Airup Command Engine.
 #[derive(Debug, Default)]
 pub struct Ace {
     pub env: Env,
+    pub modules: Modules,
 }
 impl Ace {
     /// Creates a new [Ace] instance with default settings.
@@ -59,29 +61,51 @@ impl Ace {
     ) -> BoxFuture<'_, Result<Child, Error>> {
         Box::pin(async {
             let cmd: parser::Command = tokens.into();
-            if cmd.module == "always-success" {
+            if cmd.module == "-" {
                 Ok(Child::AlwaysSuccess(Box::new(
                     self.run_tokenized(cmd.args.into_iter())
                         .await
-                        .unwrap_or_else(|_| Child::AlwaysSuccess(Box::new(Child::Nop))),
+                        .unwrap_or_else(|_| {
+                            Child::AlwaysSuccess(Box::new(Child::Builtin(
+                                builtins::noop(&[]).into(),
+                            )))
+                        }),
                 )))
-            } else if cmd.module == "async" {
-                Ok(Child::Async(Box::new(self.run_tokenized(cmd.args.into_iter()).await?)))
+            } else if cmd.module == "&" {
+                Ok(Child::Async(Box::new(
+                    self.run_tokenized(cmd.args.into_iter()).await?,
+                )))
+            } else if let Some(x) = self.modules.builtins.get(&cmd.module[..]) {
+                Ok(Child::Builtin(tokio::sync::Mutex::new(x(&cmd.args))))
             } else {
                 self.run_bin_command(&cmd).await
             }
         })
     }
 
-    async fn run_bin_command(
-        &self,
-        cmd: &parser::Command,
-    ) -> Result<Child, Error> {
+    async fn run_bin_command(&self, cmd: &parser::Command) -> Result<Child, Error> {
         let mut command = self.env.as_command(&cmd.module).await?;
         command.args(cmd.args.iter().map(|x| OsString::from(&*x)));
         let _lock = crate::process::prepare_ops().await;
         let child = command.spawn()?;
         Ok(Child::Process(crate::process::Child::from_std(child)))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Modules {
+    builtins: AHashMap<&'static str, builtins::BuiltinModule>,
+}
+impl Modules {
+    pub fn new() -> Self {
+        let mut builtins = AHashMap::with_capacity(32);
+        builtins::init(&mut builtins);
+        Self { builtins }
+    }
+}
+impl Default for Modules {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -215,7 +239,7 @@ pub enum Child {
     Async(Box<Self>),
     AlwaysSuccess(Box<Self>),
     Process(crate::process::Child),
-    Nop,
+    Builtin(tokio::sync::Mutex<mpsc::Receiver<i32>>),
 }
 impl Child {
     /// Returns process ID of the child.
@@ -225,7 +249,7 @@ impl Child {
             Self::Async(child) => child.id(),
             Self::AlwaysSuccess(child) => child.id(),
             Self::Process(proc) => proc.id(),
-            Self::Nop => 0,
+            Self::Builtin(_) => 0,
         }
     }
 
@@ -241,7 +265,7 @@ impl Child {
                     wait
                 }
                 Self::Process(proc) => proc.wait().await?,
-                Self::Nop => Wait::new(0, ExitStatus::SUCCESS),
+                Self::Builtin(rx) => Wait::new(0, builtins::wait(&mut *rx.lock().await).await),
             })
         })
     }
@@ -276,7 +300,7 @@ impl Child {
                 Self::Async(child) => child.kill(sig).await?,
                 Self::AlwaysSuccess(child) => child.kill(sig).await?,
                 Self::Process(proc) => proc.kill(sig).await?,
-                Self::Nop => (),
+                Self::Builtin(_) => (),
             };
 
             Ok(())
@@ -302,7 +326,7 @@ impl Child {
         match self {
             Self::AlwaysSuccess(child) => child.take_stdout(),
             Self::Async(child) => child.take_stdout(),
-            Self::Nop => None,
+            Self::Builtin(_) => None,
             Self::Process(child) => match child.take_stdout() {
                 Some(x) => Some(Box::new(x)),
                 None => None,
@@ -314,7 +338,7 @@ impl Child {
         match self {
             Self::AlwaysSuccess(child) => child.take_stderr(),
             Self::Async(child) => child.take_stderr(),
-            Self::Nop => None,
+            Self::Builtin(_) => None,
             Self::Process(child) => match child.take_stderr() {
                 Some(x) => Some(Box::new(x)),
                 None => None,

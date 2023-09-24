@@ -1,7 +1,4 @@
-mod app_integration;
 pub mod task;
-
-pub use app_integration::AirupdExt;
 
 use self::task::*;
 use ahash::AHashMap;
@@ -486,6 +483,84 @@ impl RetryContext {
 
     pub fn disabled(&self) -> bool {
         self.disabled.load(atomic::Ordering::Relaxed)
+    }
+}
+
+impl crate::app::Airupd {
+    pub async fn make_service_active(&self, name: &str) -> Result<(), Error> {
+        let supervisor = match self.supervisors.get(name).await {
+            Some(supervisor) => supervisor,
+            None => {
+                self.supervisors
+                    .supervise(self.storage.services.get(name).await?)
+                    .await
+            }
+        };
+        supervisor.make_active().await
+    }
+
+    pub async fn start_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
+        match self.supervisors.get(name).await {
+            Some(supervisor) => Ok(supervisor.start().await?),
+            None => {
+                let supervisor = self
+                    .supervisors
+                    .supervise(self.storage.services.get(name).await?)
+                    .await;
+                Ok(supervisor.start().await?)
+            }
+        }
+    }
+
+    pub async fn query_service(&self, name: &str) -> Result<QueryService, Error> {
+        match self.supervisors.get(name).await {
+            Some(supervisor) => Ok(supervisor.query().await),
+            None => Ok(QueryService::default_of(
+                self.storage.services.get(name).await?,
+            )),
+        }
+    }
+
+    pub async fn stop_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
+        match self.supervisors.get(name).await {
+            Some(supervisor) => Ok(supervisor.stop().await?),
+            None => {
+                self.storage.services.get(name).await?;
+                Err(Error::UnitNotStarted)
+            }
+        }
+    }
+
+    pub async fn reload_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
+        match self.supervisors.get(name).await {
+            Some(supervisor) => Ok(supervisor.reload().await?),
+            None => {
+                self.storage.services.get(name).await?;
+                Err(Error::UnitNotStarted)
+            }
+        }
+    }
+
+    pub async fn cache_service(&self, name: &str) -> Result<(), Error> {
+        self.supervisors
+            .supervise(self.storage.services.get(name).await?)
+            .await;
+        Ok(())
+    }
+
+    pub async fn uncache_service(&self, name: &str) -> Result<(), Error> {
+        self.supervisors.remove(name).await
+    }
+
+    pub async fn interrupt_service_task(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
+        let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
+        match self.supervisors.get(name).await {
+            Some(supervisor) => Ok(supervisor.interrupt_task().await?),
+            None => {
+                self.storage.services.get(name).await?;
+                Err(Error::UnitNotStarted)
+            }
+        }
     }
 }
 
