@@ -7,14 +7,9 @@ pub async fn enter() {
     let ace = Ace::default();
 
     for &i in airupfx::config::build_manifest().early_cmds {
-        if let Err(x) = run_wait(&ace, i).await {
+        if let Err(x) = super::run_wait(&ace, i).await {
             tracing::error!(target: "console", "Failed to execute command `{i}` in `early_boot` milestone: {}", x);
             airupfx::process::emergency();
         }
     }
-}
-
-async fn run_wait(ace: &Ace, cmd: &str) -> anyhow::Result<()> {
-    ace.run_wait(cmd).await??;
-    Ok(())
 }

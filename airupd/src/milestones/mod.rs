@@ -79,7 +79,8 @@ async fn exec_milestone(airupd: &crate::app::Airupd, def: &Milestone) {
 }
 
 async fn exec_milestone_async(airupd: &crate::app::Airupd, def: &Milestone) {
-    for item in def.services().await {
+    let ace = Ace::new();
+    for item in def.items().await {
         match item {
             Item::Cache(service) => {
                 if let Err(err) = airupd.cache_service(&service).await {
@@ -94,12 +95,16 @@ async fn exec_milestone_async(airupd: &crate::app::Airupd, def: &Milestone) {
                     tracing::error!(target: "console", "Failed to start {}: {}", service, err)
                 }
             },
+            Item::RunCmd(cmd) => if let Err(err) = ace.run(&cmd).await {
+                tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
+            },
         }
     }
 }
 
 async fn exec_milestone_serial(airupd: &crate::app::Airupd, def: &Milestone) {
-    for item in def.services().await {
+    let ace = Ace::new();
+    for item in def.items().await {
         match item {
             Item::Cache(service) => {
                 if let Err(err) = airupd.cache_service(&service).await {
@@ -114,12 +119,17 @@ async fn exec_milestone_serial(airupd: &crate::app::Airupd, def: &Milestone) {
                     tracing::error!(target: "console", "Failed to start {}: {}", display_name(airupd, &service).await, err);
                 }
             },
+            Item::RunCmd(cmd) => if let Err(err) = run_wait(&ace, &cmd).await {
+                tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
+            },
         }
     }
 }
 
 async fn exec_milestone_sync(airupd: &crate::app::Airupd, def: &Milestone) {
-    let items = def.services().await;
+    let ace = Ace::new();
+    let items = def.items().await;
+    let mut commands = Vec::with_capacity(items.len());
     let mut handles = Vec::with_capacity(items.len());
     for item in items {
         match item {
@@ -136,6 +146,14 @@ async fn exec_milestone_sync(airupd: &crate::app::Airupd, def: &Milestone) {
                     tracing::error!(target: "console", "Failed to start {}: {}", service, err);
                 }
             },
+            Item::RunCmd(cmd) => match ace.run(&cmd).await {
+                Ok(x) => {
+                    commands.push((cmd, x));
+                },
+                Err(err) => {
+                    tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
+                },
+            },
         }
     }
 
@@ -149,6 +167,12 @@ async fn exec_milestone_sync(airupd: &crate::app::Airupd, def: &Milestone) {
             },
         }
     }
+
+    for (cmd, child) in commands {
+        if let Err(err) = child.wait().await {
+            tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
+        }
+    }
 }
 
 async fn display_name(airupd: &crate::app::Airupd, name: &str) -> String {
@@ -157,4 +181,9 @@ async fn display_name(airupd: &crate::app::Airupd, name: &str) -> String {
         .await
         .map(|x| x.service.display_name().into())
         .unwrap_or_else(|_| name.into())
+}
+
+pub async fn run_wait(ace: &Ace, cmd: &str) -> anyhow::Result<()> {
+    ace.run_wait(cmd).await??;
+    Ok(())
 }

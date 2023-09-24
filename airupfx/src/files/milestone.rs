@@ -54,7 +54,7 @@ impl Milestone {
         })
     }
 
-    pub async fn services(&self) -> Vec<Item> {
+    pub async fn items(&self) -> Vec<Item> {
         let mut services = Vec::new();
 
         if let Ok(read_chain) = self
@@ -144,6 +144,7 @@ pub enum Kind {
 pub enum Item {
     Cache(String),
     Start(String),
+    RunCmd(String),
 }
 impl FromStr for Item {
     type Err = anyhow::Error;
@@ -159,6 +160,7 @@ impl FromStr for Item {
         match verb {
             "cache" => Ok(Self::Cache(entity.into())),
             "start" => Ok(Self::Start(entity.into())),
+            "run_cmd" => Ok(Self::RunCmd(entity.into())),
             _ => Err(anyhow!(
                 "verb `{verb}` is not considered for milestone items"
             )),
