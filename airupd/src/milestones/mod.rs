@@ -1,6 +1,6 @@
 //! # Airup Milestones
 
-mod early_boot;
+pub mod early_boot;
 
 use ahash::AHashSet;
 use airup_sdk::Error;
@@ -22,11 +22,7 @@ impl Manager {
 
 impl crate::app::Airupd {
     pub async fn enter_milestone(&self, name: String) -> Result<(), Error> {
-        if name == "early_boot" {
-            early_boot::enter().await
-        } else {
-            enter_milestone(self, name, &mut AHashSet::with_capacity(8)).await
-        }
+        enter_milestone(self, name, &mut AHashSet::with_capacity(8)).await
     }
 }
 

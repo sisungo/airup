@@ -11,7 +11,6 @@ pub struct Runtime {
 }
 impl Runtime {
     /// Creates a new [Runtime] instance.
-    #[inline]
     pub async fn new() -> Self {
         let base_dir = airupfx::config::build_manifest().runtime_dir;
         tokio::fs::create_dir_all(&base_dir).await.ok();
@@ -20,13 +19,11 @@ impl Runtime {
     }
 
     /// Locks airup data.
-    #[inline]
     pub async fn lock(&self) -> anyhow::Result<Lock> {
         Lock::new(self.base_dir.join("airupd.lock")).await
     }
 
     /// Creates an IPC server.
-    #[inline]
     pub async fn ipc_server(&self) -> anyhow::Result<ipc::Server> {
         ipc::Server::new_force(self.base_dir.join("airupd.sock")).await
     }

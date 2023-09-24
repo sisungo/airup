@@ -22,13 +22,8 @@ async fn main() {
         .quiet(self::env::cmdline().quiet)
         .color(!self::env::cmdline().no_color)
         .init();
+    milestones::early_boot::enter().await;
     app::Airupd::init().await;
-
-    // Enters the `early_boot` pseudo-milestone
-    app::airupd()
-        .enter_milestone("early_boot".into())
-        .await
-        .unwrap();
 
     // Creates Airup runtime primitives
     let _lock = app::airupd()

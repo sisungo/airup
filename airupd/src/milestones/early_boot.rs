@@ -1,10 +1,9 @@
 //! The `early_boot` pseudo-milestone.
 
-use airup_sdk::Error;
 use airupfx::prelude::*;
 
 /// Enters the `early_boot` pseudo-milestone.
-pub async fn enter() -> Result<(), Error> {
+pub async fn enter() {
     let ace = Ace::default();
 
     for &i in airupfx::config::build_manifest().early_cmds {
@@ -13,8 +12,6 @@ pub async fn enter() -> Result<(), Error> {
             airupfx::process::emergency();
         }
     }
-
-    Ok(())
 }
 
 async fn run_wait(ace: &Ace, cmd: &str) -> anyhow::Result<()> {
