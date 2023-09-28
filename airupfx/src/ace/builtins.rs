@@ -1,5 +1,7 @@
+//! Built-in commands of ACE.
+
 use crate::{process::ExitStatus, signal::SIGTERM};
-use std::{collections::HashMap, hash::BuildHasher, future::Future};
+use std::{collections::HashMap, future::Future, hash::BuildHasher};
 use tokio::sync::mpsc;
 
 pub type BuiltinModule = fn(args: Vec<String>) -> mpsc::Receiver<i32>;
@@ -46,7 +48,7 @@ fn builtin_impl<F: Future<Output = i32> + Send + Sync + 'static>(future: F) -> m
 }
 
 async fn ret(tx: mpsc::Sender<i32>, val: i32) {
-    while let Ok(_) = tx.send(val).await {}
+    while tx.send(val).await.is_ok() {}
 }
 
 fn merge_args(args: &[String]) -> String {

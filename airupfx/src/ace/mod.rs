@@ -28,14 +28,22 @@ impl Ace {
         Self::default()
     }
 
+    /// Runs the given command, returning the child.
     pub async fn run(&self, cmd: &str) -> Result<Child, Error> {
-        self.run_tokenized(parser::tokenize(cmd).into_iter()).await
+        if let Some(x) = cmd.strip_prefix("sh.exec") {
+            self.run_tokenized(["sh".into(), "-c".into(), x.into()].into_iter())
+                .await
+        } else {
+            self.run_tokenized(parser::tokenize(cmd).into_iter()).await
+        }
     }
 
+    /// Runs the given command and waits until it completed.
     pub async fn run_wait(&self, cmd: &str) -> Result<Result<(), CommandExitError>, Error> {
         self.run_wait_timeout(cmd, None).await
     }
 
+    /// Runs the given command and waits until it completed or a timeout expired.
     pub async fn run_wait_timeout(
         &self,
         cmd: &str,
@@ -84,10 +92,8 @@ impl Ace {
 
     async fn run_bin_command(&self, cmd: &parser::Command) -> Result<Child, Error> {
         let mut command = self.env.as_command(&cmd.module).await?;
-        command.args(cmd.args.iter().map(|x| OsString::from(&*x)));
-        let _lock = crate::process::prepare_ops().await;
-        let child = command.spawn()?;
-        Ok(Child::Process(crate::process::Child::from_std(child)))
+        command.args(cmd.args.iter().map(OsString::from));
+        Ok(Child::Process(crate::process::spawn(&mut command).await?))
     }
 }
 
@@ -367,7 +373,13 @@ impl Stdio {
         Ok(match self {
             Self::Inherit => std::process::Stdio::inherit(),
             Self::Piped => std::process::Stdio::piped(),
-            Self::File(path) => tokio::fs::File::open(path).await?.into_std().await.into(),
+            Self::File(path) => tokio::fs::File::options()
+                .append(true)
+                .open(path)
+                .await?
+                .into_std()
+                .await
+                .into(),
         })
     }
 }

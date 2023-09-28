@@ -1,7 +1,7 @@
 use super::*;
 use crate::supervisor::SupervisorContext;
 use airup_sdk::{system::Status, Error};
-use airupfx::{signal::SIGTERM, util::BoxFuture};
+use airupfx::{files::service::Kind, signal::SIGTERM, util::BoxFuture};
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -79,6 +79,12 @@ impl StopService {
                 }
             }
         };
+
+        if let Some(x) = &self.context.service.service.pid_file {
+            if self.context.service.service.kind == Kind::Simple {
+                tokio::fs::remove_file(x).await.ok();
+            }
+        }
 
         self.context.status.set(Status::Stopped);
 

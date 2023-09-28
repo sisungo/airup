@@ -91,7 +91,7 @@ impl PrintedQuerySystem {
         let mut services = Vec::with_capacity(query_system.services.len());
 
         for i in query_system.services.iter() {
-            let query_service = conn.query_service(&i).await?.ok();
+            let query_service = conn.query_service(i).await?.ok();
             services.push((i.clone(), query_service.map(|x| PrintedStatus::of(&x))));
         }
 

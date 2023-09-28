@@ -1,4 +1,4 @@
-use airup_sdk::{Connection, system::ConnectionExt};
+use airup_sdk::{system::ConnectionExt, Connection};
 use airupfx::signal::SIGTERM;
 use clap::Parser;
 

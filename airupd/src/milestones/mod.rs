@@ -95,9 +95,11 @@ async fn exec_milestone_async(airupd: &crate::app::Airupd, def: &Milestone) {
                     tracing::error!(target: "console", "Failed to start {}: {}", service, err)
                 }
             },
-            Item::RunCmd(cmd) => if let Err(err) = ace.run(&cmd).await {
-                tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
-            },
+            Item::RunCmd(cmd) => {
+                if let Err(err) = ace.run(&cmd).await {
+                    tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
+                }
+            }
         }
     }
 }
@@ -119,9 +121,11 @@ async fn exec_milestone_serial(airupd: &crate::app::Airupd, def: &Milestone) {
                     tracing::error!(target: "console", "Failed to start {}: {}", display_name(airupd, &service).await, err);
                 }
             },
-            Item::RunCmd(cmd) => if let Err(err) = run_wait(&ace, &cmd).await {
-                tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
-            },
+            Item::RunCmd(cmd) => {
+                if let Err(err) = run_wait(&ace, &cmd).await {
+                    tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
+                }
+            }
         }
     }
 }
@@ -149,10 +153,10 @@ async fn exec_milestone_sync(airupd: &crate::app::Airupd, def: &Milestone) {
             Item::RunCmd(cmd) => match ace.run(&cmd).await {
                 Ok(x) => {
                     commands.push((cmd, x));
-                },
+                }
                 Err(err) => {
                     tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
-                },
+                }
             },
         }
     }
@@ -161,10 +165,10 @@ async fn exec_milestone_sync(airupd: &crate::app::Airupd, def: &Milestone) {
         match handle.wait().await {
             Ok(_) | Err(Error::UnitStarted) => {
                 tracing::info!(target: "console", "Starting {}", display_name(airupd, &name).await)
-            },
+            }
             Err(err) => {
                 tracing::error!(target: "console", "Failed to start {}: {}", display_name(airupd, &name).await, err);
-            },
+            }
         }
     }
 
