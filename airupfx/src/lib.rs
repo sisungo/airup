@@ -1,5 +1,5 @@
 //! # AirupFX
-//! AirupFX is the unified framework for Airup developing.
+//! Base support library of Airup.
 
 #[cfg(feature = "fs")]
 pub mod fs;
@@ -45,5 +45,3 @@ pub mod collections;
 pub mod sync;
 
 pub mod prelude;
-
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
