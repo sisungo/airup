@@ -65,6 +65,27 @@ impl Services {
             None => Err(std::io::ErrorKind::NotFound.into()),
         }
     }
+
+    pub async fn list(&self) -> Vec<String> {
+        let mut result = Vec::new();
+        self.sideloaded
+            .read()
+            .unwrap()
+            .keys()
+            .for_each(|x| result.push(x.to_owned()));
+        self.base_chain
+            .read_chain()
+            .await
+            .map(IntoIterator::into_iter)
+            .into_iter()
+            .flatten()
+            .for_each(|x| {
+                let name = x.to_string_lossy();
+                let name = name.strip_suffix(Service::SUFFIX).unwrap_or(&name);
+                result.push(name.into());
+            });
+        result
+    }
 }
 impl Default for Services {
     fn default() -> Self {

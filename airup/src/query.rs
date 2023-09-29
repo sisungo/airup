@@ -7,21 +7,23 @@ use std::fmt::Display;
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
-    service: Option<String>,
+    /// Queries all data, including which is not loaded
+    #[arg(short, long, conflicts_with = "unit")]
+    all: bool,
+
+    unit: Option<String>,
 }
 
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
-    match cmdline.service {
+    match cmdline.unit {
         Some(x) => {
             let queried = conn.query_service(&x).await??;
             print_query_service(&queried);
         }
         None => {
             let query_system = conn.query_system().await??;
-            let printed_query_system =
-                PrintedQuerySystem::from_query_system(&mut conn, query_system).await?;
-            print_query_system(&printed_query_system);
+            print_query_system(&mut conn, &query_system, &cmdline).await?;
         }
     }
     Ok(())
@@ -29,7 +31,7 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
 
 /// Prints a [QueryService] to console, in human-friendly format.
 fn print_query_service(query_service: &QueryService) {
-    let status = PrintedStatus::of(query_service);
+    let status = PrintedStatus::of_service(query_service);
 
     println!(
         "{} {} ({})",
@@ -38,11 +40,11 @@ fn print_query_service(query_service: &QueryService) {
         &query_service.service.name
     );
     if let Some(x) = &query_service.service.service.description {
-        println!("{:>16} {}", "Description:", x);
+        println!("{:>14} {}", "Description:", x);
     }
-    println!("{:>16} {}", "Status:", status);
+    println!("{:>14} {}", "Status:", status);
     println!(
-        "{:>16} {}",
+        "{:>14} {}",
         "Main PID:",
         query_service
             .pid
@@ -52,54 +54,52 @@ fn print_query_service(query_service: &QueryService) {
 }
 
 /// Prints a [QuerySystem] to console, in human-friendly format.
-fn print_query_system(printed: &PrintedQuerySystem) {
-    let status = PrintedStatus::Active;
+async fn print_query_system(
+    conn: &mut Connection<'_>,
+    query_system: &QuerySystem,
+    cmdline: &Cmdline,
+) -> anyhow::Result<()> {
+    let mut services = Vec::with_capacity(query_system.services.len());
+    for i in query_system.services.iter() {
+        let query_service = conn.query_service(i).await?.ok();
+        services.push((
+            i.clone(),
+            query_service.map(|x| PrintedStatus::of_service(&x)),
+        ));
+    }
+    if cmdline.all {
+        for name in conn.list_services().await?? {
+            services.push((
+                name.clone(),
+                conn.query_service(&name)
+                    .await?
+                    .ok()
+                    .map(|x| PrintedStatus::of_service(&x)),
+            ));
+        }
+    }
+
+    let status = PrintedStatus::of_system(&query_system);
     println!(
         "{} {}",
         status.theme_dot(),
-        printed
-            .query_system
-            .hostname
-            .as_deref()
-            .unwrap_or("localhost")
+        query_system.hostname.as_deref().unwrap_or("localhost")
     );
-    println!("{:>16} {}", "Status:", status);
-    println!("{:>16} /", "Services:");
-    for (name, status) in &printed.services {
+    println!("{:>14} {}", "Status:", status);
+    println!("{:>14} /", "Services:");
+    for (name, status) in &services {
         match status {
             Some(status) => println!("{1:>0$} ({2})", 18 + name.len(), name, status.fmt_simple()),
             None => println!(
                 "{1:>0$} ({2})",
-                18 + name.len(),
+                16 + name.len(),
                 style(name).strikethrough(),
                 style("deleted").dim()
             ),
         }
     }
-}
 
-#[derive(Debug, Clone)]
-struct PrintedQuerySystem {
-    query_system: QuerySystem,
-    services: Vec<(String, Option<PrintedStatus>)>,
-}
-impl PrintedQuerySystem {
-    async fn from_query_system(
-        conn: &mut Connection<'_>,
-        query_system: QuerySystem,
-    ) -> anyhow::Result<Self> {
-        let mut services = Vec::with_capacity(query_system.services.len());
-
-        for i in query_system.services.iter() {
-            let query_service = conn.query_service(i).await?.ok();
-            services.push((i.clone(), query_service.map(|x| PrintedStatus::of(&x))));
-        }
-
-        Ok(Self {
-            query_system,
-            services,
-        })
-    }
+    Ok(())
 }
 
 #[derive(Debug, Clone)]
@@ -111,15 +111,15 @@ enum PrintedStatus {
     Stopping,
 }
 impl PrintedStatus {
-    fn of(query_result: &QueryService) -> Self {
-        let mut result = match query_result.status {
+    fn of_service(query_service: &QueryService) -> Self {
+        let mut result = match query_service.status {
             Status::Active => Self::Active,
             Status::Stopped => Self::Stopped,
         };
-        if let Some(x) = &query_result.last_error {
+        if let Some(x) = &query_service.last_error {
             result = Self::Failed(x.to_string());
         }
-        if let Some(x) = query_result.task.as_deref() {
+        if let Some(x) = query_service.task.as_deref() {
             match x {
                 "StartService" => result = Self::Starting,
                 "StopService" => result = Self::Stopping,
@@ -128,6 +128,13 @@ impl PrintedStatus {
         }
 
         result
+    }
+
+    fn of_system(query_system: &QuerySystem) -> Self {
+        match query_system.status {
+            Status::Active => Self::Active,
+            Status::Stopped => Self::Stopped,
+        }
     }
 
     fn theme_dot(&self) -> String {

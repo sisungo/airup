@@ -39,6 +39,7 @@ impl QueryService {
 /// Result of querying information about the whole system.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuerySystem {
+    pub status: Status,
     pub hostname: Option<String>,
     pub services: Vec<String>,
 }
@@ -72,6 +73,9 @@ pub trait ConnectionExt {
 
     /// Queries information about the whole system.
     async fn query_system(&mut self) -> anyhow::Result<Result<QuerySystem, Error>>;
+
+    /// Lists all services.
+    async fn list_services(&mut self) -> anyhow::Result<Result<Vec<String>, Error>>;
 
     /// Refreshes cached system information in the `airupd` daemon.
     async fn refresh(&mut self) -> anyhow::Result<Result<(), Error>>;
@@ -121,6 +125,10 @@ impl<'a> ConnectionExt for super::Connection<'a> {
 
     async fn query_service(&mut self, name: &str) -> anyhow::Result<Result<QueryService, Error>> {
         self.invoke("system.query_service", name).await
+    }
+
+    async fn list_services(&mut self) -> anyhow::Result<Result<Vec<String>, Error>> {
+        self.invoke("system.list_services", ()).await
     }
 
     async fn query_system(&mut self) -> anyhow::Result<Result<QuerySystem, Error>> {

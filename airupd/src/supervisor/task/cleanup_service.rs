@@ -1,9 +1,6 @@
 use super::*;
 use crate::supervisor::SupervisorContext;
-use airup_sdk::{
-    files::Service,
-    Error,
-};
+use airup_sdk::{files::Service, Error};
 use airupfx::{ace::CommandExitError, prelude::*, process::Wait};
 use std::sync::Arc;
 

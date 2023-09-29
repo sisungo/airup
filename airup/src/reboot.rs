@@ -1,5 +1,4 @@
 use airup_sdk::{system::ConnectionExt, Connection};
-use airupfx::signal::SIGTERM;
 use clap::Parser;
 
 /// Reboots the system
@@ -42,26 +41,11 @@ pub struct Cmdline {
     )]
     userspace: bool,
 
-    /// Don't kill processes
-    #[arg(short, long)]
-    no_kill: bool,
-
-    /// Don't commit filesystem caches to disk
-    #[arg(long)]
-    no_sync: bool,
-
     args: Option<Vec<String>>,
 }
 
 /// Entrypoint of the `airup reboot` subprogram.
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    if !cmdline.no_kill {
-        airupfx::process::kill(-1, SIGTERM).await?;
-    }
-    if !cmdline.no_sync {
-        airupfx::fs::sync();
-    }
-
     let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
 
     if cmdline.reboot {

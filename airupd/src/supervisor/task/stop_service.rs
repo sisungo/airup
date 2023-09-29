@@ -1,6 +1,6 @@
 use super::*;
 use crate::supervisor::SupervisorContext;
-use airup_sdk::{system::Status, Error, files::service::Kind};
+use airup_sdk::{files::service::Kind, system::Status, Error};
 use airupfx::{signal::SIGTERM, util::BoxFuture};
 use std::sync::Arc;
 
