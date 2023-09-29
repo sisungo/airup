@@ -3,14 +3,14 @@
 pub mod early_boot;
 
 use ahash::AHashSet;
-use airup_sdk::Error;
-use airupfx::{
+use airup_sdk::{
     files::{
         milestone::{Item, Kind},
         Milestone,
     },
-    prelude::*,
+    Error,
 };
+use airupfx::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct Manager {}

@@ -161,17 +161,17 @@ impl ApiError {
         }
     }
 }
-impl From<airupfx::files::ReadError> for ApiError {
-    fn from(value: airupfx::files::ReadError) -> Self {
+impl From<crate::files::ReadError> for ApiError {
+    fn from(value: crate::files::ReadError) -> Self {
         match value {
-            airupfx::files::ReadError::Io(err) => match err.kind() {
+            crate::files::ReadError::Io(err) => match err.kind() {
                 std::io::ErrorKind::NotFound => Self::UnitNotFound,
                 _ => Self::Io {
                     message: err.to_string(),
                 },
             },
-            airupfx::files::ReadError::Parse(x) => Self::BadUnit { message: x.into() },
-            airupfx::files::ReadError::Validation(x) => Self::BadUnit { message: x },
+            crate::files::ReadError::Parse(x) => Self::BadUnit { message: x.into() },
+            crate::files::ReadError::Validation(x) => Self::BadUnit { message: x },
         }
     }
 }

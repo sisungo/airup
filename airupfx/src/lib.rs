@@ -1,9 +1,6 @@
 //! # AirupFX
 //! AirupFX is the unified framework for Airup developing.
 
-#[cfg(feature = "files")]
-pub mod files;
-
 #[cfg(feature = "fs")]
 pub mod fs;
 

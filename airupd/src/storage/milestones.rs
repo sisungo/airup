@@ -1,7 +1,5 @@
-use airupfx::{
-    files::{Milestone, ReadError},
-    prelude::*,
-};
+use airup_sdk::files::{Milestone, ReadError};
+use airupfx::prelude::*;
 
 /// Represents to Airup's milestones directory.
 #[derive(Debug)]

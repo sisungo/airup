@@ -9,11 +9,10 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-full = ["ace", "config", "files", "fs", "log", "policy", "power", "process", "signal", "time", "users"]
+full = ["ace", "config", "fs", "log", "policy", "power", "process", "signal", "time", "users"]
 ace = ["users", "process"]
 config = ["toml", "env"]
 env = ["sysinfo"]
-files = ["toml", "users", "fs"]
 fs = []
 log = ["tracing-subscriber", "env"]
 policy = ["fs", "users"]

@@ -3,7 +3,7 @@
 #![allow(unstable_name_collisions)]
 
 use super::ReadError;
-use crate::prelude::*;
+use airupfx::prelude::*;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::{path::Path, str::FromStr};
@@ -57,26 +57,12 @@ impl Milestone {
     pub async fn items(&self) -> Vec<Item> {
         let mut services = Vec::new();
 
-        if let Ok(read_chain) = self
-            .base_chain
-            .read_chain()
-            .await
-            .inspect_err(|x| tracing::warn!("failed to read milestone directory: {x}"))
-        {
+        if let Ok(read_chain) = self.base_chain.read_chain().await {
             for i in read_chain {
                 if i.to_string_lossy().ends_with(".list.airc") {
-                    if let Some(path) = self.base_chain.find(&i).await.inspect_none(|| {
-                        tracing::warn!("failed to get milestone chunkfile at `{:?}`", i)
-                    }) {
+                    if let Some(path) = self.base_chain.find(&i).await {
                         tokio::fs::read_to_string(&path)
                             .await
-                            .inspect_err(|e| {
-                                tracing::warn!(
-                                    "failed to read milestone chunkfile at `{:?}`: {}",
-                                    i,
-                                    e
-                                )
-                            })
                             .map(|x| {
                                 x.lines().for_each(|y| {
                                     if let Ok(item) = y.parse() {

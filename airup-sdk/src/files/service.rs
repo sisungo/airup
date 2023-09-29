@@ -2,7 +2,7 @@
 //! This module contains [Service], the main file format of an Airup service and its combinations.
 
 use super::ReadError;
-use crate::users::{Gid, Uid};
+use airupfx::users::{Gid, Uid};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -107,9 +107,8 @@ pub struct Env {
     pub vars: BTreeMap<String, Option<String>>,
 }
 impl Env {
-    #[cfg(feature = "ace")]
-    pub fn into_ace(&self) -> Result<crate::ace::Env, crate::ace::Error> {
-        let mut result = crate::ace::Env::new();
+    pub fn into_ace(&self) -> Result<airupfx::ace::Env, airupfx::ace::Error> {
+        let mut result = airupfx::ace::Env::new();
 
         result
             .user(self.user.clone())?
@@ -137,11 +136,10 @@ pub enum Stdio {
     File(PathBuf),
 }
 impl Stdio {
-    #[cfg(feature = "ace")]
-    pub fn into_ace(self) -> crate::ace::Stdio {
+    pub fn into_ace(self) -> airupfx::ace::Stdio {
         match self {
-            Self::Inherit => crate::ace::Stdio::Inherit,
-            Self::File(path) => crate::ace::Stdio::File(path),
+            Self::Inherit => airupfx::ace::Stdio::Inherit,
+            Self::File(path) => airupfx::ace::Stdio::File(path),
         }
     }
 }

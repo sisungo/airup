@@ -1,5 +1,6 @@
 use super::Error;
-use airupfx::{files::Service, prelude::*};
+use crate::files::Service;
+use airupfx::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// Representation of the status of a service.
