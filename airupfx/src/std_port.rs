@@ -2,7 +2,9 @@
 //!
 //! These will be deleted when the features gets stablized.
 
-/// Port of unstable feature `#[feature(result_option_inspect)]` to stable Rust.
+use std::os::unix::process::CommandExt as _;
+
+/// Port of unstable feature `#![feature(result_option_inspect)]` to stable Rust.
 ///
 /// This will be deleted when the feature is stablized.
 pub trait ResultExt<T, E> {
@@ -17,7 +19,7 @@ impl<T, E> ResultExt<T, E> for Result<T, E> {
     }
 }
 
-/// Port of unstable feature `#[feature(result_option_inspect)]` to stable Rust.
+/// Port of unstable feature `#![feature(result_option_inspect)]` to stable Rust.
 ///
 /// This will be deleted when the feature is stablized.
 pub trait OptionExt<T> {
@@ -30,5 +32,19 @@ impl<T> OptionExt<T> for Option<T> {
         }
 
         self
+    }
+}
+
+/// Port of unstable feature `#![feature(process_setsid)]` to stable Rust.
+/// 
+/// This will be deleted when the feature is stablized.
+pub trait CommandExt {
+    fn setsid(&mut self) -> &mut Self;
+}
+impl CommandExt for std::process::Command {
+    fn setsid(&mut self) -> &mut Self {
+        unsafe {
+            self.pre_exec(|| crate::sys::env::setsid().map(|_| ()))
+        }
     }
 }

@@ -12,7 +12,7 @@ publish = false
 ahash = "0.8"
 async-trait = "0.1"
 anyhow = "1"
-airupfx = { path = "../airupfx", features = ["full"] }
+airupfx = { path = "../airupfx" }
 airup-sdk = { path = "../airup-sdk" }
 libc = "0.2"
 serde = "1"

@@ -1,5 +1,3 @@
-#[cfg(feature = "process")]
+pub mod env;
 pub mod process;
-
-#[cfg(feature = "signal")]
 pub mod signal;

@@ -8,30 +8,16 @@ publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[features]
-full = ["ace", "config", "fs", "log", "policy", "power", "process", "signal", "time", "users"]
-ace = ["users", "process", "signal"]
-config = ["toml", "env"]
-env = ["sysinfo"]
-fs = []
-log = ["tracing-subscriber", "env"]
-policy = ["fs", "users"]
-power = ["process"]
-process = []
-signal = []
-time = []
-users = ["env", "caches"]
-
 [dependencies]
 async-trait = "0.1"
 ahash = "0.8"
 anyhow = "1"
-caches = { version = "0.2", optional = true }
+caches = "0.2"
 serde = { version = "1", features = ["derive"] }
-sysinfo = { version = "0.29", optional = true }
+sysinfo = "0.29"
 libc = "0.2"
 thiserror = "1"
 tokio = { workspace = true }
-toml = { version = "0.7", optional = true }
+toml = "0.7"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["serde"], optional = true }
+tracing-subscriber = "0.3"

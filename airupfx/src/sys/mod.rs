@@ -20,7 +20,6 @@ pub mod macos;
 
 /// Returns a reference to the global default [crate::power::PowerManager] instance.
 #[allow(unreachable_code)]
-#[cfg(feature = "power")]
 pub fn power_manager() -> &'static dyn crate::power::PowerManager {
     #[cfg(any(
         target_os = "freebsd",
