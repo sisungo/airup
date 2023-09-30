@@ -114,7 +114,7 @@ impl From<Policy> for Compiled {
             match i.verb {
                 Verb::Allow => match i.subject {
                     Subject::Uid(u) => {
-                        let set = result.user_allow.would_get(&u);
+                        let set = result.user_allow.get_or_default(&u);
                         i.actions.drain().for_each(|x| {
                             set.insert(x);
                         });
@@ -123,14 +123,14 @@ impl From<Policy> for Compiled {
                         if let Some(x) = find_user_by_name(&u)
                             .inspect_none(|| tracing::warn!("no such user `{}`", u))
                         {
-                            let set = result.user_allow.would_get(&x.uid);
+                            let set = result.user_allow.get_or_default(&x.uid);
                             i.actions.drain().for_each(|x| {
                                 set.insert(x);
                             });
                         }
                     }
                     Subject::Group(g) => {
-                        let set = result.group_allow.would_get(&g);
+                        let set = result.group_allow.get_or_default(&g);
                         i.actions.drain().for_each(|x| {
                             set.insert(x);
                         });
@@ -138,7 +138,7 @@ impl From<Policy> for Compiled {
                 },
                 Verb::Deny => match i.subject {
                     Subject::Uid(u) => {
-                        let set = result.user_allow.would_get(&u);
+                        let set = result.user_allow.get_or_default(&u);
                         i.actions.drain().for_each(|x| {
                             set.remove(&x);
                         });
@@ -147,14 +147,14 @@ impl From<Policy> for Compiled {
                         if let Some(x) = find_user_by_name(&u)
                             .inspect_none(|| tracing::warn!("no such user `{}`", u))
                         {
-                            let set = result.user_allow.would_get(&x.uid);
+                            let set = result.user_allow.get_or_default(&x.uid);
                             i.actions.drain().for_each(|x| {
                                 set.remove(&x);
                             });
                         }
                     }
                     Subject::Group(g) => {
-                        let set = result.group_allow.would_get(&g);
+                        let set = result.group_allow.get_or_default(&g);
                         i.actions.drain().for_each(|x| {
                             set.remove(&x);
                         });

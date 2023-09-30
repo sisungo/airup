@@ -16,5 +16,4 @@ pub mod std_port;
 pub mod sync;
 pub(crate) mod sys;
 pub mod time;
-pub mod users;
 pub mod util;

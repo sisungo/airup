@@ -79,7 +79,7 @@ async fn print_query_system(
         }
     }
 
-    let status = PrintedStatus::of_system(&query_system);
+    let status = PrintedStatus::of_system(query_system);
     println!(
         "{} {}",
         status.theme_dot(),

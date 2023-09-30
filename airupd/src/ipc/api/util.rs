@@ -5,7 +5,7 @@ use airup_sdk::Error;
 use airupfx::{
     config::{system_conf, Security},
     policy::{Action, Actions},
-    users::current_uid,
+    env::current_uid,
 };
 use serde::Serialize;
 

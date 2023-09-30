@@ -3,7 +3,6 @@
 use ahash::AHashSet;
 use std::{
     collections::HashMap,
-    ffi::CString,
     future::Future,
     hash::{BuildHasher, Hash},
     pin::Pin,
@@ -83,7 +82,7 @@ where
 /// An extension to [HashMap].
 pub trait HashMapExt<K, V> {
     /// Returns mutable reference of provided key, inserts default value if not existing.
-    fn would_get(&mut self, key: &K) -> &mut V;
+    fn get_or_default(&mut self, key: &K) -> &mut V;
 }
 impl<K, V, H> HashMapExt<K, V> for HashMap<K, V, H>
 where
@@ -91,7 +90,7 @@ where
     V: Default,
     H: BuildHasher,
 {
-    fn would_get(&mut self, key: &K) -> &mut V {
+    fn get_or_default(&mut self, key: &K) -> &mut V {
         match self.contains_key(key) {
             true => self.get_mut(key).unwrap(),
             false => {
@@ -100,10 +99,4 @@ where
             }
         }
     }
-}
-
-pub fn cstring_lossy(s: &str) -> CString {
-    let s = s.replace('\0', "\u{fffd}").into_bytes();
-    debug_assert!(!s.iter().any(|x| *x == 0));
-    unsafe { CString::from_vec_unchecked(s) }
 }

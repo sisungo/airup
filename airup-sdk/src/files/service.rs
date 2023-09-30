@@ -2,7 +2,7 @@
 //! This module contains [Service], the main file format of an Airup service and its combinations.
 
 use super::ReadError;
-use airupfx::users::{Gid, Uid};
+use airupfx::env::{Gid, Uid};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -118,7 +118,8 @@ impl Env {
             .stderr(self.stderr.clone().into_ace())
             .clear_vars(self.clear_vars)
             .vars::<_, String, _, String>(self.vars.clone().into_iter())
-            .working_dir::<PathBuf, _>(self.working_dir.clone());
+            .working_dir::<PathBuf, _>(self.working_dir.clone())
+            .setsid(true);
 
         Ok(result)
     }

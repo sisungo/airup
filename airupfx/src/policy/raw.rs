@@ -1,6 +1,6 @@
 //! Inspection of raw policy rules.
 
-use crate::users::{current_uid, Uid};
+use crate::env::{current_uid, Uid};
 use anyhow::anyhow;
 use std::{
     collections::HashSet,

@@ -6,12 +6,12 @@ pub mod parser;
 use crate::{
     process::{ExitStatus, Pid, Wait, WaitError},
     signal::{SIGKILL, SIGTERM},
-    users::{find_user_by_name, Gid, Uid},
-    util::BoxFuture,
+    env::{find_user_by_name, Gid, Uid},
+    util::BoxFuture, std_port::CommandExt as _,
 };
 use ahash::AHashMap;
 use std::{
-    collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt, path::PathBuf, sync::Arc,
+    collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt as _, path::PathBuf, sync::Arc,
     time::Duration,
 };
 use tokio::{io::AsyncRead, sync::mpsc};
@@ -119,12 +119,13 @@ impl Default for Modules {
 pub struct Env {
     uid: Option<Uid>,
     gid: Option<Gid>,
-    // groups: Option<Vec<Gid>>, not implemented yet.
+    groups: Option<Vec<Gid>>,
     clear_vars: bool,
     vars: BTreeMap<OsString, Option<OsString>>,
     stdout: Stdio,
     stderr: Stdio,
     working_dir: Option<PathBuf>,
+    setsid: bool,
 }
 impl Env {
     #[inline]
@@ -144,6 +145,14 @@ impl Env {
     pub fn gid<T: Into<Option<Gid>>>(&mut self, gid: T) -> &mut Self {
         if let Some(x) = gid.into() {
             self.gid = Some(x);
+        }
+        self
+    }
+
+    #[inline]
+    pub fn groups<T: Into<Option<Vec<Gid>>>>(&mut self, groups: T) -> &mut Self {
+        if let Some(x) = groups.into() {
+            self.groups = Some(x);
         }
         self
     }
@@ -208,6 +217,12 @@ impl Env {
         self
     }
 
+    #[inline]
+    pub fn setsid(&mut self, val: bool) -> &mut Self {
+        self.setsid = val;
+        self
+    }
+
     async fn as_command(&self, arg0: &str) -> Result<std::process::Command, Error> {
         let mut command = std::process::Command::new(arg0);
         if let Some(x) = self.uid {
@@ -233,6 +248,9 @@ impl Env {
         command
             .stdout(self.stdout.to_std().await?)
             .stderr(self.stderr.to_std().await?);
+        if self.setsid {
+            command.setsid();
+        }
 
         Ok(command)
     }
