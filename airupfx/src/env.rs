@@ -51,10 +51,16 @@ fn users() -> &'static RwLock<sysinfo::System> {
     sysinfo()
 }
 
+/// Refreshes users database.
+#[inline]
+pub fn refresh_users() {
+    users().write().unwrap().refresh_users_list()
+}
+
 /// Refreshes the environmental database.
 #[inline]
 pub fn refresh() {
-    users().write().unwrap().refresh_users_list();
+    refresh_users();
 }
 
 /// Returns host name of the machine currently running the process.

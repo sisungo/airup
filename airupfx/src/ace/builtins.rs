@@ -8,9 +8,23 @@ pub type BuiltinModule = fn(args: Vec<String>) -> mpsc::Receiver<i32>;
 
 pub fn init<H: BuildHasher>(builtins: &mut HashMap<&'static str, BuiltinModule, H>) {
     builtins.insert("noop", noop);
+    builtins.insert("console.setup", console_setup);
     builtins.insert("console.info", console_info);
     builtins.insert("console.warn", console_warn);
     builtins.insert("console.error", console_error);
+}
+
+pub fn console_setup(args: Vec<String>) -> mpsc::Receiver<i32> {
+    builtin_impl(async move {
+        let path = match args.get(0) {
+            Some(x) => x,
+            None => return 1,
+        };
+        match crate::sys::env::setup_stdio(path).await {
+            Ok(()) => 0,
+            Err(_) => 2,
+        }
+    })
 }
 
 pub fn console_info(args: Vec<String>) -> mpsc::Receiver<i32> {

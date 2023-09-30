@@ -1,0 +1,8 @@
+[service]
+display-name = "Airup Daemon"
+description = "System init and service supervisor"
+kind = "oneshot"
+
+[exec]
+start = "noop"
+reload = "airup self-reload"
