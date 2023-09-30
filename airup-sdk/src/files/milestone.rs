@@ -1,7 +1,5 @@
 //! # Milestones
 
-#![allow(unstable_name_collisions)]
-
 use super::ReadError;
 use airupfx::prelude::*;
 use anyhow::anyhow;

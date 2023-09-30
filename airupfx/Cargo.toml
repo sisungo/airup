@@ -10,7 +10,7 @@ publish = false
 
 [features]
 full = ["ace", "config", "fs", "log", "policy", "power", "process", "signal", "time", "users"]
-ace = ["users", "process"]
+ace = ["users", "process", "signal"]
 config = ["toml", "env"]
 env = ["sysinfo"]
 fs = []

@@ -13,5 +13,4 @@ airup-sdk = { path = "../airup-sdk" }
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 console = "0.15"
-rustyline = "12"
-tokio = { version = "1", features = ["macros", "rt", "net", "time"] }
+tokio = { workspace = true }

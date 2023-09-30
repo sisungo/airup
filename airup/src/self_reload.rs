@@ -1,15 +1,14 @@
 use airup_sdk::prelude::*;
 use clap::Parser;
 
-/// Start services
+/// Reload `airupd` daemon itself
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
-pub struct Cmdline {
-    service: String,
-}
+pub struct Cmdline {}
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+pub async fn main(_: Cmdline) -> anyhow::Result<()> {
     let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
-    conn.reload_service(&cmdline.service).await??;
+    conn.refresh().await??;
+    conn.gc().await??;
     Ok(())
 }

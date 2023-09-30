@@ -1,4 +1,6 @@
 # Airup
+![License Badge](https://img.shields.io/badge/license-Unlicense-blue)
+
 Airup is a modern, portable and fast `init` daemon implementation.
 
 ## Project Status
@@ -15,3 +17,9 @@ For reporting a security vulnerability, please [contact sisungo](mailto:sisungo@
 
 ## License
 Airup is licensed under [The Unlicense](LICENSE).
+
+## Contributing
+We are welcome to all people who want to contribute.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in `airup` by you, shall be
+licensed under `The Unlicense` as above, without any additional terms or conditions.
