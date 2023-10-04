@@ -10,14 +10,12 @@ publish = false
 
 [dependencies]
 ahash = "0.8"
-async-trait = "0.1"
 anyhow = "1"
 airupfx = { path = "../airupfx" }
 airup-sdk = { path = "../airup-sdk" }
 libc = "0.2"
 serde = "1"
 serde_json = "1"
-sysinfo = "0.29"
 thiserror = "1"
 tokio = { workspace = true }
 tracing = "0.1"

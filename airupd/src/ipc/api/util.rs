@@ -29,7 +29,7 @@ pub async fn check_perm(context: &SessionContext, actions: &[Action]) -> Result<
     match system_conf().system.security {
         Security::Disabled => Ok(()),
         Security::Simple => check_perm_simple(context),
-        Security::Policy => check_perm_policy(context, actions).await,
+        Security::Policy => check_perm_policy(context, actions),
     }
 }
 
@@ -43,7 +43,7 @@ fn check_perm_simple(context: &SessionContext) -> Result<(), Error> {
     }
 }
 
-async fn check_perm_policy(context: &SessionContext, actions: &[Action]) -> Result<(), Error> {
+fn check_perm_policy(context: &SessionContext, actions: &[Action]) -> Result<(), Error> {
     let actions: Actions = actions.iter().cloned().into();
     match &context.uid {
         Some(uid) => {
@@ -51,8 +51,6 @@ async fn check_perm_policy(context: &SessionContext, actions: &[Action]) -> Resu
                 .storage
                 .config
                 .policy
-                .get()
-                .await
                 .check(*uid, &actions)
             {
                 true => Ok(()),

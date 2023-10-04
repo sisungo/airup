@@ -31,7 +31,7 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
 fn refresh(context: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move {
         check_perm(&context, &[Action::Refresh]).await?;
-        airupd().storage.config.policy.get().await.refresh().await;
+        airupd().storage.config.policy.refresh().await;
         airupfx::env::refresh();
         ok_null()
     })

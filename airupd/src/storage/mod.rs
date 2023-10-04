@@ -20,10 +20,9 @@ pub struct Storage {
 }
 impl Storage {
     /// Creates a new [Storage] instance.
-    #[inline]
     pub async fn new() -> Self {
         Self {
-            config: Config::new(),
+            config: Config::new().await,
             runtime: Runtime::new().await,
             services: Services::new(),
             milestones: Milestones::new(),
