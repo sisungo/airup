@@ -4,15 +4,16 @@ pub mod builtins;
 pub mod parser;
 
 use crate::{
+    env::{find_user_by_name, Gid, Uid},
     process::{ExitStatus, Pid, Wait, WaitError},
     signal::{SIGKILL, SIGTERM},
-    env::{find_user_by_name, Gid, Uid},
-    util::BoxFuture, std_port::CommandExt as _,
+    std_port::CommandExt as _,
+    util::BoxFuture,
 };
 use ahash::AHashMap;
 use std::{
-    collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt as _, path::PathBuf, sync::Arc,
-    time::Duration,
+    collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt as _, path::PathBuf,
+    sync::Arc, time::Duration,
 };
 use tokio::{io::AsyncRead, sync::mpsc};
 

@@ -2,8 +2,8 @@ mod build;
 mod system_conf;
 
 pub use system_conf::SystemConf;
+pub use build::MANIFEST as BUILD_MANIFEST;
 
-use build::BuildManifest;
 use serde::{Deserialize, Serialize};
 
 /// Representation of a security model.
@@ -34,10 +34,4 @@ pub async fn init() {
 #[inline]
 pub fn system_conf() -> &'static SystemConf {
     SystemConf::get()
-}
-
-/// Returns a reference to the unique [BuildManifest].
-#[inline]
-pub fn build_manifest() -> &'static BuildManifest {
-    BuildManifest::get()
 }

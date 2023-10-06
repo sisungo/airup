@@ -10,7 +10,7 @@ pub struct Config {
 impl Config {
     /// Creates a new [Config] instance.
     pub async fn new() -> Self {
-        let base_dir = &airupfx::config::build_manifest().config_dir;
+        let base_dir = &airupfx::config::BUILD_MANIFEST.config_dir;
 
         Self {
             policy: policy::Db::new(DirChain::from(base_dir.join("policy"))).await,

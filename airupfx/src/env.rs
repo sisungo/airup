@@ -2,9 +2,12 @@
 
 use std::{
     ffi::{OsStr, OsString},
-    sync::{OnceLock, RwLock, atomic::{AtomicBool, Ordering}},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        OnceLock, RwLock,
+    },
 };
-use sysinfo::{UserExt, SystemExt};
+use sysinfo::{SystemExt, UserExt};
 
 pub type Uid = i64;
 pub type Gid = i64;
@@ -73,32 +76,32 @@ pub fn host_name() -> Option<String> {
 #[inline]
 pub fn find_user_by_uid(uid: Uid) -> Option<UserEntry> {
     users()
-            .read()
-            .unwrap()
-            .get_user_by_id(&sysinfo::Uid::try_from(uid as usize).ok()?)
-            .map(|u| UserEntry {
-                uid,
-                gid: *u.group_id() as _,
-                name: u.name().into(),
-                groups: u.groups().to_vec(),
-            })
+        .read()
+        .unwrap()
+        .get_user_by_id(&sysinfo::Uid::try_from(uid as usize).ok()?)
+        .map(|u| UserEntry {
+            uid,
+            gid: *u.group_id() as _,
+            name: u.name().into(),
+            groups: u.groups().to_vec(),
+        })
 }
 
 /// Finds a user entry by username.
 #[inline]
 pub fn find_user_by_name(name: &String) -> Option<UserEntry> {
     users()
-            .read()
-            .unwrap()
-            .users()
-            .iter()
-            .find(|u| u.name() == name)
-            .map(|u| UserEntry {
-                uid: **u.id() as _,
-                name: name.into(),
-                gid: *u.group_id() as _,
-                groups: u.groups().to_vec(),
-            })
+        .read()
+        .unwrap()
+        .users()
+        .iter()
+        .find(|u| u.name() == name)
+        .map(|u| UserEntry {
+            uid: **u.id() as _,
+            name: name.into(),
+            gid: *u.group_id() as _,
+            groups: u.groups().to_vec(),
+        })
 }
 
 /// Returns the user entry of current user.

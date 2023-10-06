@@ -1,4 +1,4 @@
-use std::{path::Path, os::fd::AsRawFd};
+use std::{os::fd::AsRawFd, path::Path};
 
 pub fn setsid() -> std::io::Result<libc::pid_t> {
     unsafe {
@@ -25,7 +25,11 @@ pub async fn setup_stdio<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
     let path = path.as_ref();
 
     loop {
-        let file = tokio::fs::File::options().read(true).write(true).open(path).await?;
+        let file = tokio::fs::File::options()
+            .read(true)
+            .write(true)
+            .open(path)
+            .await?;
         if file.as_raw_fd() >= 3 {
             break Ok(());
         } else {

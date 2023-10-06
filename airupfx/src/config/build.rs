@@ -1,7 +1,8 @@
 #![allow(unused)]
 
+use once_cell::sync::Lazy;
 use super::{Security, Security::*};
-use std::{path::Path, sync::OnceLock};
+use std::path::Path;
 
 macro_rules! map {
     (@$key:literal : $val:literal) => {
@@ -56,6 +57,8 @@ macro_rules! build_manifest {
     };
 }
 
+pub static MANIFEST: Lazy<BuildManifest> = Lazy::new(|| include!("../../../build_manifest.rs"));
+
 /// Represents to `build_manifest.json`.
 #[derive(Debug, Clone)]
 pub struct BuildManifest {
@@ -82,18 +85,6 @@ pub struct BuildManifest {
 
     /// Default security model to use.
     pub security: Security,
-}
-impl BuildManifest {
-    pub fn parse() -> Self {
-        include!("../../../build_manifest.rs")
-    }
-
-    #[inline]
-    pub fn get() -> &'static Self {
-        static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
-
-        MANIFEST.get_or_init(Self::parse)
-    }
 }
 impl Default for BuildManifest {
     fn default() -> Self {

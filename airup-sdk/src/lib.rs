@@ -20,7 +20,7 @@ pub fn socket_path() -> &'static Path {
 
     SOCKET_PATH.get_or_init(|| {
         Box::leak(
-            airupfx::config::build_manifest()
+            airupfx::config::BUILD_MANIFEST
                 .runtime_dir
                 .join("airupd.sock")
                 .into(),

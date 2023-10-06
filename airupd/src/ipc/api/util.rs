@@ -4,8 +4,8 @@ use crate::{app::airupd, ipc::SessionContext};
 use airup_sdk::Error;
 use airupfx::{
     config::{system_conf, Security},
-    policy::{Action, Actions},
     env::current_uid,
+    policy::{Action, Actions},
 };
 use serde::Serialize;
 
@@ -46,17 +46,10 @@ fn check_perm_simple(context: &SessionContext) -> Result<(), Error> {
 fn check_perm_policy(context: &SessionContext, actions: &[Action]) -> Result<(), Error> {
     let actions: Actions = actions.iter().cloned().into();
     match &context.uid {
-        Some(uid) => {
-            match airupd()
-                .storage
-                .config
-                .policy
-                .check(*uid, &actions)
-            {
-                true => Ok(()),
-                false => Err(Error::permission_denied(actions.iter())),
-            }
-        }
+        Some(uid) => match airupd().storage.config.policy.check(*uid, &actions) {
+            true => Ok(()),
+            false => Err(Error::permission_denied(actions.iter())),
+        },
         None => Err(Error::permission_denied(["@channel:credentials"])),
     }
 }
