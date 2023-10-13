@@ -12,7 +12,9 @@ publish = false
 ahash = "0.8"
 anyhow = "1"
 libc = "0.2"
+moka = { version = "0.12", features = ["future"] }
 once_cell = "1"
+parking_lot = "0.12"
 serde = { version = "1", features = ["derive"] }
 sysinfo = "0.29"
 thiserror = "1"

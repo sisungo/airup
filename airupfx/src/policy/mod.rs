@@ -4,25 +4,25 @@
 
 mod raw;
 
-use ahash::AHashMap;
 pub use raw::{Action, Actions};
 
 use self::raw::{Policy, Subject, Verb};
-use crate::prelude::*;
-use std::sync::RwLock;
+use crate::{env::with_user_by_name, prelude::*};
+use ahash::AHashMap;
+use sysinfo::{Uid, UserExt};
 
 /// Represents to a policy database on the filesystem.
 #[derive(Debug)]
 pub struct Db {
     base_chain: DirChain<'static>,
-    compiled: RwLock<Compiled>,
+    compiled: tokio::sync::RwLock<Compiled>,
 }
 impl Db {
     /// Creates a new `Db` from provided chain.
     pub async fn new<C: Into<DirChain<'static>>>(chain: C) -> Self {
         let base_chain = chain.into();
         let policy = Self::read_policy(&base_chain).await;
-        let compiled = RwLock::new(policy.into());
+        let compiled = tokio::sync::RwLock::new(Compiled::from_policy(policy).await);
         Self {
             base_chain,
             compiled,
@@ -31,7 +31,8 @@ impl Db {
 
     /// Refreshes the cache.
     pub async fn refresh(&self) {
-        *self.compiled.write().unwrap() = Self::read_policy(&self.base_chain).await.into();
+        *self.compiled.write().await =
+            Compiled::from_policy(Self::read_policy(&self.base_chain).await).await;
     }
 
     /// Reads a policy from a directory chain.
@@ -76,8 +77,8 @@ impl Db {
     }
 
     /// Returns `true` if provided user is permitted to perform the operation.
-    pub fn check(&self, user: Uid, actions: &Actions) -> bool {
-        self.compiled.read().unwrap().check(user, actions)
+    pub async fn check(&self, user: &Uid, actions: &Actions) -> bool {
+        self.compiled.read().await.check(user, actions).await
     }
 }
 
@@ -89,26 +90,25 @@ struct Compiled {
 }
 impl Compiled {
     /// Returns `true` if provided user is permitted to perform the operation.
-    fn check(&self, user: Uid, actions: &Actions) -> bool {
+    async fn check(&self, user: &Uid, actions: &Actions) -> bool {
         self.user_allow
             .get(&user)
             .map(|x| actions.is_subset(x))
             .unwrap_or_default()
-            || find_user_by_uid(user)
-                .inspect_none(|| tracing::warn!("no such user `uid={}`", user))
-                .map(|entry| {
-                    entry.groups.iter().any(|x| {
-                        self.group_allow
-                            .get(x)
-                            .map(|y| actions.is_subset(y))
-                            .unwrap_or_default()
-                    })
+            || crate::env::with_user_by_id(&user, |entry| {
+                entry.groups().iter().any(|x| {
+                    self.group_allow
+                        .get(x)
+                        .map(|y| actions.is_subset(y))
+                        .unwrap_or_default()
                 })
-                .unwrap_or_default()
+            })
+            .await
+            .inspect_none(|| tracing::warn!("no such user `uid={}`", **user))
+            .unwrap_or_default()
     }
-}
-impl From<Policy> for Compiled {
-    fn from(pol: Policy) -> Self {
+
+    async fn from_policy(pol: Policy) -> Self {
         let mut result = Self::default();
         for mut i in pol.0 {
             match i.verb {
@@ -120,14 +120,14 @@ impl From<Policy> for Compiled {
                         });
                     }
                     Subject::User(u) => {
-                        if let Some(x) = find_user_by_name(&u)
-                            .inspect_none(|| tracing::warn!("no such user `{}`", u))
-                        {
-                            let set = result.user_allow.get_or_default(&x.uid);
+                        crate::env::with_user_by_name(&u, |x| {
+                            let set = result.user_allow.get_or_default(&x.id());
                             i.actions.drain().for_each(|x| {
                                 set.insert(x);
                             });
-                        }
+                        })
+                        .await
+                        .inspect_none(|| tracing::warn!("no such user `{}`", u));
                     }
                     Subject::Group(g) => {
                         let set = result.group_allow.get_or_default(&g);
@@ -144,14 +144,14 @@ impl From<Policy> for Compiled {
                         });
                     }
                     Subject::User(u) => {
-                        if let Some(x) = find_user_by_name(&u)
-                            .inspect_none(|| tracing::warn!("no such user `{}`", u))
-                        {
-                            let set = result.user_allow.get_or_default(&x.uid);
+                        with_user_by_name(&u, |x| {
+                            let set = result.user_allow.get_or_default(&x.id());
                             i.actions.drain().for_each(|x| {
                                 set.remove(&x);
                             });
-                        }
+                        })
+                        .await
+                        .inspect_none(|| tracing::warn!("no such user `{}`", u));
                     }
                     Subject::Group(g) => {
                         let set = result.group_allow.get_or_default(&g);

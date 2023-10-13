@@ -29,13 +29,13 @@ pub async fn check_perm(context: &SessionContext, actions: &[Action]) -> Result<
     match system_conf().system.security {
         Security::Disabled => Ok(()),
         Security::Simple => check_perm_simple(context),
-        Security::Policy => check_perm_policy(context, actions),
+        Security::Policy => check_perm_policy(context, actions).await,
     }
 }
 
 fn check_perm_simple(context: &SessionContext) -> Result<(), Error> {
     match &context.uid {
-        Some(uid) => match *uid == 0 || *uid == current_uid() {
+        Some(uid) => match **uid == 0 || *uid == current_uid() {
             true => Ok(()),
             false => Err(Error::permission_denied(["@security_simple"])),
         },
@@ -43,10 +43,10 @@ fn check_perm_simple(context: &SessionContext) -> Result<(), Error> {
     }
 }
 
-fn check_perm_policy(context: &SessionContext, actions: &[Action]) -> Result<(), Error> {
+async fn check_perm_policy(context: &SessionContext, actions: &[Action]) -> Result<(), Error> {
     let actions: Actions = actions.iter().cloned().into();
     match &context.uid {
-        Some(uid) => match airupd().storage.config.policy.check(*uid, &actions) {
+        Some(uid) => match airupd().storage.config.policy.check(uid, &actions).await {
             true => Ok(()),
             false => Err(Error::permission_denied(actions.iter())),
         },

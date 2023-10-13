@@ -1,6 +1,6 @@
 //! Inspection of raw policy rules.
 
-use crate::env::{current_uid, Uid};
+use crate::env::current_uid;
 use anyhow::anyhow;
 use std::{
     collections::HashSet,
@@ -8,6 +8,7 @@ use std::{
     ops::{Deref, DerefMut},
     str::FromStr,
 };
+use sysinfo::Uid;
 
 /// Represents to a set of policy items.
 #[derive(Debug, Clone, Default)]
@@ -18,7 +19,7 @@ impl Policy {
 
     /// Creates a new [Policy] with presets.
     pub fn with_preset() -> Self {
-        format!("allow uid={} *; allow root *;", current_uid())
+        format!("allow uid={} *; allow root *;", *current_uid())
             .parse()
             .unwrap()
     }

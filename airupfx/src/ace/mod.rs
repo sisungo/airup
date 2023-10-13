@@ -4,7 +4,7 @@ pub mod builtins;
 pub mod parser;
 
 use crate::{
-    env::{find_user_by_name, Gid, Uid},
+    env::with_user_by_name,
     process::{ExitStatus, Pid, Wait, WaitError},
     signal::{SIGKILL, SIGTERM},
     std_port::CommandExt as _,
@@ -15,6 +15,7 @@ use std::{
     collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt as _, path::PathBuf,
     sync::Arc, time::Duration,
 };
+use sysinfo::{Gid, Uid, UserExt};
 use tokio::{io::AsyncRead, sync::mpsc};
 
 /// The Airup Command Engine.
@@ -159,13 +160,16 @@ impl Env {
     }
 
     #[inline]
-    pub fn user<T: Into<Option<String>>>(&mut self, name: T) -> Result<&mut Self, Error> {
-        let name = name.into();
-        let user = match &name {
-            Some(x) => find_user_by_name(x).ok_or(Error::UserNotFound)?,
+    pub async fn user<T: Into<Option<String>>>(&mut self, name: T) -> Result<&mut Self, Error> {
+        let name = match name.into() {
+            Some(x) => x,
             None => return Ok(self),
         };
-        Ok(self.uid(user.uid).gid(user.gid))
+        let (uid, gid) =
+            with_user_by_name(&name, |user| (user.id().clone(), user.group_id().clone()))
+                .await
+                .ok_or(Error::UserNotFound)?;
+        Ok(self.uid(uid).gid(gid))
     }
 
     #[inline]
@@ -226,11 +230,11 @@ impl Env {
 
     async fn as_command(&self, arg0: &str) -> Result<std::process::Command, Error> {
         let mut command = std::process::Command::new(arg0);
-        if let Some(x) = self.uid {
-            command.uid(x as _);
+        if let Some(x) = &self.uid {
+            command.uid(**x);
         }
-        if let Some(x) = self.gid {
-            command.gid(x as _);
+        if let Some(x) = &self.gid {
+            command.gid(**x);
         }
         if let Some(x) = &self.working_dir {
             command.current_dir(x);

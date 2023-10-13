@@ -2,8 +2,8 @@
 //!
 //! These will be deleted when the features gets stablized.
 
-use crate::env::Gid;
 use std::os::unix::process::CommandExt as _;
+use sysinfo::Gid;
 
 /// Port of unstable feature `#![feature(result_option_inspect)]` to stable Rust.
 ///
@@ -49,7 +49,7 @@ impl CommandExt for std::process::Command {
     }
 
     fn groups(&mut self, groups: &[Gid]) -> &mut Self {
-        let groups: Vec<_> = groups.iter().map(|x| *x as _).collect();
-        unsafe { self.pre_exec(move || crate::sys::env::setgroups(&groups)) }
+        let groups: Vec<_> = groups.iter().map(|x| **x).collect();
+        unsafe { self.pre_exec(move || crate::sys::env::setgroups(&groups[..])) }
     }
 }

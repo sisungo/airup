@@ -8,6 +8,7 @@ use crate::app::airupd;
 use airupfx::prelude::*;
 use anyhow::anyhow;
 use std::{path::Path, sync::Arc};
+use sysinfo::Uid;
 
 /// An instance of the Airup IPC context.
 #[derive(Debug)]

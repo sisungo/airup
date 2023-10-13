@@ -1,7 +1,6 @@
 //! The AirupFX prelude.
 
 pub use crate::ace::Ace;
-pub use crate::env::{find_user_by_name, find_user_by_uid, Gid, Uid, UserEntry};
 pub use crate::fs::DirChain;
 pub use crate::power::{power_manager, PowerManager};
 pub use crate::process::Pid;

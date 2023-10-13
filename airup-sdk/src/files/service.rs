@@ -2,13 +2,13 @@
 //! This module contains [Service], the main file format of an Airup service and its combinations.
 
 use super::ReadError;
-use airupfx::env::{Gid, Uid};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
     time::Duration,
 };
+use sysinfo::{Gid, Uid};
 
 /// An Airup service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,9 +78,17 @@ pub struct Env {
     pub user: Option<String>,
 
     /// UID to execute for the service.
+    #[serde(
+        serialize_with = "airupfx::env::users::serialize_option_uid",
+        deserialize_with = "airupfx::env::users::deserialize_option_uid"
+    )]
     pub uid: Option<Uid>,
 
     /// GID to execute for the service.
+    #[serde(
+    serialize_with = "airupfx::env::users::serialize_option_gid",
+    deserialize_with = "airupfx::env::users::deserialize_option_gid"
+)]
     pub gid: Option<Gid>,
 
     /// Determines if environment variables from `airupd` process should be removed or not.
@@ -107,12 +115,13 @@ pub struct Env {
     pub vars: BTreeMap<String, Option<String>>,
 }
 impl Env {
-    pub fn into_ace(&self) -> Result<airupfx::ace::Env, airupfx::ace::Error> {
+    pub async fn into_ace(&self) -> Result<airupfx::ace::Env, airupfx::ace::Error> {
         let mut result = airupfx::ace::Env::new();
 
         result
-            .user(self.user.clone())?
-            .uid(self.uid)
+            .user(self.user.clone())
+            .await?
+            .uid(self.uid.clone())
             .gid(self.gid)
             .stdout(self.stdout.clone().into_ace())
             .stderr(self.stderr.clone().into_ace())

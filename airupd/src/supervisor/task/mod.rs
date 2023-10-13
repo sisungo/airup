@@ -128,7 +128,7 @@ pub fn task_helper() -> (TaskHelperHandle, TaskHelper) {
 pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
     let mut ace = Ace::new();
 
-    ace.env = context.service.env.into_ace()?;
+    ace.env = context.service.env.into_ace().await?;
     if let Some(pid) = context.pid().await {
         ace.env.var("MAINPID", pid.to_string());
     }
