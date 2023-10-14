@@ -6,9 +6,12 @@ pub use users::{current_uid, with_current_user, with_user_by_id, with_user_by_na
 
 use std::{
     ffi::{OsStr, OsString},
-    sync::{OnceLock, RwLock},
+    sync::RwLock,
 };
+use once_cell::sync::Lazy;
 use sysinfo::SystemExt;
+
+static SYSINFO: Lazy<RwLock<sysinfo::System>> = Lazy::new(|| RwLock::new(sysinfo::System::new()));
 
 /// Sets environment variables in the iterator for the currently running process, removing environment variables with value
 /// `None`.
@@ -41,16 +44,8 @@ pub async fn refresh() {
     users::refresh().await;
 }
 
-/// Returns a reference to the global unique locked [sysinfo::System] instance.
-#[inline]
-fn sysinfo() -> &'static RwLock<sysinfo::System> {
-    static SYSINFO: OnceLock<RwLock<sysinfo::System>> = OnceLock::new();
-
-    SYSINFO.get_or_init(|| RwLock::new(sysinfo::System::default()))
-}
-
 /// Returns host name of the machine currently running the process.
 #[inline]
 pub fn host_name() -> Option<String> {
-    sysinfo().read().unwrap().host_name()
+    SYSINFO.read().unwrap().host_name()
 }
