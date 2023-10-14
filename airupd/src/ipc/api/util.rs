@@ -25,11 +25,11 @@ pub fn null() -> serde_json::Value {
 }
 
 /// Returns `Ok(())` if given context is permitted to perform the operation, other wise returns `Err(_)`.
-pub async fn check_perm(context: &SessionContext, actions: &[Action]) -> Result<(), Error> {
+pub fn check_perm(context: &SessionContext, actions: &[Action]) -> Result<(), Error> {
     match system_conf().system.security {
         Security::Disabled => Ok(()),
         Security::Simple => check_perm_simple(context),
-        Security::Policy => check_perm_policy(context, actions).await,
+        Security::Policy => check_perm_policy(context, actions),
     }
 }
 
@@ -43,10 +43,10 @@ fn check_perm_simple(context: &SessionContext) -> Result<(), Error> {
     }
 }
 
-async fn check_perm_policy(context: &SessionContext, actions: &[Action]) -> Result<(), Error> {
+fn check_perm_policy(context: &SessionContext, actions: &[Action]) -> Result<(), Error> {
     let actions: Actions = actions.iter().cloned().into();
     match &context.uid {
-        Some(uid) => match airupd().storage.config.policy.check(uid, &actions).await {
+        Some(uid) => match airupd().storage.config.policy.check(uid, &actions) {
             true => Ok(()),
             false => Err(Error::permission_denied(actions.iter())),
         },

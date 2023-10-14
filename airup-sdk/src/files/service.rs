@@ -80,15 +80,17 @@ pub struct Env {
     /// UID to execute for the service.
     #[serde(
         serialize_with = "airupfx::env::users::serialize_option_uid",
-        deserialize_with = "airupfx::env::users::deserialize_option_uid"
+        deserialize_with = "airupfx::env::users::deserialize_option_uid",
+        default
     )]
     pub uid: Option<Uid>,
 
     /// GID to execute for the service.
     #[serde(
-    serialize_with = "airupfx::env::users::serialize_option_gid",
-    deserialize_with = "airupfx::env::users::deserialize_option_gid"
-)]
+        serialize_with = "airupfx::env::users::serialize_option_gid",
+        deserialize_with = "airupfx::env::users::deserialize_option_gid",
+        default
+    )]
     pub gid: Option<Gid>,
 
     /// Determines if environment variables from `airupd` process should be removed or not.

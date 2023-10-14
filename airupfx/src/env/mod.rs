@@ -4,11 +4,11 @@ pub mod users;
 
 pub use users::{current_uid, with_current_user, with_user_by_id, with_user_by_name};
 
+use once_cell::sync::Lazy;
 use std::{
     ffi::{OsStr, OsString},
     sync::RwLock,
 };
-use once_cell::sync::Lazy;
 use sysinfo::SystemExt;
 
 static SYSINFO: Lazy<RwLock<sysinfo::System>> = Lazy::new(|| RwLock::new(sysinfo::System::new()));
@@ -41,7 +41,7 @@ pub fn take_var<K: AsRef<OsStr>>(key: K) -> Result<String, std::env::VarError> {
 /// Refreshes the environmental database.
 #[inline]
 pub async fn refresh() {
-    users::refresh().await;
+    users::refresh();
 }
 
 /// Returns host name of the machine currently running the process.

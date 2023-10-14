@@ -29,14 +29,14 @@ fn echo_raw(_: Arc<SessionContext>, x: Request) -> MethodFuture {
 
 fn dump(context: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move {
-        check_perm(&context, &[Action::Dump]).await?;
+        check_perm(&context, &[Action::Dump])?;
         ok(format!("{:?}", airupd()))
     })
 }
 
 fn exit(context: Arc<SessionContext>, x: Request) -> MethodFuture {
     Box::pin(async move {
-        check_perm(&context, &[Action::Power]).await?;
+        check_perm(&context, &[Action::Power])?;
         airupd()
             .lifetime
             .exit(x.extract_params().unwrap_or_default());
@@ -46,7 +46,7 @@ fn exit(context: Arc<SessionContext>, x: Request) -> MethodFuture {
 
 fn reload_image(context: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move {
-        check_perm(&context, &[Action::Power]).await?;
+        check_perm(&context, &[Action::Power])?;
         airupd().lifetime.reload_image();
         ok_null()
     })

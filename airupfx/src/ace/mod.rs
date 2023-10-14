@@ -167,7 +167,6 @@ impl Env {
         };
         let (uid, gid) =
             with_user_by_name(&name, |user| (user.id().clone(), user.group_id().clone()))
-                .await
                 .ok_or(Error::UserNotFound)?;
         Ok(self.uid(uid).gid(gid))
     }
