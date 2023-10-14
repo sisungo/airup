@@ -6,10 +6,10 @@ mod raw;
 
 pub use raw::{Action, Actions};
 
-use std::sync::RwLock;
 use self::raw::{Policy, Subject, Verb};
 use crate::{env::with_user_by_name, prelude::*};
 use ahash::AHashMap;
+use std::sync::RwLock;
 use sysinfo::{Uid, UserExt};
 
 /// Represents to a policy database on the filesystem.

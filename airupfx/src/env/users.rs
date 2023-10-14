@@ -1,6 +1,6 @@
-use std::sync::RwLock;
 use once_cell::sync::Lazy;
 use serde::de::Error;
+use std::sync::RwLock;
 use sysinfo::{Gid, SystemExt, Uid, User, UserExt};
 
 static USERS: Lazy<RwLock<sysinfo::System>> = Lazy::new(|| {

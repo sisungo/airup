@@ -129,8 +129,9 @@ pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
     let mut ace = Ace::new();
 
     ace.env = context.service.env.into_ace().await?;
+    ace.env.var("AIRUP_SERVICE", context.service.name.clone());
     if let Some(pid) = context.pid().await {
-        ace.env.var("MAINPID", pid.to_string());
+        ace.env.var("AIRUP_SERVICE_MAINPID", pid.to_string());
     }
 
     Ok(ace)
