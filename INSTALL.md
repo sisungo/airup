@@ -8,7 +8,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 Some build dependencies are optional, but is useful for some workflows:
- - [cargo-make](https://github.com/sagiegurari/cargo-make): The workflow manager.
+ - [cargo-make](https://github.com/sagiegurari/cargo-make): A workflow manager for Rust.
 
 ## Configuration
 Some Airup functions are configured at build time. The build manifest which is located at `build_manifest.rs` stores primitive

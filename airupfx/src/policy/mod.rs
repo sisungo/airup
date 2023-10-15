@@ -92,10 +92,10 @@ impl Compiled {
     /// Returns `true` if provided user is permitted to perform the operation.
     fn check(&self, user: &Uid, actions: &Actions) -> bool {
         self.user_allow
-            .get(&user)
+            .get(user)
             .map(|x| actions.is_subset(x))
             .unwrap_or_default()
-            || crate::env::with_user_by_id(&user, |entry| {
+            || crate::env::with_user_by_id(user, |entry| {
                 entry.groups().iter().any(|x| {
                     self.group_allow
                         .get(x)
@@ -121,7 +121,7 @@ impl From<Policy> for Compiled {
                     }
                     Subject::User(u) => {
                         crate::env::with_user_by_name(&u, |x| {
-                            let set = result.user_allow.get_or_default(&x.id());
+                            let set = result.user_allow.get_or_default(x.id());
                             i.actions.drain().for_each(|x| {
                                 set.insert(x);
                             });
@@ -144,7 +144,7 @@ impl From<Policy> for Compiled {
                     }
                     Subject::User(u) => {
                         with_user_by_name(&u, |x| {
-                            let set = result.user_allow.get_or_default(&x.id());
+                            let set = result.user_allow.get_or_default(x.id());
                             i.actions.drain().for_each(|x| {
                                 set.remove(&x);
                             });
