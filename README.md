@@ -1,7 +1,7 @@
 # Airup
 ![License Badge](https://img.shields.io/badge/license-Unlicense-blue)
 
-Airup is a modern, portable and fast `init` daemon implementation.
+Airup is a modern, portable and fast implementation of daemon supervisors and the `init` daemon.
 
 ## Project Status
 *WARNING*: This project is currently in unstable status and should *NOT* be used in any production environment.
@@ -12,14 +12,11 @@ Airup is a modern, portable and fast `init` daemon implementation.
 ## Build & Installation
 View [Installation Guide](INSTALL.md).
 
-## Vulnerability Reporting
-For reporting a security vulnerability, please [contact sisungo](mailto:sisungo@icloud.com).
-
 ## License
 Airup is licensed under [The Unlicense](LICENSE).
 
 ## Contributing
-We are welcome to all people who want to contribute.
+View [Contributor's Manual](CONTRIBUTING.md).
 
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in `airup` by you, shall be
-licensed under `The Unlicense` as above, without any additional terms or conditions.
+## Reporting Security Issues
+View [Security Policy](SECURITY.md).
