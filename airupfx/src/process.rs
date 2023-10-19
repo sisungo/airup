@@ -186,13 +186,8 @@ pub fn init() {
     sys::process::init();
 }
 
-pub async fn prepare_ops() -> impl Send + Sync {
-    sys::process::prepare_ops().await
-}
-
 /// Spawns a process associated with given [std::process::Command], returning a [Child] object.
 pub async fn spawn(cmd: &mut std::process::Command) -> std::io::Result<Child> {
-    let _lock = prepare_ops().await;
     Ok(Child::from_std(cmd.spawn()?))
 }
 

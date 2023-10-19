@@ -99,7 +99,6 @@ impl Child {
     /// ## Cancel Safety
     /// This method is cancel safe.
     pub async fn from_pid(pid: Pid) -> std::io::Result<Self> {
-        let _lock = child_queue().lock_waiter().await;
         match wait_nonblocking(pid)? {
             Some(wait) => Ok(Self {
                 pid,
@@ -162,7 +161,6 @@ impl Drop for Child {
 /// A queue of waiting child processes.
 #[derive(Debug, Default)]
 struct ChildQueue {
-    waiter_lock: tokio::sync::RwLock<()>,
     queue: RwLock<AHashMap<Pid, mpsc::Sender<Wait>>>,
 }
 impl ChildQueue {
@@ -197,7 +195,6 @@ impl ChildQueue {
                     };
 
                     if wait.code().is_some() || wait.signal().is_some() {
-                        let _lock = self.waiter_lock.write().await;
                         self.send(wait).await;
                         continue;
                     }
@@ -228,11 +225,6 @@ impl ChildQueue {
             None => None,
         }
     }
-
-    /// Gets a shared lock access of the waiter lock.
-    pub async fn lock_waiter(&self) -> tokio::sync::RwLockReadGuard<'_, ()> {
-        self.waiter_lock.read().await
-    }
 }
 
 /// Returns a reference to the global unique [ChildQueue] instance.
@@ -255,8 +247,4 @@ pub enum WaitError {
 
 pub fn init() {
     ChildQueue::init();
-}
-
-pub async fn prepare_ops() -> tokio::sync::RwLockReadGuard<'static, ()> {
-    child_queue().lock_waiter().await
 }

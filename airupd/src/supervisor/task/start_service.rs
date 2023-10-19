@@ -101,7 +101,6 @@ impl StartService {
                 }
             }
             Kind::Forking => {
-                let _lock = airupfx::process::prepare_ops().await;
                 ace.run_wait_timeout(&self.context.service.exec.start, countdown.left())
                     .await??;
                 let pid: Pid = tokio::fs::read_to_string(
