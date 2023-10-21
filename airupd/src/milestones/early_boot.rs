@@ -6,7 +6,7 @@ use airupfx::prelude::*;
 pub async fn enter() {
     let ace = Ace::default();
 
-    for &i in airupfx::config::BUILD_MANIFEST.early_cmds {
+    for i in &airupfx::config::build_manifest().early_cmds {
         if let Err(x) = super::run_wait(&ace, i).await {
             tracing::error!(target: "console", "Failed to execute command `{i}` in `early_boot` milestone: {}", x);
             airupfx::process::emergency();

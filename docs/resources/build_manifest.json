@@ -1,0 +1,10 @@
+{
+    "os_name": "\u001b[36;4mAirup\u001b[0m",
+    "config_dir": "/etc/airup",
+    "service_dir": "/etc/airup/services",
+    "milestone_dir": "/etc/airup/milestones",
+    "runtime_dir": "/run/airup",
+    "env_vars": {},
+    "early_cmds": [],
+    "security": "policy"
+}

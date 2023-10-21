@@ -165,9 +165,8 @@ impl Env {
             Some(x) => x,
             None => return Ok(self),
         };
-        let (uid, gid) =
-            with_user_by_name(&name, |user| (user.id().clone(), user.group_id()))
-                .ok_or(Error::UserNotFound)?;
+        let (uid, gid) = with_user_by_name(&name, |user| (user.id().clone(), user.group_id()))
+            .ok_or(Error::UserNotFound)?;
         Ok(self.uid(uid).gid(gid))
     }
 

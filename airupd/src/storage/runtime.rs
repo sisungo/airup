@@ -12,7 +12,7 @@ pub struct Runtime {
 impl Runtime {
     /// Creates a new [Runtime] instance.
     pub async fn new() -> Self {
-        let base_dir = airupfx::config::BUILD_MANIFEST.runtime_dir;
+        let base_dir = airupfx::config::build_manifest().runtime_dir;
         tokio::fs::create_dir_all(&base_dir).await.ok();
 
         Self { base_dir }
@@ -25,7 +25,9 @@ impl Runtime {
 
     /// Creates an IPC server.
     pub async fn ipc_server(&self) -> anyhow::Result<ipc::Server> {
-        ipc::Server::new_force(self.base_dir.join("airupd.sock")).await
+        let socket_path = self.base_dir.join("airupd.sock");
+        std::env::set_var("AIRUP_SOCK", &socket_path);
+        ipc::Server::new_force(&socket_path).await
     }
 }
 

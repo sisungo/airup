@@ -1,7 +1,7 @@
 mod build;
 mod system_conf;
 
-pub use build::MANIFEST as BUILD_MANIFEST;
+pub use build::manifest as build_manifest;
 pub use system_conf::SystemConf;
 
 use serde::{Deserialize, Serialize};

@@ -1,7 +1,9 @@
 //! # Airup CLI
 
 mod debug;
+mod disable;
 mod edit;
+mod enable;
 mod query;
 mod reboot;
 mod reload;
@@ -21,9 +23,11 @@ pub enum Cmdline {
     Reload(reload::Cmdline),
     Restart(restart::Cmdline),
     Query(query::Cmdline),
-    Reboot(reboot::Cmdline),
     SelfReload(self_reload::Cmdline),
+    Reboot(reboot::Cmdline),
     Edit(edit::Cmdline),
+    Enable(enable::Cmdline),
+    Disable(disable::Cmdline),
     Debug(debug::Cmdline),
 }
 
@@ -39,6 +43,8 @@ async fn main() {
         Cmdline::Reboot(cmdline) => reboot::main(cmdline).await,
         Cmdline::SelfReload(cmdline) => self_reload::main(cmdline).await,
         Cmdline::Edit(cmdline) => edit::main(cmdline).await,
+        Cmdline::Enable(cmdline) => enable::main(cmdline).await,
+        Cmdline::Disable(cmdline) => disable::main(cmdline).await,
         Cmdline::Debug(cmdline) => debug::main(cmdline).await,
     };
     if let Err(e) = result {

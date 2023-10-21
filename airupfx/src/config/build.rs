@@ -1,68 +1,18 @@
 #![allow(unused)]
 
-use super::{Security, Security::*};
+use super::Security;
+use ahash::HashMap;
 use once_cell::sync::Lazy;
-use std::path::Path;
+use serde::{Deserialize, Serialize};
+use std::{path::Path, sync::OnceLock};
 
-macro_rules! map {
-    (@$key:literal : $val:literal) => {
-        ($key, Some($val))
-    };
-    (@$key:literal : null) => {
-        ($key, None)
-    };
-    ({ $($key:literal : $val:tt),* }) => {
-        &[$(map!(@$key : $val))*]
-    };
-    ({ $($key:literal : $val:tt),* ,}) => {
-        map!({ $($key : $val),* })
-    };
-}
-macro_rules! build_manifest {
-    (@$result:expr, os_name : $val:literal) => {
-        $result.os_name = $val;
-    };
-    (@$result:expr, config_dir : $val:literal) => {
-        $result.config_dir = ::std::path::Path::new($val);
-    };
-    (@$result:expr, service_dir : $val:literal) => {
-        $result.service_dir = ::std::path::Path::new($val);
-    };
-    (@$result:expr, milestone_dir : $val:literal) => {
-        $result.milestone_dir = ::std::path::Path::new($val);
-    };
-    (@$result:expr, runtime_dir : $val:literal) => {
-        $result.runtime_dir = ::std::path::Path::new($val);
-    };
-    (@$result:expr, early_cmds : $val:expr) => {
-        $result.early_cmds = &$val;
-    };
-    (@$result:expr, env_vars : $val:tt) => {
-        $result.env_vars = map!($val);
-    };
-    (@$result:expr, security : $val:expr) => {
-        $result.security = $val;
-    };
-    ($($key:ident : $val:tt),* ,) => {
-        build_manifest!($($key : $val),*)
-    };
-    ($($key:ident : $val:tt),*) => {
-        {
-            let mut result = BuildManifest::default();
-            $(
-                build_manifest!(@result, $key : $val);
-            )*
-            result
-        }
-    };
-}
-
-pub static MANIFEST: Lazy<BuildManifest> = Lazy::new(|| include!("../../../build_manifest.rs"));
+pub static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
 
 /// Represents to `build_manifest.json`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildManifest {
     /// Name of the running operating system.
+    #[serde(default = "default_os_name")]
     pub os_name: &'static str,
 
     /// Path of Airup's system-wide config directory, e.g. `/etc/airup`.
@@ -78,25 +28,32 @@ pub struct BuildManifest {
     pub runtime_dir: &'static Path,
 
     /// Table of initial environment variables.
-    pub env_vars: &'static [(&'static str, Option<&'static str>)],
+    #[serde(default)]
+    pub env_vars: HashMap<&'static str, Option<&'static str>>,
 
     /// Commands executed in `early_boot` pseudo-milestone.
-    pub early_cmds: &'static [&'static str],
+    #[serde(default)]
+    pub early_cmds: Vec<&'static str>,
 
     /// Default security model to use.
+    #[serde(default)]
     pub security: Security,
 }
-impl Default for BuildManifest {
-    fn default() -> Self {
-        Self {
-            os_name: "\x1b[36;4mAirup\x1b[0m",
-            config_dir: Path::new("/etc/airup"),
-            service_dir: Path::new("/etc/airup/services"),
-            milestone_dir: Path::new("/etc/airup/milestones"),
-            runtime_dir: Path::new("/run/airup"),
-            env_vars: &[],
-            early_cmds: &[],
-            security: Security::Policy,
-        }
-    }
+
+fn default_os_name() -> &'static str {
+    "\x1b[36;4mAirup\x1b[0m"
+}
+
+pub fn manifest() -> &'static BuildManifest {
+    MANIFEST.get_or_init(|| {
+        serde_json::from_str(include_str!("../../../build_manifest.json")).expect("bad airup build")
+    })
+}
+
+/// Sets the build manifest to the specific value.
+/// 
+/// ## Panic
+/// Panics if the manifest is already set, which may be done by any call of [manifest] or [set_manifest].
+pub fn set_manifest(manifest: BuildManifest) {
+    MANIFEST.set(manifest);
 }
