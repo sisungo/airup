@@ -1,7 +1,7 @@
 use airup_sdk::{system::ConnectionExt, Connection};
 use clap::Parser;
 
-/// Reboots the system
+/// Reboot, power-off or halt the system
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
