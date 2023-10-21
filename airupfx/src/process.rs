@@ -5,7 +5,7 @@ use std::{convert::Infallible, sync::OnceLock};
 use tokio::process::{ChildStderr, ChildStdout};
 
 /// Represents to an OS-assigned process identifier.
-pub type Pid = isize;
+pub type Pid = libc::pid_t;
 
 /// Returns the OS-assigned process identifier associated with this process.
 pub fn id() -> Pid {

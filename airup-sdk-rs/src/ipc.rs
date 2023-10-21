@@ -145,7 +145,7 @@ impl Response {
         match self {
             Self::Ok(val) => {
                 Ok(serde_json::from_value(val)
-                    .map_err(|_| ApiError::bad_response("TypeError", ""))?)
+                    .map_err(|err| ApiError::bad_response("TypeError", format!("{:?}", err)))?)
             }
             Self::Err(err) => Err(err),
         }

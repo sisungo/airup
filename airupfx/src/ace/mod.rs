@@ -15,7 +15,7 @@ use std::{
     collections::BTreeMap, ffi::OsString, os::unix::process::CommandExt as _, path::PathBuf,
     sync::Arc, time::Duration,
 };
-use sysinfo::{Gid, Uid, UserExt};
+use sysinfo::{Gid, UserExt};
 use tokio::{io::AsyncRead, sync::mpsc};
 
 /// The Airup Command Engine.
@@ -119,8 +119,8 @@ impl Default for Modules {
 /// Environment of an ACE engine.
 #[derive(Debug, Clone, Default)]
 pub struct Env {
-    uid: Option<Uid>,
-    gid: Option<Gid>,
+    uid: Option<libc::uid_t>,
+    gid: Option<libc::gid_t>,
     groups: Option<Vec<Gid>>,
     clear_vars: bool,
     vars: BTreeMap<OsString, Option<OsString>>,
@@ -136,7 +136,7 @@ impl Env {
     }
 
     #[inline]
-    pub fn uid<T: Into<Option<Uid>>>(&mut self, uid: T) -> &mut Self {
+    pub fn uid<T: Into<Option<libc::uid_t>>>(&mut self, uid: T) -> &mut Self {
         if let Some(x) = uid.into() {
             self.uid = Some(x);
         }
@@ -144,7 +144,7 @@ impl Env {
     }
 
     #[inline]
-    pub fn gid<T: Into<Option<Gid>>>(&mut self, gid: T) -> &mut Self {
+    pub fn gid<T: Into<Option<libc::gid_t>>>(&mut self, gid: T) -> &mut Self {
         if let Some(x) = gid.into() {
             self.gid = Some(x);
         }
@@ -165,7 +165,7 @@ impl Env {
             Some(x) => x,
             None => return Ok(self),
         };
-        let (uid, gid) = with_user_by_name(&name, |user| (user.id().clone(), user.group_id()))
+        let (uid, gid) = with_user_by_name(&name, |user| (**user.id(), *user.group_id()))
             .ok_or(Error::UserNotFound)?;
         Ok(self.uid(uid).gid(gid))
     }
@@ -229,10 +229,10 @@ impl Env {
     async fn as_command(&self, arg0: &str) -> Result<std::process::Command, Error> {
         let mut command = std::process::Command::new(arg0);
         if let Some(x) = &self.uid {
-            command.uid(**x);
+            command.uid(*x);
         }
         if let Some(x) = &self.gid {
-            command.gid(**x);
+            command.gid(*x);
         }
         if let Some(x) = &self.working_dir {
             command.current_dir(x);

@@ -8,7 +8,6 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
-use sysinfo::{Gid, Uid};
 
 /// An Airup service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,20 +77,10 @@ pub struct Env {
     pub user: Option<String>,
 
     /// UID to execute for the service.
-    #[serde(
-        serialize_with = "airupfx::env::users::serialize_option_uid",
-        deserialize_with = "airupfx::env::users::deserialize_option_uid",
-        default
-    )]
-    pub uid: Option<Uid>,
+    pub uid: Option<libc::uid_t>,
 
     /// GID to execute for the service.
-    #[serde(
-        serialize_with = "airupfx::env::users::serialize_option_gid",
-        deserialize_with = "airupfx::env::users::deserialize_option_gid",
-        default
-    )]
-    pub gid: Option<Gid>,
+    pub gid: Option<libc::gid_t>,
 
     /// Determines if environment variables from `airupd` process should be removed or not.
     #[serde(default)]
@@ -123,7 +112,7 @@ impl Env {
         result
             .user(self.user.clone())
             .await?
-            .uid(self.uid.clone())
+            .uid(self.uid)
             .gid(self.gid)
             .stdout(self.stdout.clone().into_ace())
             .stderr(self.stderr.clone().into_ace())
