@@ -71,9 +71,17 @@ impl Default for System {
     }
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Locations {
-    pub logs: Option<PathBuf>,
+    #[serde(default = "default_log_dir")]
+    pub logs: PathBuf,
+}
+impl Default for Locations {
+    fn default() -> Self {
+        Self {
+            logs: default_log_dir(),
+        }
+    }
 }
 
 /// Represents to Airup's environment.
@@ -105,4 +113,8 @@ fn default_os_name() -> Cow<'static, str> {
 
 fn default_security() -> Security {
     super::build_manifest().security
+}
+
+fn default_log_dir() -> PathBuf {
+    super::build_manifest().log_dir.into()
 }

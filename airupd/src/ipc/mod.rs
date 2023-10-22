@@ -79,7 +79,7 @@ pub struct Session {
     context: Arc<SessionContext>,
 }
 impl Session {
-    /// Creates a new `Session` with the given [airupfx::ipc::Connection].
+    /// Creates a new `Session` with the given [airup_sdk::ipc::Connection].
     pub async fn new(conn: airup_sdk::ipc::Connection) -> Self {
         let context = Arc::new(SessionContext::with_conn(&conn));
         Self { conn, context }

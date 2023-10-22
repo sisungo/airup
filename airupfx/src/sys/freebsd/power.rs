@@ -1,29 +1,26 @@
-//! BSD-family (FreeBSD, NetBSD, DragonflyBSD, OpenBSD) power management.
+//! FreeBSD power management.
 
 use crate::power::PowerManager;
 use libc::{RB_AUTOBOOT, RB_HALT, RB_POWEROFF};
 use std::convert::Infallible;
 
 #[derive(Default)]
-pub struct Bsd;
-impl Bsd {
-    pub const GLOBAL: &'static Self = &Self;
-}
-impl PowerManager for Bsd {
+pub struct FreeBsd;
+impl PowerManager for FreeBsd {
     fn poweroff(&self) -> std::io::Result<Infallible> {
-        bsd_reboot(RB_POWEROFF)
+        freebsd_reboot(RB_POWEROFF)
     }
 
     fn reboot(&self) -> std::io::Result<Infallible> {
-        bsd_reboot(RB_AUTOBOOT)
+        freebsd_reboot(RB_AUTOBOOT)
     }
 
     fn halt(&self) -> std::io::Result<Infallible> {
-        bsd_reboot(RB_HALT)
+        freebsd_reboot(RB_HALT)
     }
 }
 
-fn bsd_reboot(cmd: libc::c_int) -> std::io::Result<Infallible> {
+fn freebsd_reboot(cmd: libc::c_int) -> std::io::Result<Infallible> {
     let status = unsafe { reboot(cmd) };
     match status {
         -1 => Err(std::io::Error::last_os_error()),

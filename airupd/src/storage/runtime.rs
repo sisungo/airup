@@ -37,11 +37,11 @@ pub struct Lock(PathBuf);
 impl Lock {
     /// Creates an owned `Lock` instance for specified path.
     pub async fn new(path: PathBuf) -> anyhow::Result<Self> {
-        if airupfx::process::id() != 1 && tokio::fs::try_exists(&path).await.unwrap_or(true) {
+        if *airupfx::process::ID != 1 && tokio::fs::try_exists(&path).await.unwrap_or(true) {
             return Err(anyhow!("already locked"));
         }
 
-        tokio::fs::write(&path, airupfx::process::id().to_string().as_bytes()).await?;
+        tokio::fs::write(&path, airupfx::process::ID.to_string().as_bytes()).await?;
 
         Ok(Self(path))
     }

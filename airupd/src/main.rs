@@ -14,7 +14,7 @@ use airupfx::prelude::*;
 #[tokio::main]
 async fn main() {
     // Initializes Airup subsystems
-    airupfx::process::init();
+    airupfx::sys::init();
     env::Cmdline::init();
     airupfx::config::init().await;
     airupfx::log::Builder::new()

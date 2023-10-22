@@ -1,18 +1,15 @@
 //! A module for working with processes.
 
 use crate::sys;
-use std::{convert::Infallible, sync::OnceLock};
+use std::convert::Infallible;
+use once_cell::sync::Lazy;
 use tokio::process::{ChildStderr, ChildStdout};
 
 /// Represents to an OS-assigned process identifier.
 pub type Pid = libc::pid_t;
 
-/// Returns the OS-assigned process identifier associated with this process.
-pub fn id() -> Pid {
-    static ID: OnceLock<Pid> = OnceLock::new();
-
-    *ID.get_or_init(|| std::process::id() as _)
-}
+/// The OS-assigned process identifier associated with this process.
+pub static ID: Lazy<u32> = Lazy::new(|| std::process::id());
 
 /// Reloads the process image with the version on the filesystem.
 pub fn reload_image() -> std::io::Result<Infallible> {
@@ -24,7 +21,7 @@ pub fn reload_image() -> std::io::Result<Infallible> {
 /// If the process has `pid==1`, this will start a shell and reloads the process image. Otherwise this will make current
 /// process exit.
 pub fn emergency() -> ! {
-    if id() == 1 {
+    if *ID == 1 {
         loop {
             tracing::error!(target: "console", "A fatal error has occured. Starting shell...");
             if let Err(e) = shell() {
@@ -180,10 +177,6 @@ impl Child {
     pub fn take_stderr(&mut self) -> Option<ChildStderr> {
         self.0.take_stderr()
     }
-}
-
-pub fn init() {
-    sys::process::init();
 }
 
 /// Spawns a process associated with given [std::process::Command], returning a [Child] object.

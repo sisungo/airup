@@ -27,6 +27,9 @@ pub struct BuildManifest {
     /// Path of Airup's system-wide runtime directory, e.g. `/run/airup`.
     pub runtime_dir: &'static Path,
 
+    /// Path of Airup's system-wide log directory, e.g. `/var/log/airup`.
+    pub log_dir: &'static Path,
+
     /// Table of initial environment variables.
     #[serde(default)]
     pub env_vars: HashMap<&'static str, Option<&'static str>>,

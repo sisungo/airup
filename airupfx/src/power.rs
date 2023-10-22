@@ -39,7 +39,7 @@ impl PowerManager for Fallback {
 impl Fallback {
     /// Prints "It's now safe to turn off the device." to standard error stream and parks current thread.
     fn halt_process() -> ! {
-        if crate::process::id() == 1 {
+        if *crate::process::ID == 1 {
             eprintln!("It's now safe to turn off the device.");
             loop {
                 std::thread::park();
@@ -52,7 +52,7 @@ impl Fallback {
 
 /// Returns a reference to the global unique [PowerManager] instance.
 pub fn power_manager() -> &'static dyn PowerManager {
-    if crate::process::id() == 1 {
+    if *crate::process::ID == 1 {
         crate::sys::power_manager()
     } else {
         Fallback::GLOBAL

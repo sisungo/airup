@@ -9,9 +9,6 @@ use std::{convert::Infallible, ptr::NonNull};
 
 #[derive(Default)]
 pub struct Linux;
-impl Linux {
-    pub const GLOBAL: &'static Self = &Self;
-}
 impl PowerManager for Linux {
     fn poweroff(&self) -> std::io::Result<Infallible> {
         linux_reboot(LINUX_REBOOT_CMD_POWER_OFF, None)?;

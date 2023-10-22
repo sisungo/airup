@@ -43,6 +43,15 @@ pub const SIGWINCH: i32 = libc::SIGWINCH;
 /// Kills the process.
 pub const SIGKILL: i32 = libc::SIGKILL;
 
+/// Segmentation fault.
+pub const SIGSEGV: i32 = libc::SIGSEGV;
+
+/// Aborted.
+pub const SIGABRT: i32 = libc::SIGABRT;
+
+/// Float-point exception.
+pub const SIGFPE: i32 = libc::SIGFPE;
+
 /// Registers a signal handler.
 pub fn signal<
     F: FnMut(i32) -> T + Send + Sync + 'static,
