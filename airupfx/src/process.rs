@@ -1,15 +1,15 @@
 //! A module for working with processes.
 
 use crate::sys;
-use std::convert::Infallible;
 use once_cell::sync::Lazy;
+use std::convert::Infallible;
 use tokio::process::{ChildStderr, ChildStdout};
 
 /// Represents to an OS-assigned process identifier.
 pub type Pid = libc::pid_t;
 
 /// The OS-assigned process identifier associated with this process.
-pub static ID: Lazy<u32> = Lazy::new(|| std::process::id());
+pub static ID: Lazy<u32> = Lazy::new(std::process::id);
 
 /// Reloads the process image with the version on the filesystem.
 pub fn reload_image() -> std::io::Result<Infallible> {

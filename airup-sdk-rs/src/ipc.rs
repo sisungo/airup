@@ -143,10 +143,8 @@ impl Response {
     /// Converts from `Response` to a `Result`.
     pub fn into_result<T: DeserializeOwned>(self) -> Result<T, ApiError> {
         match self {
-            Self::Ok(val) => {
-                Ok(serde_json::from_value(val)
-                    .map_err(|err| ApiError::bad_response("TypeError", format!("{:?}", err)))?)
-            }
+            Self::Ok(val) => Ok(serde_json::from_value(val)
+                .map_err(|err| ApiError::bad_response("TypeError", format!("{:?}", err)))?),
             Self::Err(err) => Err(err),
         }
     }

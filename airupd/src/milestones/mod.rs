@@ -11,6 +11,7 @@ use airup_sdk::{
     Error,
 };
 use airupfx::prelude::*;
+use crate::app;
 
 #[derive(Debug, Default)]
 pub struct Manager {}
@@ -22,18 +23,17 @@ impl Manager {
 
 impl crate::app::Airupd {
     pub async fn enter_milestone(&self, name: String) -> Result<(), Error> {
-        enter_milestone(self, name, &mut AHashSet::with_capacity(8)).await
+        enter_milestone(name, &mut AHashSet::with_capacity(8)).await
     }
 }
 
-fn enter_milestone<'a>(
-    airupd: &'a crate::app::Airupd,
+fn enter_milestone(
     name: String,
-    hist: &'a mut AHashSet<String>,
-) -> BoxFuture<'a, Result<(), Error>> {
+    hist: &mut AHashSet<String>,
+) -> BoxFuture<'_, Result<(), Error>> {
     Box::pin(async move {
         let name = name.strip_suffix(Milestone::SUFFIX).unwrap_or(&name);
-        let def = match airupd.storage.milestones.get(name).await {
+        let def = match app::airupd().storage.milestones.get(name).await {
             Ok(x) => x,
             Err(err) => {
                 tracing::error!(target: "console", "Failed to enter milestone `{}`: {}", name, err);
@@ -56,7 +56,7 @@ fn enter_milestone<'a>(
 
         // Enters dependency milestones
         for dep in def.manifest.milestone.dependencies.iter() {
-            enter_milestone(airupd, dep.into(), hist).await.ok();
+            enter_milestone(dep.into(), hist).await.ok();
         }
 
         // By default, Airup sets `AIRUP_MILESTONE` environment variable to indicate services which milestone is the system
@@ -64,32 +64,32 @@ fn enter_milestone<'a>(
         std::env::set_var("AIRUP_MILESTONE", name);
 
         // Starts services
-        exec_milestone(airupd, &def).await;
+        exec_milestone(&def).await;
 
         Ok(())
     })
 }
 
-async fn exec_milestone(airupd: &crate::app::Airupd, def: &Milestone) {
+async fn exec_milestone(def: &Milestone) {
     match def.manifest.milestone.kind {
-        Kind::Async => exec_milestone_async(airupd, def).await,
-        Kind::Serial => exec_milestone_serial(airupd, def).await,
-        Kind::Sync => exec_milestone_sync(airupd, def).await,
+        Kind::Async => exec_milestone_async(def).await,
+        Kind::Serial => exec_milestone_serial(def).await,
+        Kind::Sync => exec_milestone_sync(def).await,
     }
 }
 
-async fn exec_milestone_async(airupd: &crate::app::Airupd, def: &Milestone) {
+async fn exec_milestone_async(def: &Milestone) {
     let ace = Ace::new();
     for item in def.items().await {
         match item {
             Item::Cache(service) => {
-                if let Err(err) = airupd.cache_service(&service).await {
+                if let Err(err) = app::airupd().cache_service(&service).await {
                     tracing::error!(target: "console", "Failed to load unit {}: {}", service, err);
                 }
             }
-            Item::Start(service) => match airupd.start_service(&service).await {
+            Item::Start(service) => match app::airupd().start_service(&service).await {
                 Ok(_) => {
-                    tracing::info!(target: "console", "Starting {}", display_name(airupd, &service).await)
+                    tracing::info!(target: "console", "Starting {}", display_name(&service).await)
                 }
                 Err(err) => {
                     tracing::error!(target: "console", "Failed to start {}: {}", service, err)
@@ -104,21 +104,21 @@ async fn exec_milestone_async(airupd: &crate::app::Airupd, def: &Milestone) {
     }
 }
 
-async fn exec_milestone_serial(airupd: &crate::app::Airupd, def: &Milestone) {
+async fn exec_milestone_serial(def: &Milestone) {
     let ace = Ace::new();
     for item in def.items().await {
         match item {
             Item::Cache(service) => {
-                if let Err(err) = airupd.cache_service(&service).await {
+                if let Err(err) = app::airupd().cache_service(&service).await {
                     tracing::error!(target: "console", "Failed to load unit {}: {}", service, err);
                 }
             }
-            Item::Start(service) => match airupd.make_service_active(&service).await {
+            Item::Start(service) => match app::airupd().make_service_active(&service).await {
                 Ok(_) => {
-                    tracing::info!(target: "console", "Starting {}", display_name(airupd, &service).await)
+                    tracing::info!(target: "console", "Starting {}", display_name(&service).await)
                 }
                 Err(err) => {
-                    tracing::error!(target: "console", "Failed to start {}: {}", display_name(airupd, &service).await, err);
+                    tracing::error!(target: "console", "Failed to start {}: {}", display_name(&service).await, err);
                 }
             },
             Item::RunCmd(cmd) => {
@@ -130,7 +130,7 @@ async fn exec_milestone_serial(airupd: &crate::app::Airupd, def: &Milestone) {
     }
 }
 
-async fn exec_milestone_sync(airupd: &crate::app::Airupd, def: &Milestone) {
+async fn exec_milestone_sync(def: &Milestone) {
     let ace = Ace::new();
     let items = def.items().await;
     let mut commands = Vec::with_capacity(items.len());
@@ -138,11 +138,11 @@ async fn exec_milestone_sync(airupd: &crate::app::Airupd, def: &Milestone) {
     for item in items {
         match item {
             Item::Cache(service) => {
-                if let Err(err) = airupd.cache_service(&service).await {
+                if let Err(err) = app::airupd().cache_service(&service).await {
                     tracing::error!(target: "console", "Failed to load unit {}: {}", service, err);
                 }
             }
-            Item::Start(service) => match airupd.start_service(&service).await {
+            Item::Start(service) => match app::airupd().start_service(&service).await {
                 Ok(x) => {
                     handles.push((service, x));
                 }
@@ -164,10 +164,10 @@ async fn exec_milestone_sync(airupd: &crate::app::Airupd, def: &Milestone) {
     for (name, handle) in handles {
         match handle.wait().await {
             Ok(_) | Err(Error::UnitStarted) => {
-                tracing::info!(target: "console", "Starting {}", display_name(airupd, &name).await)
+                tracing::info!(target: "console", "Starting {}", display_name(&name).await)
             }
             Err(err) => {
-                tracing::error!(target: "console", "Failed to start {}: {}", display_name(airupd, &name).await, err);
+                tracing::error!(target: "console", "Failed to start {}: {}", display_name(&name).await, err);
             }
         }
     }
@@ -179,8 +179,8 @@ async fn exec_milestone_sync(airupd: &crate::app::Airupd, def: &Milestone) {
     }
 }
 
-async fn display_name(airupd: &crate::app::Airupd, name: &str) -> String {
-    airupd
+async fn display_name(name: &str) -> String {
+    app::airupd()
         .query_service(name)
         .await
         .map(|x| x.service.display_name().into())

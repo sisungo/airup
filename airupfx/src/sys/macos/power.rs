@@ -3,7 +3,7 @@
 #[link(name = "System")]
 extern "C" {
     /// Reboots the system or halts the processor.
-    /// 
+    ///
     /// This is a Apple Private API.
     fn reboot(howto: libc::c_int) -> libc::c_int;
 }

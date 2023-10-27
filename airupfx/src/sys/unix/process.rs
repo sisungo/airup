@@ -1,7 +1,7 @@
 use crate::process::{ExitStatus, Pid, Wait};
 use ahash::AHashMap;
 use std::{
-    cmp::Ordering,
+    cmp,
     convert::Infallible,
     os::unix::process::CommandExt,
     sync::{Mutex, OnceLock, RwLock},
@@ -20,9 +20,9 @@ fn wait_nonblocking(pid: Pid) -> std::io::Result<Option<Wait>> {
     let pid = unsafe { libc::waitpid(pid as _, &mut status, libc::WNOHANG) } as Pid;
 
     match pid.cmp(&0) {
-        Ordering::Equal => Ok(None),
-        Ordering::Less => Err(std::io::Error::last_os_error()),
-        Ordering::Greater => Ok(Some(Wait::new(pid, ExitStatus::from_unix(status)))),
+        cmp::Ordering::Equal => Ok(None),
+        cmp::Ordering::Less => Err(std::io::Error::last_os_error()),
+        cmp::Ordering::Greater => Ok(Some(Wait::new(pid, ExitStatus::from_unix(status)))),
     }
 }
 
