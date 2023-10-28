@@ -1,8 +1,20 @@
-# Xmake cache
-.xmake/
-build/
+# CMake cache
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+*.a
+*.o
+*.so
 
 # MacOS Cache
 .DS_Store
 
+# IDE Config
+.vscode/
 
