@@ -1,7 +1,0 @@
-{
-    "config_dir": "target/airup_data/config",
-    "service_dir": "target/airup_data/config/services",
-    "milestone_dir": "target/airup_data/config/milestones",
-    "runtime_dir": "target/airup_data/runtime",
-    "log_dir": "target/airup_data/log"
-}

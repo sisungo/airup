@@ -1,6 +1,6 @@
 /target
 /Cargo.lock
-/build_manifest.rs
+/build_manifest.json
 /.DS_Store
 /.vscode
 /.idea
