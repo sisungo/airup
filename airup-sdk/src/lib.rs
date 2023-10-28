@@ -3,6 +3,7 @@ pub mod files;
 pub mod ipc;
 pub mod prelude;
 pub mod system;
+pub mod ffi;
 
 pub use error::ApiError as Error;
 use serde::{de::DeserializeOwned, ser::Serialize};
