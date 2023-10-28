@@ -2,6 +2,7 @@
 
 pub mod early_boot;
 
+use crate::app;
 use ahash::AHashSet;
 use airup_sdk::{
     files::{
@@ -11,7 +12,6 @@ use airup_sdk::{
     Error,
 };
 use airupfx::prelude::*;
-use crate::app;
 
 #[derive(Debug, Default)]
 pub struct Manager {}
@@ -27,10 +27,7 @@ impl crate::app::Airupd {
     }
 }
 
-fn enter_milestone(
-    name: String,
-    hist: &mut AHashSet<String>,
-) -> BoxFuture<'_, Result<(), Error>> {
+fn enter_milestone(name: String, hist: &mut AHashSet<String>) -> BoxFuture<'_, Result<(), Error>> {
     Box::pin(async move {
         let name = name.strip_suffix(Milestone::SUFFIX).unwrap_or(&name);
         let def = match app::airupd().storage.milestones.get(name).await {

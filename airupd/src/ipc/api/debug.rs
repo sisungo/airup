@@ -30,7 +30,7 @@ fn echo_raw(_: Arc<SessionContext>, x: Request) -> MethodFuture {
 fn dump(context: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move {
         check_perm(&context, &[Action::Dump])?;
-        ok(format!("{:?}", airupd()))
+        ok(format!("{:#?}", airupd()))
     })
 }
 

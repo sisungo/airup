@@ -7,8 +7,13 @@ use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     methods.insert("info.version", version);
+    methods.insert("info.build_manifest", build_manifest);
 }
 
 fn version(_: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async { ok(env!("CARGO_PKG_VERSION")) })
+}
+
+fn build_manifest(_: Arc<SessionContext>, _: Request) -> MethodFuture {
+    Box::pin(async { ok(airupfx::config::build_manifest()) })
 }
