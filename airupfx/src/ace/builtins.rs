@@ -16,7 +16,7 @@ pub fn init<H: BuildHasher>(builtins: &mut HashMap<&'static str, BuiltinModule, 
 
 pub fn console_setup(args: Vec<String>) -> mpsc::Receiver<i32> {
     builtin_impl(async move {
-        let path = match args.get(0) {
+        let path = match args.first() {
             Some(x) => x,
             None => return 1,
         };

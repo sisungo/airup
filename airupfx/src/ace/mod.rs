@@ -396,6 +396,7 @@ impl Stdio {
             Self::Piped => std::process::Stdio::piped(),
             Self::File(path) => tokio::fs::File::options()
                 .append(true)
+                .create(true)
                 .open(path)
                 .await?
                 .into_std()

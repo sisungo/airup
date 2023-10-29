@@ -1,11 +1,13 @@
 //! # Airup Storage
 
 mod config;
+mod logs;
 mod milestones;
 mod runtime;
 mod services;
 
 use self::config::Config;
+use self::logs::Logs;
 use self::milestones::Milestones;
 use self::runtime::Runtime;
 use self::services::Services;
@@ -17,6 +19,7 @@ pub struct Storage {
     pub runtime: Runtime,
     pub services: Services,
     pub milestones: Milestones,
+    pub logs: Logs,
 }
 impl Storage {
     /// Creates a new [Storage] instance.
@@ -26,6 +29,7 @@ impl Storage {
             runtime: Runtime::new().await,
             services: Services::new(),
             milestones: Milestones::new(),
+            logs: Logs::new(),
         }
     }
 }

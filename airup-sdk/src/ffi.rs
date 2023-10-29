@@ -24,7 +24,7 @@ pub const AIRUP_SDK_INITIALIZED: airup_sdk_result_t = airup_sdk_result_t(2);
 pub const AIRUP_SDK_NOT_INITIALIZED: airup_sdk_result_t = airup_sdk_result_t(2);
 
 /// Initializes the Airup SDK.
-/// 
+///
 /// This should be called before most Airup SDK functions, otherwise they returns [AIRUP_SDK_NOT_INITIALIZED].
 #[no_mangle]
 pub extern "C" fn airup_sdk_init() -> airup_sdk_result_t {
