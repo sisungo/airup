@@ -27,11 +27,12 @@ pub async fn init() {
     SystemConf::init().await;
 }
 
-/// Returns a reference to the global unique [SystemConf] instance.
+/// Returns a reference to the global unique [`SystemConf`] instance.
 ///
 /// ## Panic
 /// Panics if [init] hasn't been called.
 #[inline]
+#[must_use]
 pub fn system_conf() -> &'static SystemConf {
     SystemConf::get()
 }

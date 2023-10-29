@@ -1,4 +1,4 @@
-//! The AirupFX prelude.
+//! The `AirupFX` prelude.
 
 pub use crate::ace::Ace;
 pub use crate::fs::DirChain;

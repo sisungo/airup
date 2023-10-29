@@ -39,10 +39,7 @@ impl Logs {
             .find(path)
             .await
             .ok_or_else(|| std::io::Error::from(std::io::ErrorKind::NotFound))?;
-        tokio::fs::File::options()
-            .read(true)
-            .open(path)
-            .await
+        tokio::fs::File::options().read(true).open(path).await
     }
 }
 impl Default for Logs {

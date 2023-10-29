@@ -29,7 +29,7 @@ pub trait OptionExt<T> {
 impl<T> OptionExt<T> for Option<T> {
     fn inspect_none<F: FnOnce()>(self, op: F) -> Self {
         if self.is_none() {
-            op()
+            op();
         }
 
         self

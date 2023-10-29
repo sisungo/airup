@@ -54,7 +54,7 @@ impl Db {
                         tokio::fs::read_to_string(&path)
                             .await
                             .inspect_err(|e| {
-                                tracing::warn!("failed to read policy file at `{:?}`: {}", i, e)
+                                tracing::warn!("failed to read policy file at `{:?}`: {}", i, e);
                             })
                             .map(|x| {
                                 x.parse()
@@ -63,7 +63,7 @@ impl Db {
                                             "failed to parse policy file at `{:?}`: {}",
                                             i,
                                             e
-                                        )
+                                        );
                                     })
                                     .map(|mut y| policy.merge(&mut y))
                             })

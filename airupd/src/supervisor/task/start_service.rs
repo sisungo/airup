@@ -113,9 +113,7 @@ impl StartService {
                 .map_err(Error::pid_file)?;
                 self.context
                     .set_child(airupfx::ace::Child::Process(
-                        airupfx::process::Child::from_pid(pid)
-                            .await
-                            .map_err(|err| Error::io(&err))?,
+                        airupfx::process::Child::from_pid(pid).map_err(|err| Error::io(&err))?,
                     ))
                     .await;
             }

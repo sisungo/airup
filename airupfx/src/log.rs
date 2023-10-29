@@ -14,6 +14,7 @@ pub struct Builder {
 impl Builder {
     /// Creates a new `Builder` with default settings.
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }

@@ -25,7 +25,7 @@ impl Policy {
     }
 
     /// Merges another policy to current policy, clearing the another one.
-    pub fn merge(&mut self, another: &mut Policy) {
+    pub fn merge(&mut self, another: &mut Self) {
         self.0.append(&mut another.0);
     }
 }
@@ -170,6 +170,7 @@ impl Display for Action {
 pub struct Actions(HashSet<Action>);
 impl Actions {
     /// Returns an action set over all [Action]s.
+    #[must_use]
     pub fn all() -> Self {
         Self(Action::STRING_MAP.iter().map(|x| x.0).collect())
     }

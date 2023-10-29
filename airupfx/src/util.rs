@@ -37,13 +37,13 @@ pub trait OptionExt<T> {
 }
 impl<T> OptionExt<T> for Option<T> {
     fn unwrap_log(self, why: &str) -> T {
-        match self {
-            Some(val) => val,
-            None => {
+        self.map_or_else(
+            || {
                 tracing::error!(target: "console", "{why}");
                 crate::process::emergency();
-            }
-        }
+            },
+            |val| val,
+        )
     }
 }
 

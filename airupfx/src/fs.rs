@@ -65,6 +65,9 @@ impl<'a> DirChain<'a> {
     }
 
     /// Gets a list that contains relative paths of filesystem objects on the chain. The result is sorted (chain-order first).
+    ///
+    /// # Errors
+    /// An `Err(_)` is returned if the underlying filesystem operation failed.
     pub async fn read_chain(&self) -> std::io::Result<Vec<OsString>> {
         let mut result = Vec::new();
         let mut pwd = self.0.clone();
@@ -99,15 +102,17 @@ impl<'a> DirChain<'a> {
     }
 
     /// Finds a file from the chain, or creates it at the end of the chain if not found.
+    ///
+    /// # Errors
+    /// An `Err(_)` is returned if the underlying filesystem operation failed.
     pub async fn find_or_create<P: AsRef<Path>>(&self, path: P) -> std::io::Result<PathBuf> {
         let path = path.as_ref();
-        match self.find(path).await {
-            Some(np) => Ok(np),
-            None => {
-                let np = self.end().await.join(path);
-                tokio::fs::File::create(&np).await?;
-                Ok(np)
-            }
+        if let Some(np) = self.find(path).await {
+            Ok(np)
+        } else {
+            let np = self.end().await.join(path);
+            tokio::fs::File::create(&np).await?;
+            Ok(np)
         }
     }
 }

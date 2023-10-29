@@ -47,10 +47,9 @@ pub fn noop(_: Vec<String>) -> mpsc::Receiver<i32> {
 }
 
 pub async fn wait(rx: &mut mpsc::Receiver<i32>) -> ExitStatus {
-    match rx.recv().await {
-        Some(code) => ExitStatus::Exited(code as _),
-        None => ExitStatus::Signaled(SIGTERM),
-    }
+    (rx.recv().await).map_or(ExitStatus::Signaled(SIGTERM), |code| {
+        ExitStatus::Exited(code as _)
+    })
 }
 
 fn builtin_impl<F: Future<Output = i32> + Send + Sync + 'static>(future: F) -> mpsc::Receiver<i32> {

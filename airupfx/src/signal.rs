@@ -1,6 +1,9 @@
 pub use crate::sys::signal::*;
 
 /// Ignores a signal.
+///
+/// ## Errors
+/// An `Err(_)` is returned if the underlying OS function failed.
 pub fn ignore(signum: i32) -> anyhow::Result<()> {
     signal(signum, |_| async {})
 }

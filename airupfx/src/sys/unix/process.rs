@@ -58,7 +58,7 @@ pub struct Child {
 }
 impl Child {
     /// Returns OS-assign process ID of the child process.
-    pub fn id(&self) -> Pid {
+    pub const fn id(&self) -> Pid {
         self.pid
     }
 
@@ -94,21 +94,23 @@ impl Child {
         }
     }
 
-    /// Creates a [Child] instance from PID.
+    /// Creates a [`Child`] instance from PID.
     ///
     /// ## Cancel Safety
     /// This method is cancel safe.
-    pub async fn from_pid(pid: Pid) -> std::io::Result<Self> {
-        match wait_nonblocking(pid)? {
-            Some(wait) => Ok(Self {
-                pid,
-                wait_queue: None.into(),
-                wait_cached: Some(wait).into(),
-                stdout: None,
-                stderr: None,
-            }),
-            None => Ok(unsafe { Self::from_pid_unchecked(pid, None, None) }),
-        }
+    pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
+        (wait_nonblocking(pid)?).map_or_else(
+            || Ok(unsafe { Self::from_pid_unchecked(pid, None, None) }),
+            |wait| {
+                Ok(Self {
+                    pid,
+                    wait_queue: None.into(),
+                    wait_cached: Some(wait).into(),
+                    stdout: None,
+                    stderr: None,
+                })
+            },
+        )
     }
 
     /// Waits until the process was terminated.

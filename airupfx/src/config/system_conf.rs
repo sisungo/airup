@@ -47,7 +47,7 @@ impl SystemConf {
 
     /// Returns a reference to the global unique [SystemConf] instance.
     ///
-    /// ## Panic
+    /// # Panics
     /// Panics if the instance has not be initialized yet.
     pub fn get() -> &'static SystemConf {
         SYSTEM_CONF.get().unwrap()
@@ -97,10 +97,10 @@ impl Env {
     /// Overrides the environment with this [Env] object.
     fn override_env(&self) {
         let mut vars: BTreeMap<String, Option<String>> = BTreeMap::new();
-        for (k, v) in &super::build_manifest().env_vars {
+        for (&k, v) in &super::build_manifest().env_vars {
             vars.insert(k.to_string(), v.map(Into::into));
         }
-        for (k, v) in self.vars.iter() {
+        for (k, v) in &self.vars {
             vars.insert(k.into(), v.clone());
         }
         crate::env::set_vars(vars);

@@ -28,9 +28,12 @@ pub fn set_vars<I: IntoIterator<Item = (K, Option<V>)>, K: Into<OsString>, V: In
 /// Fetches the environment variable key from the current process, then removes the environment variable from the environment
 /// of current process.
 ///
-/// ## Panics
+/// # Panics
 /// This function may panic if key is empty, contains an ASCII equals sign '=' or the NUL character '\0', or when value contains
 /// the NUL character.
+///
+/// # Errors
+/// An `Err(_)` is returned if the specific variable is not existing.
 #[inline]
 pub fn take_var<K: AsRef<OsStr>>(key: K) -> Result<String, std::env::VarError> {
     let value = std::env::var(key.as_ref())?;

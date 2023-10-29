@@ -12,6 +12,9 @@ pub type Pid = libc::pid_t;
 pub static ID: Lazy<u32> = Lazy::new(std::process::id);
 
 /// Reloads the process image with the version on the filesystem.
+///
+/// ## Errors
+/// An `Err(_)` is returned if the underlying OS function failed.
 pub fn reload_image() -> std::io::Result<Infallible> {
     sys::process::reload_image()
 }
@@ -45,6 +48,9 @@ fn shell() -> std::io::Result<()> {
 }
 
 /// Sends the given signal to the specified process.
+///
+/// ## Errors
+/// An `Err(_)` is returned if the underlying OS function failed.
 pub async fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
     sys::process::kill(pid, signum).await
 }
@@ -91,7 +97,7 @@ impl Wait {
 /// Represents to an exit status.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExitStatus {
-    /// The process was terminated normally by a call to [libc::_exit] or [libc::exit].
+    /// The process was terminated normally by a call to [`libc::_exit`] or [`libc::exit`].
     Exited(libc::c_int),
 
     /// The process was terminated due to receipt of a signal.
@@ -104,7 +110,7 @@ impl ExitStatus {
     /// Represents to a successful exit.
     pub const SUCCESS: Self = Self::Exited(0);
 
-    /// Converts from a `status` returned by [libc::waitpid] to [ExitStatus].
+    /// Converts from a `status` returned by [`libc::waitpid`] to [`ExitStatus`].
     pub fn from_unix(status: libc::c_int) -> Self {
         if libc::WIFEXITED(status) {
             Self::Exited(libc::WEXITSTATUS(status))
@@ -130,16 +136,16 @@ impl Child {
         self.0.id()
     }
 
-    /// Converts from [std::process::Child] to [Child].
+    /// Converts from [`std::process::Child`] to [`Child`].
     pub fn from_std(c: std::process::Child) -> Self {
         Self(sys::process::Child::from_std(c))
     }
 
-    /// Creates a [Child] instance from PID. The PID must be a valid PID that belongs to child process of current process, or
+    /// Creates a [`Child`] instance from PID. The PID must be a valid PID that belongs to child process of current process, or
     /// the behavior is undefined.
     ///
-    /// ## Safety
-    /// Current implementation of AirupFX process module doesn't cause safety issues when the PID doesn't meet the requirements,
+    /// # Safety
+    /// Current implementation of `AirupFX` process module doesn't cause safety issues when the PID doesn't meet the requirements,
     /// but the behavior may be changed in the future version.
     pub unsafe fn from_pid_unchecked(
         pid: Pid,
@@ -149,23 +155,32 @@ impl Child {
         Self(sys::process::Child::from_pid_unchecked(pid, stdout, stderr))
     }
 
-    /// Creates a [Child] instance from PID.
+    /// Creates a [`Child`] instance from PID.
     ///
     /// ## Cancel Safety
     /// This method is cancel safe.
-    pub async fn from_pid(pid: Pid) -> std::io::Result<Self> {
-        Ok(Self(sys::process::Child::from_pid(pid).await?))
+    ///
+    /// ## Errors
+    /// An `Err(_)` is returned if the process is not a valid child process of current process.
+    pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
+        Ok(Self(sys::process::Child::from_pid(pid)?))
     }
 
     /// Waits until the process was terminated.
     ///
     /// ## Cancel Safety
     /// This method is cancel safe.
+    ///
+    /// ## Errors
+    /// An `Err(_)` is returned if the underlying OS function failed.
     pub async fn wait(&self) -> Result<Wait, WaitError> {
         self.0.wait().await.map_err(Into::into)
     }
 
     /// Sends the specified signal to the child process.
+    ///
+    /// ## Errors
+    /// An `Err(_)` is returned if the underlying OS function failed.
     pub async fn kill(&self, sig: i32) -> std::io::Result<()> {
         self.0.kill(sig).await
     }
@@ -179,7 +194,10 @@ impl Child {
     }
 }
 
-/// Spawns a process associated with given [std::process::Command], returning a [Child] object.
+/// Spawns a process associated with given [`std::process::Command`], returning a [`Child`] object.
+///
+/// ## Errors
+/// An `Err(_)` is returned if the underlying OS function failed.
 pub async fn spawn(cmd: &mut std::process::Command) -> std::io::Result<Child> {
     Ok(Child::from_std(cmd.spawn()?))
 }

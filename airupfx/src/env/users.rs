@@ -12,7 +12,7 @@ static CACHE: Lazy<mini_moka::sync::Cache<Request, Option<usize>, ahash::RandomS
         mini_moka::sync::Cache::builder()
             .initial_capacity(4)
             .max_capacity(64)
-            .build_with_hasher(Default::default())
+            .build_with_hasher(ahash::RandomState::default())
     });
 
 /// Refreshes users database.
