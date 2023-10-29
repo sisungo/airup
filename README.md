@@ -9,7 +9,7 @@ Maintained Versions:
  - Current Mainline Version: `0.4.0-alpha.1`
  - Current Release Version: `0.3.1`
 
-**WARNING**: The project is currently in **unstable** stage and should **NOT** be used in production environments. It may contain
+⚠️ **WARNING**: The project is currently in **unstable** stage and should **NOT** be used in production environments. It may contain
 errors, bugs or quality issues. Welcome to open an issue to report bugs.
 
 ## Documentation

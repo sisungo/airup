@@ -31,7 +31,7 @@ pub struct Connection(S2D<UnixStream>);
 impl Connection {
     /// Connects to the specified socket.
     pub async fn connect<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
-        Ok(Self(UnixStream::connect(path).await?.into()))
+        Ok(Self(S2D::new(UnixStream::connect(path).await?, usize::MAX)))
     }
 
     /// Receives a datagram and deserializes it from JSON to `T`.
@@ -152,54 +152,56 @@ impl Response {
 
 /// A connection.
 #[derive(Debug)]
-pub struct S2D<T>(T);
+pub struct S2D<T> {
+    inner: T,
+    size_limit: usize,
+}
 impl<T> S2D<T>
 where
     T: AsyncRead + AsyncWrite + Unpin,
 {
-    /// Maximum length of a datagram.
-    pub const MAX_DATAGRAM_LEN: usize = 6 * 1024 * 1024;
-
     /// Receives a datagram.
     pub async fn recv(&mut self) -> anyhow::Result<Vec<u8>> {
-        let len = self.0.read_u64_le().await? as usize;
-        if len > Self::MAX_DATAGRAM_LEN {
+        let len = self.inner.read_u64_le().await? as usize;
+        if len > self.size_limit {
             return Err(anyhow!("datagram is too big ({} bytes)", len));
         }
         let mut blob = vec![0u8; len];
-        self.0.read_exact(&mut blob).await?;
+        self.inner.read_exact(&mut blob).await?;
 
         Ok(blob)
     }
 
     /// Sends a datagram.
     pub async fn send(&mut self, blob: &[u8]) -> anyhow::Result<()> {
-        if blob.len() > Self::MAX_DATAGRAM_LEN {
-            return Err(anyhow!("datagram is too big ({} bytes)", blob.len()));
-        }
-        self.0.write_u64_le(blob.len() as _).await?;
-        self.0.write_all(blob).await?;
+        self.inner.write_u64_le(blob.len() as _).await?;
+        self.inner.write_all(blob).await?;
 
         Ok(())
     }
 
+    /// Sets size limitation.
+    pub fn set_size_limit(&mut self, new: usize) -> usize {
+        std::mem::replace(&mut self.size_limit, new)
+    }
+
     /// Creates a new `Connection` with provided stream.
-    pub fn new(stream: T) -> Self {
-        stream.into()
+    pub fn new(inner: T, size_limit: usize) -> Self {
+        Self { inner, size_limit }
     }
 }
 impl<T> AsRef<T> for S2D<T> {
     fn as_ref(&self) -> &T {
-        &self.0
+        &self.inner
     }
 }
 impl<T> AsMut<T> for S2D<T> {
     fn as_mut(&mut self) -> &mut T {
-        &mut self.0
+        &mut self.inner
     }
 }
-impl<T> From<T> for S2D<T> {
-    fn from(value: T) -> Self {
-        Self(value)
+impl<T: AsyncRead + AsyncWrite + Unpin> From<T> for S2D<T> {
+    fn from(inner: T) -> Self {
+        Self::new(inner, 6 * 1024 * 1024)
     }
 }
