@@ -160,10 +160,11 @@ impl PrintedStatus {
 }
 impl Display for PrintedStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.fmt_simple())?;
-        if let Self::Failed(why) = self {
-            write!(f, " {}", why)?;
-        }
+        let extra = match self {
+            Self::Failed(why) => format!("{}", why),
+            _ => format!(""),
+        };
+        write!(f, "{} ({})", self.fmt_simple(), extra)?;
         Ok(())
     }
 }

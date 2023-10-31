@@ -8,7 +8,7 @@ use std::{path::Path, sync::OnceLock};
 
 pub static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
 
-/// Represents to `build_manifest.json`.
+/// Represents to the structure of the build manifest, which is read from `build_manifest.json` at compile-time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildManifest {
     /// Name of the running operating system.
@@ -55,7 +55,7 @@ pub fn manifest() -> &'static BuildManifest {
 
 /// Sets the build manifest to the specific value.
 ///
-/// ## Panic
+/// # Panics
 /// Panics if the manifest is already set, which may be done by any call of [manifest] or [set_manifest].
 pub fn set_manifest(manifest: BuildManifest) {
     MANIFEST.set(manifest);

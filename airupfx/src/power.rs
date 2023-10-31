@@ -26,7 +26,7 @@ pub trait PowerManager: Send + Sync {
 /// A fallback implementation of `AirupFX` power management.
 ///
 /// On this implementation, when power management methods are called, it simply prints "It's now safe to turn off the device."
-/// to standard error stream and parks the thread.
+/// to standard error stream and parks the thread if we are `pid == 1`. Otherwise, it directly exits with code `0`.
 #[derive(Default)]
 pub struct Fallback;
 impl Fallback {

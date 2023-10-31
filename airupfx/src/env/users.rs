@@ -1,3 +1,5 @@
+//! Inspection and manipulation of the operating system's multi-user function.
+
 use once_cell::sync::Lazy;
 use std::sync::RwLock;
 use sysinfo::{SystemExt, Uid, User, UserExt};

@@ -12,7 +12,7 @@ use std::{
     cmp,
     ops::DerefMut,
     sync::{
-        atomic::{self, AtomicBool, AtomicI32},
+        atomic::{self, AtomicBool, AtomicI32, AtomicI64},
         Arc, Mutex, RwLock,
     },
 };
@@ -231,6 +231,7 @@ impl Supervisor {
             Request::Query(chan) => {
                 let query_result = QueryService {
                     status: self.context.status.get(),
+                    status_since: Some(self.context.status.timestamp()),
                     pid: self.context.pid().await,
                     task: self
                         .current_task
@@ -400,14 +401,21 @@ impl SupervisorContext {
 #[derive(Debug, Default)]
 pub struct StatusContext {
     data: Mutex<Status>,
+    timestamp: AtomicI64,
 }
 impl StatusContext {
     pub fn get(&self) -> Status {
         *self.data.lock().unwrap()
     }
 
+    pub fn timestamp(&self) -> i64 {
+        self.timestamp.load(atomic::Ordering::Relaxed)
+    }
+
     pub fn set(&self, new: Status) -> Status {
-        std::mem::replace(&mut *self.data.lock().unwrap(), new)
+        let mut lock = self.data.lock().unwrap();
+        self.timestamp.store(airupfx::time::timestamp_ms(), atomic::Ordering::Relaxed);
+        std::mem::replace(&mut lock, new)
     }
 }
 

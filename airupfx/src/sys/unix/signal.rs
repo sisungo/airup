@@ -1,3 +1,5 @@
+//! Signal handling for Unix platforms.
+
 use std::future::Future;
 use tokio::signal::unix::SignalKind;
 
@@ -53,6 +55,9 @@ pub const SIGABRT: i32 = libc::SIGABRT;
 pub const SIGFPE: i32 = libc::SIGFPE;
 
 /// Registers a signal handler.
+/// 
+/// # Errors
+/// An `Err(_)` is returned if the underlying OS function failed.
 pub fn signal<
     F: FnMut(i32) -> T + Send + Sync + 'static,
     T: Future<Output = ()> + Send + 'static,

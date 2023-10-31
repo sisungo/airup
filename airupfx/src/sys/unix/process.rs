@@ -1,3 +1,10 @@
+//! Process management on Unix platforms.
+//! 
+//! This internally registers a `SIGCHLD` listener and spawns a background task to listen the signal. When registering 
+//! a new child process (e.g. by spawning), the PID is subscribed from the internal table. When a new sucessful call to
+//! `waitpid()` completed, if the PID was previously subscribed, the result will be sent to the subscriber and then the 
+//! subscription is cancelled.
+
 use crate::process::{ExitStatus, Pid, Wait};
 use ahash::AHashMap;
 use std::{
@@ -15,6 +22,9 @@ use tokio::{
 static CHILD_QUEUE: OnceLock<ChildQueue> = OnceLock::new();
 
 /// Waits for process termination in nonblocking mode.
+/// 
+/// # Errors
+/// An `Err(_)` is returned if the underlying OS function failed.
 fn wait_nonblocking(pid: Pid) -> std::io::Result<Option<Wait>> {
     let mut status = 0;
     let pid = unsafe { libc::waitpid(pid as _, &mut status, libc::WNOHANG) } as Pid;
@@ -34,6 +44,9 @@ pub fn reload_image() -> std::io::Result<Infallible> {
 }
 
 /// Sends the given signal to the specified process.
+/// 
+/// # Errors
+/// An `Err(_)` is returned if the underlying OS function failed.
 pub async fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
     tokio::task::spawn_blocking(move || {
         let result = unsafe { libc::kill(pid as _, signum) };
@@ -77,7 +90,7 @@ impl Child {
     /// Creates a [Child] instance from PID. The PID must be a valid PID that belongs to child process of current process, or
     /// the behavior is undefined.
     ///
-    /// ## Safety
+    /// # Safety
     /// Current implementation of AirupFX process module doesn't cause safety issues when the PID doesn't meet the requirements,
     /// but the behavior may be changed in the future version.
     pub unsafe fn from_pid_unchecked(
@@ -96,7 +109,7 @@ impl Child {
 
     /// Creates a [`Child`] instance from PID.
     ///
-    /// ## Cancel Safety
+    /// # Cancel Safety
     /// This method is cancel safe.
     pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
         (wait_nonblocking(pid)?).map_or_else(
@@ -115,7 +128,7 @@ impl Child {
 
     /// Waits until the process was terminated.
     ///
-    /// ## Cancel Safety
+    /// # Cancel Safety
     /// This method is cancel safe.
     pub async fn wait(&self) -> Result<Wait, WaitError> {
         let mut wait_queue = self.wait_queue.lock().await;
@@ -138,6 +151,9 @@ impl Child {
     }
 
     /// Sends the specified signal to the child process.
+    /// 
+    /// # Errors
+    /// An `Err(_)` is returned if the underlying OS function failed.
     pub async fn kill(&self, sig: i32) -> std::io::Result<()> {
         let wait_cached = self.wait_cached.lock().unwrap().clone();
         match wait_cached {
@@ -146,10 +162,12 @@ impl Child {
         }
     }
 
+    /// Takes the `stdout` out of the option, leaving a `None` in its place.
     pub fn take_stdout(&mut self) -> Option<ChildStdout> {
         self.stdout.take()
     }
 
+    /// Takes the `stderr` out of the option, leaving a `None` in its place.
     pub fn take_stderr(&mut self) -> Option<ChildStderr> {
         self.stderr.take()
     }

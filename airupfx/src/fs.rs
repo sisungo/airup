@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-/// Represents to a `directory chain`, which has a filesystem layout similar to:
+/// Represents to a "directory chain", which has a filesystem layout similar to:
 /// ```text
 /// /dir_chain
 ///           /file1.txt

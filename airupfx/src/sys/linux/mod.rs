@@ -1,3 +1,5 @@
+//! Platform-specific functions for the Linux kernel.
+
 pub mod power;
 pub mod process;
 pub use super::unix::env;
@@ -9,6 +11,8 @@ pub fn power_manager() -> &'static dyn crate::power::PowerManager {
 
 pub fn init() {
     super::unix::init();
+
+    // Linux supports the feature of child subreapers, which allows us to reap grandchild processes as we are not `pid == 1`.
     if *crate::process::ID != 1 {
         process::become_subreaper().ok();
     }

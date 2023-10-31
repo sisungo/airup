@@ -19,6 +19,7 @@ pub enum Status {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryService {
     pub status: Status,
+    pub status_since: Option<i64>,
     pub pid: Option<Pid>,
     pub task: Option<String>,
     pub last_error: Option<Error>,
@@ -28,6 +29,7 @@ impl QueryService {
     pub fn default_of(service: Service) -> Self {
         Self {
             status: Status::Stopped,
+            status_since: None,
             pid: None,
             task: None,
             last_error: None,
@@ -40,6 +42,7 @@ impl QueryService {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuerySystem {
     pub status: Status,
+    pub status_since: i64,
     pub hostname: Option<String>,
     pub services: Vec<String>,
 }

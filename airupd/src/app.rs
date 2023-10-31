@@ -15,6 +15,7 @@ pub struct Airupd {
     pub lifetime: lifetime::System,
     pub milestones: milestones::Manager,
     pub supervisors: supervisor::Manager,
+    creation_time: i64,
 }
 impl Airupd {
     /// Initializes the Airupd app for use of [airupd].
@@ -25,6 +26,7 @@ impl Airupd {
             lifetime: lifetime::System::new(),
             milestones: milestones::Manager::new(),
             supervisors: supervisor::Manager::new(),
+            creation_time: airupfx::time::timestamp_ms(),
         };
 
         AIRUPD.set(object).unwrap();
@@ -34,6 +36,7 @@ impl Airupd {
     pub async fn query_system(&self) -> QuerySystem {
         QuerySystem {
             status: Status::Active,
+            status_since: self.creation_time,
             hostname: airupfx::env::host_name(),
             services: self.supervisors.list().await,
         }

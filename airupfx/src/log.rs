@@ -1,5 +1,5 @@
 //! # The Airup Logger
-//! AirupFX-flavored presets for the [tracing] framework.
+//! AirupFX-flavored presets for the [`tracing`] framework.
 
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{filter::filter_fn, prelude::*};
@@ -12,7 +12,7 @@ pub struct Builder {
     color: bool,
 }
 impl Builder {
-    /// Creates a new `Builder` with default settings.
+    /// Creates a new [`Builder`] instance with default settings.
     #[inline]
     #[must_use]
     pub fn new() -> Self {

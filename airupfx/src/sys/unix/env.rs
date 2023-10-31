@@ -1,3 +1,5 @@
+//! Inspection and manipulation of the process's environment.
+
 use std::{os::fd::AsRawFd, path::Path};
 
 pub fn setsid() -> std::io::Result<libc::pid_t> {

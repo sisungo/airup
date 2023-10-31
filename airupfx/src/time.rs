@@ -9,7 +9,7 @@ pub struct Countdown {
     dur: Option<Duration>,
 }
 impl Countdown {
-    /// Creates a new [Countdown] instance with the given [Duration].
+    /// Creates a new [`Countdown`] instance with the given [`Duration`].
     pub fn new(dur: Option<Duration>) -> Self {
         Self {
             inst: Instant::now(),
@@ -24,7 +24,7 @@ impl Countdown {
     }
 }
 
-/// Creates a countdown timer with given [Duration].
+/// Creates a countdown timer with given [`Duration`].
 #[inline]
 pub fn countdown(dur: Option<Duration>) -> Countdown {
     Countdown::new(dur)
