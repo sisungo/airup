@@ -4,7 +4,7 @@ use super::Security;
 use ahash::HashMap;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::{path::Path, sync::OnceLock};
+use std::{path::{Path, PathBuf}, sync::OnceLock};
 
 pub static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
 
@@ -13,38 +13,40 @@ pub static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
 pub struct BuildManifest {
     /// Name of the running operating system.
     #[serde(default = "default_os_name")]
-    pub os_name: &'static str,
+    pub os_name: String,
 
     /// Path of Airup's system-wide config directory, e.g. `/etc/airup`.
-    pub config_dir: &'static Path,
+    pub config_dir: PathBuf,
 
     /// Path of Airup's system-wide service directory, e.g. `/etc/airup/services`.
-    pub service_dir: &'static Path,
+    pub service_dir: PathBuf,
 
     /// Path of Airup's system-wide milestone directory, e.g. `/etc/airup/milestones`.
-    pub milestone_dir: &'static Path,
+    pub milestone_dir: PathBuf,
 
     /// Path of Airup's system-wide runtime directory, e.g. `/run/airup`.
-    pub runtime_dir: &'static Path,
+    pub runtime_dir: PathBuf,
 
     /// Path of Airup's system-wide log directory, e.g. `/var/log/airup`.
-    pub log_dir: &'static Path,
+    pub log_dir: PathBuf,
 
     /// Table of initial environment variables.
     #[serde(default)]
-    pub env_vars: HashMap<&'static str, Option<&'static str>>,
+    pub env_vars: HashMap<String, Option<String>>,
 
     /// Commands executed in `early_boot` pseudo-milestone.
     #[serde(default)]
-    pub early_cmds: Vec<&'static str>,
+    pub early_cmds: Vec<String>,
 
     /// Default security model to use.
+    /// 
+    /// **Deprecation**: This is deprecated in 10 days.
     #[serde(default)]
     pub security: Security,
 }
 
-fn default_os_name() -> &'static str {
-    "\x1b[36;4mAirup\x1b[0m"
+fn default_os_name() -> String {
+    "\x1b[36;4mAirup\x1b[0m".into()
 }
 
 pub fn manifest() -> &'static BuildManifest {

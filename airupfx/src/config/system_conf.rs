@@ -4,7 +4,6 @@ use super::Security;
 use ahash::HashMap;
 use serde::{Deserialize, Serialize};
 use std::{
-    borrow::Cow,
     collections::BTreeMap,
     path::{Path, PathBuf},
     sync::OnceLock,
@@ -57,7 +56,7 @@ impl SystemConf {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct System {
     #[serde(default = "default_os_name")]
-    pub os_name: Cow<'static, str>,
+    pub os_name: String,
 
     #[serde(default = "default_security")]
     pub security: Security,
@@ -97,8 +96,8 @@ impl Env {
     /// Overrides the environment with this [Env] object.
     fn override_env(&self) {
         let mut vars: BTreeMap<String, Option<String>> = BTreeMap::new();
-        for (&k, v) in &super::build_manifest().env_vars {
-            vars.insert(k.to_string(), v.map(Into::into));
+        for (k, v) in &super::build_manifest().env_vars {
+            vars.insert(k.to_owned(), v.as_ref().map(Into::into));
         }
         for (k, v) in &self.vars {
             vars.insert(k.into(), v.clone());
@@ -107,8 +106,8 @@ impl Env {
     }
 }
 
-fn default_os_name() -> Cow<'static, str> {
-    super::build_manifest().os_name.into()
+fn default_os_name() -> String {
+    super::build_manifest().os_name.clone()
 }
 
 fn default_security() -> Security {
@@ -116,5 +115,5 @@ fn default_security() -> Security {
 }
 
 fn default_log_dir() -> PathBuf {
-    super::build_manifest().log_dir.into()
+    super::build_manifest().log_dir.clone()
 }

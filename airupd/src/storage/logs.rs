@@ -12,7 +12,7 @@ impl Logs {
     /// Creates a new [Logs] instance.
     pub fn new() -> Self {
         Self {
-            base_chain: DirChain::new(airupfx::config::build_manifest().log_dir),
+            base_chain: DirChain::new(airupfx::config::build_manifest().log_dir.clone()),
         }
     }
 
