@@ -1,17 +1,14 @@
-#![allow(unused)]
-
 use super::Security;
 use ahash::HashMap;
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::{
-    path::{Path, PathBuf},
+    path::PathBuf,
     sync::OnceLock,
 };
 
 pub static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
 
-/// Represents to the structure of the build manifest, which is read from `build_manifest.json` at compile-time.
+/// Represents to the structure of the build manifest, which is usually read from `build_manifest.json` at compile-time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildManifest {
     /// Name of the running operating system.
@@ -52,6 +49,11 @@ fn default_os_name() -> String {
     "\x1b[36;4mAirup\x1b[0m".into()
 }
 
+/// Gets a reference to the global [`BuildManifest`] instance. If [`set_manifest`] was not previously called, it automatically
+/// initializes the instance by reading the compile-time `build_manifest.json`.
+/// 
+/// # Panics
+/// Panics if the [`BuildManifest`] instance was not initialized yet and the compile-time `build_manifest.json` was invalid.
 pub fn manifest() -> &'static BuildManifest {
     MANIFEST.get_or_init(|| {
         serde_json::from_str(include_str!("../../../build_manifest.json")).expect("bad airup build")
@@ -63,5 +65,5 @@ pub fn manifest() -> &'static BuildManifest {
 /// # Panics
 /// Panics if the manifest is already set, which may be done by any call of [manifest] or [set_manifest].
 pub fn set_manifest(manifest: BuildManifest) {
-    MANIFEST.set(manifest);
+    MANIFEST.set(manifest).unwrap();
 }

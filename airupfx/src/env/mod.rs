@@ -15,6 +15,10 @@ static SYSINFO: Lazy<RwLock<sysinfo::System>> = Lazy::new(|| RwLock::new(sysinfo
 
 /// Sets environment variables in the iterator for the currently running process, removing environment variables with value
 /// `None`.
+/// 
+/// # Panics
+/// This function may panic if any of the keys is empty, contains an ASCII equals sign '=' or the NUL character '\0', or when
+/// the value contains the NUL character.
 #[inline]
 pub fn set_vars<I: IntoIterator<Item = (K, Option<V>)>, K: Into<OsString>, V: Into<OsString>>(
     iter: I,
