@@ -2,7 +2,12 @@
 
 use crate::sys;
 use once_cell::sync::Lazy;
-use std::convert::Infallible;
+use std::{
+    convert::Infallible,
+    ffi::OsString,
+    ops::{Deref, DerefMut},
+    path::PathBuf,
+};
 use tokio::process::{ChildStderr, ChildStdout};
 
 /// Represents to an OS-assigned process identifier.
@@ -200,6 +205,193 @@ impl Child {
 /// An `Err(_)` is returned if the underlying OS function failed.
 pub async fn spawn(cmd: &mut std::process::Command) -> std::io::Result<Child> {
     Ok(Child::from_std(cmd.spawn()?))
+}
+
+#[derive(Debug, Clone, Default)]
+pub enum Stdio {
+    /// The child inherits from the corresponding parent descriptor.
+    #[default]
+    Inherit,
+
+    /// A new pipe should be arranged to connect the parent and child processes.
+    Piped,
+
+    File(PathBuf),
+}
+impl Stdio {
+    pub async fn to_std(&self) -> std::io::Result<std::process::Stdio> {
+        Ok(match self {
+            Self::Inherit => std::process::Stdio::inherit(),
+            Self::Piped => std::process::Stdio::piped(),
+            Self::File(path) => tokio::fs::File::options()
+                .append(true)
+                .create(true)
+                .open(path)
+                .await?
+                .into_std()
+                .await
+                .into(),
+        })
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct CommandEnv {
+    pub(crate) uid: Option<libc::uid_t>,
+    pub(crate) gid: Option<libc::gid_t>,
+    pub(crate) groups: Option<Vec<libc::gid_t>>,
+    pub(crate) clear_vars: bool,
+    pub(crate) vars: Vec<(OsString, Option<OsString>)>,
+    pub(crate) stdout: Stdio,
+    pub(crate) stderr: Stdio,
+    pub(crate) working_dir: Option<PathBuf>,
+    pub(crate) setsid: bool,
+}
+impl CommandEnv {
+    #[inline]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[inline]
+    pub fn uid<T: Into<Option<libc::uid_t>>>(&mut self, uid: T) -> &mut Self {
+        if let Some(x) = uid.into() {
+            self.uid = Some(x);
+        }
+        self
+    }
+
+    #[inline]
+    pub fn gid<T: Into<Option<libc::gid_t>>>(&mut self, gid: T) -> &mut Self {
+        if let Some(x) = gid.into() {
+            self.gid = Some(x);
+        }
+        self
+    }
+
+    #[inline]
+    pub fn groups<T: Into<Option<Vec<libc::gid_t>>>>(&mut self, groups: T) -> &mut Self {
+        if let Some(x) = groups.into() {
+            self.groups = Some(x);
+        }
+        self
+    }
+
+    #[inline]
+    pub fn clear_vars(&mut self, val: bool) -> &mut Self {
+        self.clear_vars = val;
+        self
+    }
+
+    #[inline]
+    pub fn var<K: Into<OsString>, V: Into<Option<C>>, C: Into<OsString>>(
+        &mut self,
+        k: K,
+        v: V,
+    ) -> &mut Self {
+        self.vars.push((k.into(), v.into().map(Into::into)));
+        self
+    }
+
+    #[inline]
+    pub fn vars<
+        I: Iterator<Item = (K, V)>,
+        K: Into<OsString>,
+        V: Into<Option<T>>,
+        T: Into<OsString>,
+    >(
+        &mut self,
+        iter: I,
+    ) -> &mut Self {
+        iter.for_each(|(k, v)| {
+            self.var(k, v);
+        });
+        self
+    }
+
+    #[inline]
+    pub fn working_dir<P: Into<PathBuf>, T: Into<Option<P>>>(&mut self, value: T) -> &mut Self {
+        self.working_dir = value.into().map(Into::into);
+        self
+    }
+
+    pub fn login<'a, U: Into<Option<&'a str>>>(&mut self, name: U) -> anyhow::Result<&mut Self> {
+        if let Some(x) = name.into() {
+            crate::sys::process::command_login(self, x)?;
+        }
+        Ok(self)
+    }
+
+    #[inline]
+    pub fn stdout(&mut self, new: Stdio) -> &mut Self {
+        self.stdout = new;
+        self
+    }
+
+    #[inline]
+    pub fn stderr(&mut self, new: Stdio) -> &mut Self {
+        self.stderr = new;
+        self
+    }
+
+    #[inline]
+    pub fn setsid(&mut self, val: bool) -> &mut Self {
+        self.setsid = val;
+        self
+    }
+}
+
+#[derive(Debug)]
+pub struct Command {
+    pub(crate) env: CommandEnv,
+    pub(crate) program: OsString,
+    pub(crate) arg0: Option<OsString>,
+    pub(crate) args: Vec<OsString>,
+}
+impl Command {
+    #[inline]
+    pub fn new<S: Into<OsString>>(program: S) -> Self {
+        Self {
+            env: CommandEnv::default(),
+            program: program.into(),
+            arg0: None,
+            args: vec![],
+        }
+    }
+
+    #[inline]
+    pub fn arg0<S: Into<OsString>>(&mut self, arg0: S) -> &mut Self {
+        self.arg0 = Some(arg0.into());
+        self
+    }
+
+    #[inline]
+    pub fn arg<S: Into<OsString>>(&mut self, arg: S) -> &mut Self {
+        self.args.push(arg.into());
+        self
+    }
+
+    #[inline]
+    pub async fn to_std(&self) -> anyhow::Result<std::process::Command> {
+        crate::sys::process::command_to_std(self).await
+    }
+
+    #[inline]
+    pub async fn spawn(&self) -> anyhow::Result<Child> {
+        Ok(spawn(&mut self.to_std().await?).await?)
+    }
+}
+impl Deref for Command {
+    type Target = CommandEnv;
+
+    fn deref(&self) -> &Self::Target {
+        &self.env
+    }
+}
+impl DerefMut for Command {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.env
+    }
 }
 
 #[derive(Debug, Clone, thiserror::Error)]

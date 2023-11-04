@@ -10,7 +10,9 @@ pub async fn set_sock_permission<P: AsRef<Path>>(path: P) -> std::io::Result<()>
     let path = path.as_ref().to_owned();
     if *crate::process::ID == 1 {
         let gid = None;
-        tokio::task::spawn_blocking(move || std::os::unix::fs::chown(path, None, gid)).await.unwrap()?;
+        tokio::task::spawn_blocking(move || std::os::unix::fs::chown(path, None, gid))
+            .await
+            .unwrap()?;
     }
     Ok(())
 }

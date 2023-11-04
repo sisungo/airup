@@ -16,7 +16,7 @@ use std::{
 };
 
 /// Returns default path of Airup's IPC socket.
-/// 
+///
 /// If environment `AIRUP_SOCK` was present, returns the value of `AIRUP_SOCK`. Otherwise it returns `$runtime_dir/airupd.sock`,
 /// which is related to the compile-time `build_manifest.json`.
 pub fn socket_path() -> &'static Path {
@@ -24,9 +24,14 @@ pub fn socket_path() -> &'static Path {
 
     SOCKET_PATH.get_or_init(|| {
         Box::leak(
-            std::env::var("AIRUP_SOCK").map(PathBuf::from).unwrap_or_else(|_| airupfx::config::build_manifest()
-                .runtime_dir
-                .join("airupd.sock")).into()
+            std::env::var("AIRUP_SOCK")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| {
+                    airupfx::config::build_manifest()
+                        .runtime_dir
+                        .join("airupd.sock")
+                })
+                .into(),
         )
     })
 }

@@ -5,7 +5,10 @@
 //! `waitpid()` completed, if the PID was previously subscribed, the result will be sent to the subscriber and then the
 //! subscription is cancelled.
 
-use crate::process::{ExitStatus, Pid, Wait};
+use crate::{
+    process::{ExitStatus, Pid, Wait},
+    std_port::CommandExt as _,
+};
 use ahash::AHashMap;
 use std::{
     cmp,
@@ -13,6 +16,7 @@ use std::{
     os::unix::process::CommandExt,
     sync::{Mutex, OnceLock, RwLock},
 };
+use sysinfo::UserExt;
 use tokio::{
     process::{ChildStderr, ChildStdout},
     signal::unix::SignalKind,
@@ -249,10 +253,62 @@ impl ChildQueue {
 
 /// Returns a reference to the global unique [ChildQueue] instance.
 ///
-/// ## Panic
+/// # Panics
 /// Panics if the instance has not been initialized yet.
 fn child_queue() -> &'static ChildQueue {
     CHILD_QUEUE.get().unwrap()
+}
+
+/// Converts from [`crate::process::Command`] to [`std::process::Command`].
+pub(crate) async fn command_to_std(
+    command: &crate::process::Command,
+) -> anyhow::Result<std::process::Command> {
+    let mut result = std::process::Command::new(&command.program);
+    command.args.iter().for_each(|x| {
+        result.arg(x);
+    });
+    if let Some(x) = &command.arg0 {
+        result.arg0(x);
+    }
+    if let Some(x) = command.env.uid {
+        result.uid(x);
+    }
+    if let Some(x) = command.env.gid {
+        result.gid(x);
+    }
+    if let Some(x) = &command.env.working_dir {
+        result.current_dir(x);
+    }
+    if command.env.clear_vars {
+        result.env_clear();
+    }
+    command.env.vars.iter().for_each(|(k, v)| match v {
+        Some(v) => {
+            result.env(k, v);
+        }
+        None => {
+            result.env_remove(k);
+        }
+    });
+    result
+        .stdout(command.env.stdout.to_std().await?)
+        .stderr(command.env.stderr.to_std().await?);
+    if command.env.setsid {
+        result.setsid();
+    }
+
+    Ok(result)
+}
+
+pub(crate) fn command_login(
+    env: &mut crate::process::CommandEnv,
+    name: &str,
+) -> anyhow::Result<()> {
+    let (uid, gid) = crate::env::with_user_by_name(name, |entry| (**entry.id(), *entry.group_id()))
+        .ok_or_else(|| anyhow::anyhow!("user \"{name}\" not found"))?;
+    env.uid(uid).gid(gid);
+
+    Ok(())
 }
 
 /// An error occured by calling `wait` on a [Child].

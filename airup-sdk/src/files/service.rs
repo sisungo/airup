@@ -115,12 +115,11 @@ pub struct Env {
     pub vars: BTreeMap<String, Option<String>>,
 }
 impl Env {
-    pub async fn into_ace(&self) -> Result<airupfx::ace::Env, airupfx::ace::Error> {
-        let mut result = airupfx::ace::Env::new();
+    pub async fn into_airupfx(&self) -> anyhow::Result<airupfx::process::CommandEnv> {
+        let mut result = airupfx::process::CommandEnv::new();
 
         result
-            .user(self.user.clone())
-            .await?
+            .login(self.user.as_deref())?
             .uid(self.uid)
             .gid(self.gid)
             .stdout(self.stdout.clone().into_ace())
@@ -144,12 +143,16 @@ pub enum Stdio {
 
     /// Redirects `stdio` to the specified file.
     File(PathBuf),
+
+    /// Use the Airup simple logger to record `stdio` outputs.
+    Log,
 }
 impl Stdio {
-    pub fn into_ace(self) -> airupfx::ace::Stdio {
+    pub fn into_ace(self) -> airupfx::process::Stdio {
         match self {
-            Self::Inherit => airupfx::ace::Stdio::Inherit,
-            Self::File(path) => airupfx::ace::Stdio::File(path),
+            Self::Inherit => airupfx::process::Stdio::Inherit,
+            Self::File(path) => airupfx::process::Stdio::File(path),
+            Self::Log => airupfx::process::Stdio::Piped,
         }
     }
 }

@@ -137,12 +137,6 @@ impl ApiError {
         Self::DependencyNotSatisfied { name: name.into() }
     }
 
-    pub fn io(err: &std::io::Error) -> Self {
-        Self::Io {
-            message: err.to_string(),
-        }
-    }
-
     pub fn unsupported<T: Into<Cow<'static, str>>>(message: T) -> Self {
         Self::Unsupported {
             message: message.into(),
@@ -179,10 +173,8 @@ impl From<crate::files::ReadError> for ApiError {
 impl From<airupfx::ace::Error> for ApiError {
     fn from(value: airupfx::ace::Error) -> Self {
         match value {
-            airupfx::ace::Error::UserNotFound => Self::UserNotFound,
-            airupfx::ace::Error::CommandNotFound => Self::CommandNotFound,
             airupfx::ace::Error::Wait(err) => Self::internal(err.to_string()),
-            airupfx::ace::Error::Io(err) => Self::io(&err),
+            airupfx::ace::Error::Io(message) => Self::Io { message },
             airupfx::ace::Error::TimedOut => Self::TimedOut,
         }
     }

@@ -1,10 +1,7 @@
 use super::Security;
 use ahash::HashMap;
 use serde::{Deserialize, Serialize};
-use std::{
-    path::PathBuf,
-    sync::OnceLock,
-};
+use std::{path::PathBuf, sync::OnceLock};
 
 pub static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
 
@@ -51,7 +48,7 @@ fn default_os_name() -> String {
 
 /// Gets a reference to the global [`BuildManifest`] instance. If [`set_manifest`] was not previously called, it automatically
 /// initializes the instance by reading the compile-time `build_manifest.json`.
-/// 
+///
 /// # Panics
 /// Panics if the [`BuildManifest`] instance was not initialized yet and the compile-time `build_manifest.json` was invalid.
 pub fn manifest() -> &'static BuildManifest {
