@@ -1,6 +1,5 @@
 //! Represents to Airup's system config.
 
-use super::Security;
 use ahash::HashMap;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -57,15 +56,11 @@ impl SystemConf {
 pub struct System {
     #[serde(default = "default_os_name")]
     pub os_name: String,
-
-    #[serde(default = "default_security")]
-    pub security: Security,
 }
 impl Default for System {
     fn default() -> Self {
         Self {
             os_name: default_os_name(),
-            security: default_security(),
         }
     }
 }
@@ -108,10 +103,6 @@ impl Env {
 
 fn default_os_name() -> String {
     super::build_manifest().os_name.clone()
-}
-
-fn default_security() -> Security {
-    super::build_manifest().security
 }
 
 fn default_log_dir() -> PathBuf {

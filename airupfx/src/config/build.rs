@@ -1,4 +1,3 @@
-use super::Security;
 use ahash::HashMap;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, sync::OnceLock};
@@ -34,12 +33,6 @@ pub struct BuildManifest {
     /// Commands executed in `early_boot` pseudo-milestone.
     #[serde(default)]
     pub early_cmds: Vec<String>,
-
-    /// Default security model to use.
-    ///
-    /// **Deprecation**: This is deprecated in 10 days.
-    #[serde(default)]
-    pub security: Security,
 }
 
 fn default_os_name() -> String {

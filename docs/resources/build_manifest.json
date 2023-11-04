@@ -6,6 +6,5 @@
     "runtime_dir": "/run/airup",
     "log_dir": "/var/log/airup",
     "env_vars": {},
-    "early_cmds": [],
-    "security": "policy"
+    "early_cmds": []
 }

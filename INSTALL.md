@@ -9,7 +9,6 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 Some build dependencies are optional, but is useful for some workflows:
  - [cargo-make](https://github.com/sagiegurari/cargo-make): A workflow manager for Rust.
- - [xmake](https://xmake.io): Build system used by the `Airup C/C++ SDK`.
 
 ## Configuration
 Some Airup functions are configured at build time. The build manifest which is located at `build_manifest.rs` stores primitive
@@ -20,9 +19,9 @@ items:
  - `service_dir`: Path of Airup's service directory, which stores services.
  - `milestone_dir`: Path of Airup's milestone directory, which stores milestones.
  - `runtime_dir`: Path of Airup's runtime directory, which stores runtime files like the Unix socket.
+ - `log_dir`: Path of Airup's logging directory, which stores log files of configured daemons.
  - `env_vars`: Environment variables for the global system. When a value is explictly set to `null`, the variables is deleted if it exists.
  - `early_cmds`: Commands that are executed in the `early_boot` pseudo-milestone.
- - `security`: Determines which security model is used by default.
 
 ## Build
 Build debug version of Airup with command:
