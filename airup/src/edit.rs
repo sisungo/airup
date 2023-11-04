@@ -8,7 +8,7 @@ pub struct Cmdline {
     file: String,
 }
 
-pub async fn main(_: Cmdline) -> anyhow::Result<()> {
-    let mut _conn = Connection::connect(airup_sdk::socket_path()).await?;
+pub fn main(_: Cmdline) -> anyhow::Result<()> {
+    let mut _conn = BlockingConnection::connect(airup_sdk::socket_path())?;
     Ok(())
 }

@@ -6,7 +6,6 @@ pub mod config;
 pub mod env;
 pub mod fs;
 pub mod log;
-pub mod policy;
 pub mod power;
 pub mod prelude;
 pub mod process;

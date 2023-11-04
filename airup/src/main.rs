@@ -31,21 +31,20 @@ pub enum Cmdline {
     Debug(debug::Cmdline),
 }
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() {
+fn main() {
     let cmdline = Cmdline::parse();
     let result = match cmdline {
-        Cmdline::Start(cmdline) => start::main(cmdline).await,
-        Cmdline::Stop(cmdline) => stop::main(cmdline).await,
-        Cmdline::Reload(cmdline) => reload::main(cmdline).await,
-        Cmdline::Restart(cmdline) => restart::main(cmdline).await,
-        Cmdline::Query(cmdline) => query::main(cmdline).await,
-        Cmdline::Reboot(cmdline) => reboot::main(cmdline).await,
-        Cmdline::SelfReload(cmdline) => self_reload::main(cmdline).await,
-        Cmdline::Edit(cmdline) => edit::main(cmdline).await,
-        Cmdline::Enable(cmdline) => enable::main(cmdline).await,
-        Cmdline::Disable(cmdline) => disable::main(cmdline).await,
-        Cmdline::Debug(cmdline) => debug::main(cmdline).await,
+        Cmdline::Start(cmdline) => start::main(cmdline),
+        Cmdline::Stop(cmdline) => stop::main(cmdline),
+        Cmdline::Reload(cmdline) => reload::main(cmdline),
+        Cmdline::Restart(cmdline) => restart::main(cmdline),
+        Cmdline::Query(cmdline) => query::main(cmdline),
+        Cmdline::Reboot(cmdline) => reboot::main(cmdline),
+        Cmdline::SelfReload(cmdline) => self_reload::main(cmdline),
+        Cmdline::Edit(cmdline) => edit::main(cmdline),
+        Cmdline::Enable(cmdline) => enable::main(cmdline),
+        Cmdline::Disable(cmdline) => disable::main(cmdline),
+        Cmdline::Debug(cmdline) => debug::main(cmdline),
     };
     if let Err(e) = result {
         eprintln!("{} {}", style("error:").red().bold(), e);

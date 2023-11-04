@@ -12,12 +12,11 @@ pub struct Cmdline {
     sideload: Option<PathBuf>,
 }
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = BlockingConnection::connect(airup_sdk::socket_path())?;
     if let Some(path) = cmdline.sideload {
-        conn.sideload_service(&cmdline.service, &Service::read_from(path).await?)
-            .await??;
+        conn.sideload_service(&cmdline.service, &Service::read_from_blocking(path)?)??;
     }
-    conn.start_service(&cmdline.service).await??;
+    conn.start_service(&cmdline.service)??;
     Ok(())
 }

@@ -8,8 +8,8 @@ pub struct Cmdline {
     service: String,
 }
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
-    conn.reload_service(&cmdline.service).await??;
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = BlockingConnection::connect(airup_sdk::socket_path())?;
+    conn.reload_service(&cmdline.service)??;
     Ok(())
 }

@@ -4,7 +4,10 @@ use super::Security;
 use ahash::HashMap;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::{path::{Path, PathBuf}, sync::OnceLock};
+use std::{
+    path::{Path, PathBuf},
+    sync::OnceLock,
+};
 
 pub static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
 
@@ -39,7 +42,7 @@ pub struct BuildManifest {
     pub early_cmds: Vec<String>,
 
     /// Default security model to use.
-    /// 
+    ///
     /// **Deprecation**: This is deprecated in 10 days.
     #[serde(default)]
     pub security: Security,

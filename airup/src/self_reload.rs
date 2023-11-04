@@ -6,9 +6,9 @@ use clap::Parser;
 #[command(about)]
 pub struct Cmdline {}
 
-pub async fn main(_: Cmdline) -> anyhow::Result<()> {
-    let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
-    conn.refresh().await??;
-    conn.gc().await??;
+pub fn main(_: Cmdline) -> anyhow::Result<()> {
+    let mut conn = BlockingConnection::connect(airup_sdk::socket_path())?;
+    conn.refresh()??;
+    conn.gc()??;
     Ok(())
 }

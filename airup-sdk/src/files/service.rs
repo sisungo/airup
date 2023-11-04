@@ -32,7 +32,26 @@ impl Service {
 
     /// Reads a [Service] from given path.
     pub async fn read_from<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
-        Self::_read_from(path.as_ref()).await
+        let path = path.as_ref();
+        let s = tokio::fs::read_to_string(path).await?;
+        let mut object: Self = toml::from_str(&s)?;
+
+        object.validate()?;
+        object.name = path.file_stem().unwrap().to_string_lossy().into();
+
+        Ok(object)
+    }
+
+    /// Reads a [Service] from given path.
+    pub fn read_from_blocking<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
+        let path = path.as_ref();
+        let s = std::fs::read_to_string(path)?;
+        let mut object: Self = toml::from_str(&s)?;
+
+        object.validate()?;
+        object.name = path.file_stem().unwrap().to_string_lossy().into();
+
+        Ok(object)
     }
 
     /// Returns the name to display for this service.
@@ -57,16 +76,6 @@ impl Service {
                 _ => Ok(()),
             },
         }
-    }
-
-    async fn _read_from(path: &Path) -> Result<Self, ReadError> {
-        let s = tokio::fs::read_to_string(path).await?;
-        let mut object: Self = toml::from_str(&s)?;
-
-        object.validate()?;
-        object.name = path.file_stem().unwrap().to_string_lossy().into();
-
-        Ok(object)
     }
 }
 

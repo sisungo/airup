@@ -1,6 +1,7 @@
 use super::Error;
 use crate::files::Service;
 use airupfx::prelude::*;
+use duplicate::duplicate_item;
 use serde::{Deserialize, Serialize};
 
 /// Representation of the status of a service.
@@ -47,8 +48,13 @@ pub struct QuerySystem {
     pub services: Vec<String>,
 }
 
+#[duplicate_item(
+    Name                       async;
+    [ConnectionExt]            [async];
+    [BlockingConnectionExt]    [];
+)]
 #[async_trait::async_trait]
-pub trait ConnectionExt {
+pub trait Name {
     /// Sideloads a service.
     async fn sideload_service(
         &mut self,
@@ -95,66 +101,70 @@ pub trait ConnectionExt {
     /// Halts the system.
     async fn halt(&mut self) -> anyhow::Result<Result<(), Error>>;
 }
+#[duplicate_item(
+    Name                       async      Connection                         may_await(code);
+    [ConnectionExt]            [async]    [super::Connection<'_>]            [code.await];
+    [BlockingConnectionExt]    []         [super::BlockingConnection<'_>]    [code];
+)]
 #[async_trait::async_trait]
-impl<'a> ConnectionExt for super::Connection<'a> {
+impl Name for Connection {
     async fn sideload_service(
         &mut self,
         name: &str,
         service: &Service,
     ) -> anyhow::Result<Result<(), Error>> {
-        self.invoke("system.sideload_service", (name, service))
-            .await
+        may_await([self.invoke("system.sideload_service", (name, service))])
     }
 
     async fn start_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
-        self.invoke("system.start_service", name).await
+        may_await([self.invoke("system.start_service", name)])
     }
 
     async fn stop_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
-        self.invoke("system.stop_service", name).await
+        may_await([self.invoke("system.stop_service", name)])
     }
 
     async fn cache_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
-        self.invoke("system.cache_service", name).await
+        may_await([self.invoke("system.cache_service", name)])
     }
 
     async fn uncache_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
-        self.invoke("system.uncache_service", name).await
+        may_await([self.invoke("system.uncache_service", name)])
     }
 
     async fn reload_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
-        self.invoke("system.reload_service", name).await
+        may_await([self.invoke("system.reload_service", name)])
     }
 
     async fn query_service(&mut self, name: &str) -> anyhow::Result<Result<QueryService, Error>> {
-        self.invoke("system.query_service", name).await
+        may_await([self.invoke("system.query_service", name)])
     }
 
     async fn list_services(&mut self) -> anyhow::Result<Result<Vec<String>, Error>> {
-        self.invoke("system.list_services", ()).await
+        may_await([self.invoke("system.list_services", ())])
     }
 
     async fn query_system(&mut self) -> anyhow::Result<Result<QuerySystem, Error>> {
-        self.invoke("system.query_system", ()).await
+        may_await([self.invoke("system.query_system", ())])
     }
 
     async fn refresh(&mut self) -> anyhow::Result<Result<(), Error>> {
-        self.invoke("system.refresh", ()).await
+        may_await([self.invoke("system.refresh", ())])
     }
 
     async fn gc(&mut self) -> anyhow::Result<Result<(), Error>> {
-        self.invoke("system.gc", ()).await
+        may_await([self.invoke("system.gc", ())])
     }
 
     async fn poweroff(&mut self) -> anyhow::Result<Result<(), Error>> {
-        self.invoke("system.poweroff", ()).await
+        may_await([self.invoke("system.poweroff", ())])
     }
 
     async fn reboot(&mut self) -> anyhow::Result<Result<(), Error>> {
-        self.invoke("system.reboot", ()).await
+        may_await([self.invoke("system.reboot", ())])
     }
 
     async fn halt(&mut self) -> anyhow::Result<Result<(), Error>> {
-        self.invoke("system.halt", ()).await
+        may_await([self.invoke("system.halt", ())])
     }
 }

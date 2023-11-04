@@ -15,33 +15,48 @@
 
 use crate::error::ApiError;
 use anyhow::anyhow;
+use duplicate::duplicate_item;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
+    io::{Read, Write},
     ops::{Deref, DerefMut},
     path::Path,
 };
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
-    net::{unix::UCred, UnixListener, UnixStream},
+    net::UnixListener,
 };
 
 /// Represents to a connection.
+#[duplicate_item(
+    Name                    Stream;
+    [Connection]            [tokio::net::UnixStream];
+    [BlockingConnection]    [std::os::unix::net::UnixStream];
+)]
 #[derive(Debug)]
-pub struct Connection(S2D<UnixStream>);
-impl Connection {
+pub struct Name(S2D<Stream>);
+#[duplicate_item(
+    Name                     Stream                              async      may_await(code)    receive(code)             send_to(who, blob);
+    [Connection]             [tokio::net::UnixStream]            [async]    [code.await]       [code.recv().await]       [who.send(blob).await];
+    [BlockingConnection]     [std::os::unix::net::UnixStream]    []         [code]             [code.recv_blocking()]    [who.send_blocking(blob)];
+)]
+impl Name {
     /// Connects to the specified socket.
     pub async fn connect<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
-        Ok(Self(S2D::new(UnixStream::connect(path).await?, usize::MAX)))
+        Ok(Self(S2D::new(
+            may_await([Stream::connect(path)])?,
+            usize::MAX,
+        )))
     }
 
     /// Receives a datagram and deserializes it from JSON to `T`.
     pub async fn recv<T: DeserializeOwned>(&mut self) -> anyhow::Result<T> {
-        Ok(serde_json::from_slice(&self.0.recv().await?)?)
+        Ok(serde_json::from_slice(&receive([self.0])?)?)
     }
 
-    /// Receives a request.
+    /// Receives a request from the underlying protocol.
     pub async fn recv_req(&mut self) -> anyhow::Result<Request> {
-        let req: Request = serde_json::from_slice(&self.0.recv().await?).unwrap_or_else(|err| {
+        let req: Request = serde_json::from_slice(&receive([self.0])?).unwrap_or_else(|err| {
             Request::new(
                 "debug.echo_raw",
                 Response::Err(ApiError::bad_request("InvalidJson", err.to_string())),
@@ -51,29 +66,30 @@ impl Connection {
         Ok(req)
     }
 
-    /// Receives a response.
+    /// Receives a response from the underlying protocol.
     pub async fn recv_resp(&mut self) -> anyhow::Result<Response> {
-        self.recv().await
+        may_await([self.recv()])
     }
 
     /// Sends a datagram with JSON-serialized given object.
     pub async fn send<T: Serialize>(&mut self, obj: &T) -> anyhow::Result<()> {
-        self.0.send(serde_json::to_string(obj)?.as_bytes()).await
-    }
-
-    /// Attempts to get peer's UNIX credentials.
-    pub fn cred(&self) -> std::io::Result<UCred> {
-        self.0.as_ref().peer_cred()
+        send_to([self.0], [serde_json::to_string(obj)?.as_bytes()])
     }
 }
-impl Deref for Connection {
-    type Target = S2D<UnixStream>;
+#[duplicate_item(
+    Name                    Stream;
+    [Connection]            [tokio::net::UnixStream];
+    [BlockingConnection]    [std::os::unix::net::UnixStream];
+)]
+impl Deref for Name {
+    type Target = S2D<Stream>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
-impl DerefMut for Connection {
+#[duplicate_item(Name; [Connection]; [BlockingConnection];)]
+impl DerefMut for Name {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
@@ -131,8 +147,9 @@ pub enum Response {
 impl Response {
     /// Creates a new `Response` from given `Result`.
     ///
-    /// ## Panic
-    /// Panics when `serde_json::to_value` fails.
+    /// # Panics
+    /// Panics when `serde_json::to_value` fails. This always assumes that the passed value is always interpreted as a value
+    /// JSON object.
     pub fn new<T: Serialize>(result: Result<T, ApiError>) -> Self {
         match result {
             Ok(val) => Self::Ok(serde_json::to_value(&val).unwrap()),
@@ -156,11 +173,19 @@ pub struct S2D<T> {
     inner: T,
     size_limit: usize,
 }
-impl<T> S2D<T>
-where
-    T: AsyncRead + AsyncWrite + Unpin,
-{
-    /// Receives a datagram.
+impl<T> S2D<T> {
+    /// Sets received datagram size limitation.
+    pub fn set_size_limit(&mut self, new: usize) -> usize {
+        std::mem::replace(&mut self.size_limit, new)
+    }
+
+    /// Creates a new [`S2D`] with provided stream.
+    pub fn new(inner: T, size_limit: usize) -> Self {
+        Self { inner, size_limit }
+    }
+}
+impl<T: AsyncRead + Unpin> S2D<T> {
+    /// Receives a datagram from the stream.
     pub async fn recv(&mut self) -> anyhow::Result<Vec<u8>> {
         let len = self.inner.read_u64_le().await? as usize;
         if len > self.size_limit {
@@ -171,23 +196,38 @@ where
 
         Ok(blob)
     }
-
-    /// Sends a datagram.
+}
+impl<T: AsyncWrite + Unpin> S2D<T> {
+    /// Sends a datagram to the stream.
     pub async fn send(&mut self, blob: &[u8]) -> anyhow::Result<()> {
         self.inner.write_u64_le(blob.len() as _).await?;
         self.inner.write_all(blob).await?;
 
         Ok(())
     }
+}
+impl<T: Read> S2D<T> {
+    /// Receives a datagram from the stream.
+    pub fn recv_blocking(&mut self) -> anyhow::Result<Vec<u8>> {
+        let mut len = [0u8; std::mem::size_of::<u64>()];
+        self.inner.read_exact(&mut len)?;
+        let len = u64::from_le_bytes(len) as usize;
+        if len > self.size_limit {
+            return Err(anyhow!("datagram is too big ({} bytes)", len));
+        }
+        let mut blob = vec![0u8; len];
+        self.inner.read_exact(&mut blob)?;
 
-    /// Sets size limitation.
-    pub fn set_size_limit(&mut self, new: usize) -> usize {
-        std::mem::replace(&mut self.size_limit, new)
+        Ok(blob)
     }
+}
+impl<T: Write> S2D<T> {
+    /// Sends a datagram to the stream.
+    pub fn send_blocking(&mut self, blob: &[u8]) -> anyhow::Result<()> {
+        self.inner.write_all(&u64::to_le_bytes(blob.len() as _))?;
+        self.inner.write_all(blob)?;
 
-    /// Creates a new `Connection` with provided stream.
-    pub fn new(inner: T, size_limit: usize) -> Self {
-        Self { inner, size_limit }
+        Ok(())
     }
 }
 impl<T> AsRef<T> for S2D<T> {

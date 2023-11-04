@@ -1,8 +1,8 @@
 //! Process management on Unix platforms.
-//! 
-//! This internally registers a `SIGCHLD` listener and spawns a background task to listen the signal. When registering 
+//!
+//! This internally registers a `SIGCHLD` listener and spawns a background task to listen the signal. When registering
 //! a new child process (e.g. by spawning), the PID is subscribed from the internal table. When a new sucessful call to
-//! `waitpid()` completed, if the PID was previously subscribed, the result will be sent to the subscriber and then the 
+//! `waitpid()` completed, if the PID was previously subscribed, the result will be sent to the subscriber and then the
 //! subscription is cancelled.
 
 use crate::process::{ExitStatus, Pid, Wait};
@@ -22,7 +22,7 @@ use tokio::{
 static CHILD_QUEUE: OnceLock<ChildQueue> = OnceLock::new();
 
 /// Waits for process termination in nonblocking mode.
-/// 
+///
 /// # Errors
 /// An `Err(_)` is returned if the underlying OS function failed.
 fn wait_nonblocking(pid: Pid) -> std::io::Result<Option<Wait>> {
@@ -44,7 +44,7 @@ pub fn reload_image() -> std::io::Result<Infallible> {
 }
 
 /// Sends the given signal to the specified process.
-/// 
+///
 /// # Errors
 /// An `Err(_)` is returned if the underlying OS function failed.
 pub async fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
@@ -151,7 +151,7 @@ impl Child {
     }
 
     /// Sends the specified signal to the child process.
-    /// 
+    ///
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
     pub async fn kill(&self, sig: i32) -> std::io::Result<()> {

@@ -55,7 +55,7 @@ pub const SIGABRT: i32 = libc::SIGABRT;
 pub const SIGFPE: i32 = libc::SIGFPE;
 
 /// Registers a signal handler.
-/// 
+///
 /// # Errors
 /// An `Err(_)` is returned if the underlying OS function failed.
 pub fn signal<

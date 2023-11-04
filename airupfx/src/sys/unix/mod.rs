@@ -1,6 +1,7 @@
 //! Platform-specific functions for Unix platforms.
 
 pub mod env;
+pub mod fs;
 pub mod process;
 pub mod signal;
 

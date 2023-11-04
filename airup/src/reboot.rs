@@ -1,4 +1,4 @@
-use airup_sdk::{system::ConnectionExt, Connection};
+use airup_sdk::prelude::*;
 use clap::Parser;
 
 /// Reboot, power-off or halt the system
@@ -45,17 +45,17 @@ pub struct Cmdline {
 }
 
 /// Entrypoint of the `airup reboot` subprogram.
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = BlockingConnection::connect(airup_sdk::socket_path())?;
 
     if cmdline.reboot {
-        conn.reboot().await??;
+        conn.reboot()??;
     }
     if cmdline.poweroff {
-        conn.poweroff().await??;
+        conn.poweroff()??;
     }
     if cmdline.halt {
-        conn.halt().await??;
+        conn.halt()??;
     }
 
     Ok(())

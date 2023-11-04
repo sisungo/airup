@@ -14,16 +14,16 @@ pub struct Cmdline {
     unit: Option<String>,
 }
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = BlockingConnection::connect(airup_sdk::socket_path())?;
     match cmdline.unit {
         Some(x) => {
-            let queried = conn.query_service(&x).await??;
+            let queried = conn.query_service(&x)??;
             print_query_service(&queried);
         }
         None => {
-            let query_system = conn.query_system().await??;
-            print_query_system(&mut conn, &query_system, &cmdline).await?;
+            let query_system = conn.query_system()??;
+            print_query_system(&mut conn, &query_system, &cmdline)?;
         }
     }
     Ok(())
@@ -54,25 +54,24 @@ fn print_query_service(query_service: &QueryService) {
 }
 
 /// Prints a [QuerySystem] to console, in human-friendly format.
-async fn print_query_system(
-    conn: &mut Connection<'_>,
+fn print_query_system(
+    conn: &mut BlockingConnection<'_>,
     query_system: &QuerySystem,
     cmdline: &Cmdline,
 ) -> anyhow::Result<()> {
     let mut services = Vec::with_capacity(query_system.services.len());
     for i in query_system.services.iter() {
-        let query_service = conn.query_service(i).await?.ok();
+        let query_service = conn.query_service(i)?.ok();
         services.push((
             i.clone(),
             query_service.map(|x| PrintedStatus::of_service(&x)),
         ));
     }
     if cmdline.all {
-        for name in conn.list_services().await?? {
+        for name in conn.list_services()?? {
             services.push((
                 name.clone(),
-                conn.query_service(&name)
-                    .await?
+                conn.query_service(&name)?
                     .ok()
                     .map(|x| PrintedStatus::of_service(&x)),
             ));

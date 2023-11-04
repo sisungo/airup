@@ -9,11 +9,11 @@ pub struct Cmdline {
     command: Option<String>,
 }
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = Connection::connect(airup_sdk::socket_path()).await?;
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = BlockingConnection::connect(airup_sdk::socket_path())?;
     if let Some(cmd) = cmdline.command {
-        conn.send_raw(cmd.as_bytes()).await?;
-        println!("{}", String::from_utf8_lossy(&conn.recv_raw().await?));
+        conn.send_raw(cmd.as_bytes())?;
+        println!("{}", String::from_utf8_lossy(&conn.recv_raw()?));
         return Ok(());
     }
     Ok(())

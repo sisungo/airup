@@ -414,7 +414,8 @@ impl StatusContext {
 
     pub fn set(&self, new: Status) -> Status {
         let mut lock = self.data.lock().unwrap();
-        self.timestamp.store(airupfx::time::timestamp_ms(), atomic::Ordering::Relaxed);
+        self.timestamp
+            .store(airupfx::time::timestamp_ms(), atomic::Ordering::Relaxed);
         std::mem::replace(&mut lock, new)
     }
 }

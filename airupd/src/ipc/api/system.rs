@@ -1,12 +1,11 @@
 //! APIs that provides system operations.
 
 use super::{
-    util::{check_perm, ok, ok_null},
+    util::{ok, ok_null},
     Method, MethodFuture,
 };
 use crate::{app::airupd, ipc::SessionContext};
 use airup_sdk::ipc::Request;
-use airupfx::policy::Action;
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
@@ -28,70 +27,59 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     methods.insert("system.halt", halt);
 }
 
-fn refresh(context: Arc<SessionContext>, _: Request) -> MethodFuture {
+fn refresh(_: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move {
-        check_perm(&context, &[Action::Refresh])?;
-        airupd().storage.config.policy.refresh().await;
         airupfx::env::refresh().await;
         ok_null()
     })
 }
 
-fn gc(context: Arc<SessionContext>, _: Request) -> MethodFuture {
+fn gc(_: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move {
-        check_perm(&context, &[Action::Refresh])?;
         airupd().supervisors.gc().await;
         ok_null()
     })
 }
 
-fn query_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+fn query_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let service: String = req.extract_params()?;
-        check_perm(&context, &[Action::QueryServices])?;
         ok(airupd().query_service(&service).await?)
     })
 }
 
-fn query_system(context: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async move {
-        check_perm(&context, &[Action::QueryServices])?;
-        ok(airupd().query_system().await)
-    })
+fn query_system(_: Arc<SessionContext>, _: Request) -> MethodFuture {
+    Box::pin(async move { ok(airupd().query_system().await) })
 }
 
-fn start_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+fn start_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let service: String = req.extract_params()?;
-        check_perm(&context, &[Action::ManageServices])?;
         let handle = airupd().start_service(&service).await?;
         handle.wait().await?;
         ok_null()
     })
 }
 
-fn stop_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+fn stop_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let service: String = req.extract_params()?;
-        check_perm(&context, &[Action::ManageServices])?;
         airupd().stop_service(&service).await?.wait().await?;
         ok_null()
     })
 }
 
-fn reload_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+fn reload_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let service: String = req.extract_params()?;
-        check_perm(&context, &[Action::ManageServices])?;
         airupd().reload_service(&service).await?.wait().await?;
         ok_null()
     })
 }
 
-fn interrupt_service_task(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+fn interrupt_service_task(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let service: String = req.extract_params()?;
-        check_perm(&context, &[Action::ManageServices])?;
         airupd()
             .interrupt_service_task(&service)
             .await?
@@ -101,68 +89,58 @@ fn interrupt_service_task(context: Arc<SessionContext>, req: Request) -> MethodF
     })
 }
 
-fn sideload_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+fn sideload_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let (name, service): (String, _) = req.extract_params()?;
-        check_perm(&context, &[Action::SideloadServices])?;
         airupd().storage.services.load(&name, service)?;
         ok_null()
     })
 }
 
-fn unsideload_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+fn unsideload_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let name: String = req.extract_params()?;
-        check_perm(&context, &[Action::SideloadServices])?;
         airupd().storage.services.unload(&name)?;
         ok_null()
     })
 }
 
-fn cache_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+fn cache_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let service: String = req.extract_params()?;
-        check_perm(&context, &[Action::ManageServices])?;
         airupd().cache_service(&service).await?;
         ok_null()
     })
 }
 
-fn uncache_service(context: Arc<SessionContext>, req: Request) -> MethodFuture {
+fn uncache_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let service: String = req.extract_params()?;
-        check_perm(&context, &[Action::ManageServices])?;
         airupd().uncache_service(&service).await?;
         ok_null()
     })
 }
 
-fn list_services(context: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async move {
-        check_perm(&context, &[Action::QueryServices])?;
-        ok(airupd().storage.services.list().await)
-    })
+fn list_services(_: Arc<SessionContext>, _: Request) -> MethodFuture {
+    Box::pin(async move { ok(airupd().storage.services.list().await) })
 }
 
-fn poweroff(context: Arc<SessionContext>, _: Request) -> MethodFuture {
+fn poweroff(_: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move {
-        check_perm(&context, &[Action::Power])?;
         airupd().lifetime.poweroff();
         ok_null()
     })
 }
 
-fn reboot(context: Arc<SessionContext>, _: Request) -> MethodFuture {
+fn reboot(_: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move {
-        check_perm(&context, &[Action::Power])?;
         airupd().lifetime.reboot();
         ok_null()
     })
 }
 
-fn halt(context: Arc<SessionContext>, _: Request) -> MethodFuture {
+fn halt(_: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move {
-        check_perm(&context, &[Action::Power])?;
         airupd().lifetime.halt();
         ok_null()
     })
