@@ -138,13 +138,13 @@ impl Env {
 #[serde(rename_all = "kebab-case")]
 pub enum Stdio {
     /// Inherits `stdio` from the parent process.
-    #[default]
     Inherit,
 
     /// Redirects `stdio` to the specified file.
     File(PathBuf),
 
-    /// Use the Airup simple logger to record `stdio` outputs.
+    /// Use the Airup logger to record `stdio` outputs.
+    #[default]
     Log,
 }
 impl Stdio {

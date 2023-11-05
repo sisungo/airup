@@ -42,7 +42,7 @@ impl System {
         self.send(Event::ReloadImage);
     }
 
-    /// Sends an Airupd lifetime event.
+    /// Sends an process-wide lifetime event.
     fn send(&self, event: Event) {
         self.0.send(event).ok();
     }

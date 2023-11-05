@@ -1,13 +1,14 @@
 use airup_sdk::prelude::*;
 use clap::Parser;
 use console::{style, Emoji};
-use std::fmt::Display;
+use chrono::prelude::*;
+use std::{fmt::Display, ops::Deref};
 
 /// Query system information
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
-    /// Queries all data, including which is not loaded
+    /// Queries all information, including which is not loaded
     #[arg(short, long, conflicts_with = "unit")]
     all: bool,
 
@@ -53,7 +54,7 @@ fn print_query_service(query_service: &QueryService) {
     );
 }
 
-/// Prints a [QuerySystem] to console, in human-friendly format.
+/// Prints a [`QuerySystem`] to console, in human-friendly format.
 fn print_query_system(
     conn: &mut BlockingConnection<'_>,
     query_system: &QuerySystem,
@@ -88,7 +89,7 @@ fn print_query_system(
     println!("{:>14} /", "Services:");
     for (name, status) in &services {
         match status {
-            Some(status) => println!("{1:>0$} ({2})", 18 + name.len(), name, status.fmt_simple()),
+            Some(status) => println!("{1:>0$} ({2})", 18 + name.len(), name, status.kind),
             None => println!(
                 "{1:>0$} ({2})",
                 16 + name.len(),
@@ -102,21 +103,21 @@ fn print_query_system(
 }
 
 #[derive(Debug, Clone)]
-enum PrintedStatus {
+enum PrintedStatusKind {
     Active,
     Stopped,
-    Failed(String),
+    Failed,
     Starting,
     Stopping,
 }
-impl PrintedStatus {
+impl PrintedStatusKind {
     fn of_service(query_service: &QueryService) -> Self {
         let mut result = match query_service.status {
             Status::Active => Self::Active,
             Status::Stopped => Self::Stopped,
         };
-        if let Some(x) = &query_service.last_error {
-            result = Self::Failed(x.to_string());
+        if let Some(_) = &query_service.last_error {
+            result = Self::Failed;
         }
         if let Some(x) = query_service.task.as_deref() {
             match x {
@@ -139,31 +140,72 @@ impl PrintedStatus {
     fn theme_dot(&self) -> String {
         let theme_dot = style(Emoji("●", "*"));
         match self {
-            PrintedStatus::Active => theme_dot.green(),
-            PrintedStatus::Stopped => theme_dot,
-            PrintedStatus::Failed(_) => theme_dot.red(),
-            PrintedStatus::Starting | PrintedStatus::Stopping => theme_dot.blue(),
+            Self::Active => theme_dot.green(),
+            Self::Stopped => theme_dot,
+            Self::Failed => theme_dot.red(),
+            Self::Starting | Self::Stopping => theme_dot.blue(),
         }
         .to_string()
     }
-
-    fn fmt_simple(&self) -> impl Display {
+}
+impl Display for PrintedStatusKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Active => style("active").bold().green(),
-            Self::Stopped => style("stopped").bold(),
-            Self::Failed(_) => style("failed").bold().red(),
-            Self::Starting => style("starting").bold().blue(),
-            Self::Stopping => style("starting").bold().blue(),
+            Self::Active => write!(f, "{}", style("active").bold().green()),
+            Self::Stopped => write!(f, "{}", style("stopped").bold()),
+            Self::Failed => write!(f, "{}", style("failed").bold().red()),
+            Self::Starting => write!(f, "{}", style("starting").bold().blue()),
+            Self::Stopping => write!(f, "{}", style("starting").bold().blue()),
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct PrintedStatus {
+    kind: PrintedStatusKind,
+    since: Option<i64>,
+    error: Option<String>,
+}
+impl PrintedStatus {
+    fn of_service(query_service: &QueryService) -> Self {
+        let kind = PrintedStatusKind::of_service(query_service);
+        let error = query_service.last_error.as_ref().map(ToString::to_string);
+        let since = query_service.status_since.clone();
+        Self { kind, since, error }
+    }
+
+    fn of_system(query_system: &QuerySystem) -> Self {
+        let kind = PrintedStatusKind::of_system(query_system);
+        let since = query_system.status_since.clone();
+        Self {
+            kind,
+            since: Some(since),
+            error: None,
+        }
+    }
+}
+impl Deref for PrintedStatus {
+    type Target = PrintedStatusKind;
+
+    fn deref(&self) -> &Self::Target {
+        &self.kind
     }
 }
 impl Display for PrintedStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let extra = match self {
-            Self::Failed(why) => format!("{}", why),
-            _ => format!(""),
-        };
-        write!(f, "{} ({})", self.fmt_simple(), extra)?;
+        Display::fmt(&self.kind, f)?;
+        let ps = format!(
+            "{}; since {}",
+            self.error.as_deref().unwrap_or_default(),
+            self.since.map(|x| {
+                let dt = DateTime::from_timestamp(x / 1000, 0);
+                dt.map(|x| Local.from_utc_datetime(&x.naive_utc()).to_string()).unwrap_or_else(|| x.to_string())
+            }).unwrap_or_default(),
+        );
+        let ps = ps.trim_start_matches("; ");
+        if ps != "since " {
+            write!(f, " ({ps})")?;
+        }
         Ok(())
     }
 }

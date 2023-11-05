@@ -1,3 +1,6 @@
+//! # The `Airup` Supervisor
+//! Main module containing full airup supervisor logic.
+
 pub mod task;
 
 use self::task::*;
@@ -35,7 +38,7 @@ pub struct Manager {
     provided: tokio::sync::RwLock<AHashMap<String, Arc<SupervisorHandle>>>,
 }
 impl Manager {
-    /// Creates a new, empty [Manager] instance.
+    /// Creates a new, empty [`Manager`] instance.
     pub fn new() -> Self {
         Self::default()
     }
@@ -87,8 +90,7 @@ impl Manager {
     pub async fn remove(&self, name: &str) -> Result<(), Error> {
         let mut supervisors = self.supervisors.write().await;
         let mut provided = self.provided.write().await;
-        self.remove_from(name, &mut supervisors, &mut provided, true)
-            .await
+        Self::_remove_from(name, &mut supervisors, &mut provided, true).await
     }
 
     /// Removes supervisors that are not used.
@@ -96,15 +98,22 @@ impl Manager {
         let mut supervisors = self.supervisors.write().await;
         let mut provided = self.provided.write().await;
         let all: Vec<_> = supervisors.keys().map(ToString::to_string).collect();
+
+        // [`Manager::_remove_from`] fails if the specific supervisor cannot be removed, so we can iterate over all supervisors
+        // to "try to remove".
         for k in all {
-            self.remove_from(&k, &mut supervisors, &mut provided, false)
+            Self::_remove_from(&k, &mut supervisors, &mut provided, false)
                 .await
                 .ok();
         }
     }
 
-    async fn remove_from(
-        &self,
+    /// Removes the specific supervisor from passed supervisor and provider set.
+    ///
+    /// It can sucessfully remove a service which is neither active, having errors or being registered as a provider. In
+    /// permissive mode, it allows removing any non-active services, and automatically unregisters providers registered by
+    /// the specific service.
+    async fn _remove_from(
         name: &str,
         supervisors: &mut (dyn DerefMut<Target = AHashMap<String, Arc<SupervisorHandle>>>
                   + Send
@@ -162,7 +171,7 @@ pub struct SupervisorHandle {
     sender: mpsc::Sender<Request>,
 }
 impl SupervisorHandle {
-    /// Creates a new [SupervisorHandle] instance while starting the associated supervisor.
+    /// Creates a new [`SupervisorHandle`] instance while starting the associated supervisor.
     pub fn new(service: Service) -> Arc<Self> {
         let (sender, receiver) = mpsc::channel(128);
 
@@ -226,6 +235,10 @@ impl Supervisor {
         }
     }
 
+    /// Called when a request is sent to the supervisor.
+    ///
+    /// This function itself should return as soon as possible in order to prevent blocking the supervisor workflow. It handles
+    /// requests, generates a response and immediately returns.
     async fn handle_req(&mut self, req: Request) {
         match req {
             Request::Query(chan) => {
@@ -280,6 +293,11 @@ impl Supervisor {
         }
     }
 
+    /// Called when the child process was terminated.
+    ///
+    /// This firstly sets the status of the service to `Stopped`. If retrying is enabled (`user_stop_service` is not called; even
+    /// though `retry = 0`), it starts the "CleanupService" task, which may check if the service could be retried and (if it
+    /// can), retry the service.
     async fn handle_wait(&mut self, wait: Wait) {
         self.context.status.set(Status::Stopped);
         self.context.set_child(None).await;
@@ -290,6 +308,9 @@ impl Supervisor {
         }
     }
 
+    /// Called when current task finished.
+    ///
+    /// If error auto-saving is enabled, it sets last error to the task's result.
     async fn handle_wait_task(&mut self, rslt: Result<TaskFeedback, Error>) {
         if let Err(err) = rslt {
             if self.context.last_error.take_autosave() {
@@ -298,11 +319,17 @@ impl Supervisor {
         }
     }
 
+    /// Called when the user attempted to start the service.
+    ///
+    /// This resets the retry counter, then returns the just-started "StartService" task if task creation succeeded.
     fn user_start_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.context.retry.reset();
         self.current_task.start_service(self.context.clone())
     }
 
+    /// Called when the user attempted to stop the service.
+    ///
+    /// This disables retrying, then returns the just-started "StopService" task if task creation succeeded.
     fn user_stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.context.retry.disable();
         self.current_task.stop_service(self.context.clone())
@@ -376,7 +403,7 @@ pub struct SupervisorContext {
     retry: RetryContext,
 }
 impl SupervisorContext {
-    /// Creates a new [SupervisorContext] instance for the given [Service].
+    /// Creates a new [`SupervisorContext`] instance for the given [`Service`].
     pub fn new(service: Service) -> Arc<Self> {
         Arc::new(Self {
             service,
@@ -404,14 +431,17 @@ pub struct StatusContext {
     timestamp: AtomicI64,
 }
 impl StatusContext {
+    /// Gets current status.
     pub fn get(&self) -> Status {
         *self.data.lock().unwrap()
     }
 
+    /// Gets the timestamp of last status change.
     pub fn timestamp(&self) -> i64 {
         self.timestamp.load(atomic::Ordering::Relaxed)
     }
 
+    /// Changes current status updating timestamp.
     pub fn set(&self, new: Status) -> Status {
         let mut lock = self.data.lock().unwrap();
         self.timestamp
@@ -449,6 +479,7 @@ pub struct RetryContext {
     count: AtomicI32,
 }
 impl RetryContext {
+    /// Returns `true` if the service should be retried, then increases retry counter.
     pub fn check_and_mark(&self, max: i32) -> bool {
         if self.disabled() {
             return false;
@@ -470,27 +501,35 @@ impl RetryContext {
         }
     }
 
+    /// Resets the retry counter.
+    ///
+    /// If retrying is disabled, it will be enabled. Then the retry count is set to zero.
     pub fn reset(&self) {
         self.enable();
         self.reset_count();
     }
 
+    /// Sets the retry count to zero.
     pub fn reset_count(&self) {
         self.count.store(0, atomic::Ordering::Relaxed);
     }
 
+    /// Enables retrying if disabled.
     pub fn enable(&self) {
         self.disabled.store(false, atomic::Ordering::Relaxed);
     }
 
+    /// Disables retrying if enabled.
     pub fn disable(&self) {
         self.disabled.store(true, atomic::Ordering::Relaxed);
     }
 
+    /// Returns `true` if retrying is enabled.
     pub fn enabled(&self) -> bool {
         !self.disabled()
     }
 
+    /// Returns `true` if retrying is disabled.
     pub fn disabled(&self) -> bool {
         self.disabled.load(atomic::Ordering::Relaxed)
     }
@@ -574,6 +613,7 @@ impl crate::app::Airupd {
     }
 }
 
+/// Representation of a request sent to a supervisor.
 enum Request {
     Query(oneshot::Sender<QueryService>),
     Start(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),

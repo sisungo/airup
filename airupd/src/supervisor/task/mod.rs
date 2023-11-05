@@ -1,3 +1,5 @@
+//! Tasks of the Airup supervisor.
+
 mod cleanup_service;
 pub mod feedback;
 mod reload_service;
@@ -22,6 +24,9 @@ pub trait TaskHandle: Send + Sync + 'static {
     fn task_type(&self) -> &'static str;
 
     /// Sends an interruption request to the task.
+    ///
+    /// **NOTE**: It's determined by the task logic that what time it can be interrupted and the method immediately returns. To
+    /// wait until the task terminated, please call [`TaskHandle::wait`].
     fn send_interrupt(&self);
 
     /// Waits for completion of the task.
@@ -29,12 +34,12 @@ pub trait TaskHandle: Send + Sync + 'static {
     /// If the task has been interrupted, this should return `Err(Error::TaskInterrupted)`. Otherwise it waits until the task
     /// has completed.
     ///
-    /// ## Cancel Safety
+    /// # Cancel Safety
     /// This method is cancel-safe.
     fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>>;
 }
 
-/// An [TaskHandle] implementation that immediately successfully completes.
+/// An [`TaskHandle`] implementation that immediately successfully completes.
 pub struct EmptyTaskHandle;
 impl TaskHandle for EmptyTaskHandle {
     fn task_type(&self) -> &'static str {
@@ -46,7 +51,7 @@ impl TaskHandle for EmptyTaskHandle {
     }
 }
 
-/// A helper type for implementing [TaskHandle].
+/// A helper type for implementing [`TaskHandle`].
 #[derive(Debug)]
 pub struct TaskHelperHandle {
     int_flag: watch::Sender<bool>,
@@ -73,14 +78,14 @@ impl TaskHandle for TaskHelperHandle {
     }
 }
 
-/// A helper type for implementing [TaskHandle], backend type of [TaskHelperHandle].
+/// A helper type for implementing [`TaskHandle`], which acts as backend type of [`TaskHelperHandle`].
 #[derive(Debug)]
 pub struct TaskHelper {
     int_flag: watch::Receiver<bool>,
     done: watch::Sender<Option<Result<TaskFeedback, Error>>>,
 }
 impl TaskHelper {
-    /// Executes a [Future] in an interruptable scope. If this task is interrupted, returns `Err(Error::TaskInterrupted)`,
+    /// Executes a [`Future`] in an interruptable scope. If this task is interrupted, returns `Err(Error::TaskInterrupted)`,
     /// otherwise returns `Ok(_)`.
     pub async fn interruptable_scope<T, F: Future<Output = T>>(
         &self,
@@ -107,7 +112,7 @@ impl TaskHelper {
     }
 }
 
-/// Returns a pair of [TaskHelper] and [TaskHelperHandle].
+/// Returns a pair of [`TaskHelper`] and [`TaskHelperHandle`].
 pub fn task_helper() -> (TaskHelperHandle, TaskHelper) {
     let (int_flag_tx, int_flag_rx) = watch::channel(false);
     let (done_tx, done_rx) = watch::channel(None);
@@ -124,7 +129,7 @@ pub fn task_helper() -> (TaskHelperHandle, TaskHelper) {
     (handle, helper)
 }
 
-/// Creates an [Ace] instance matching the given [SupervisorContext].
+/// Creates an [`Ace`] instance matching the given [`SupervisorContext`].
 pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
     let mut ace = Ace::new();
 
