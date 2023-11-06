@@ -8,8 +8,8 @@ pub mod util;
 use super::SessionContext;
 use ahash::AHashMap;
 use airup_sdk::{
-    error::ApiError,
     ipc::{Request, Response},
+    Error,
 };
 use airupfx::prelude::*;
 use std::sync::Arc;
@@ -41,7 +41,7 @@ impl Manager {
         let method = self.methods.get(&req.method[..]).copied();
         match method {
             Some(method) => Response::new(method(context, req).await),
-            None => Response::Err(ApiError::NoSuchMethod),
+            None => Response::Err(Error::NoSuchMethod),
         }
     }
 }
@@ -55,4 +55,4 @@ impl Default for Manager {
 pub type Method = fn(Arc<SessionContext>, Request) -> MethodFuture;
 
 /// Represents to future type of an IPC method.
-pub type MethodFuture = BoxFuture<'static, Result<serde_json::Value, ApiError>>;
+pub type MethodFuture = BoxFuture<'static, Result<serde_json::Value, Error>>;

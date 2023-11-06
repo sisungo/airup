@@ -30,7 +30,8 @@ impl Ace {
             self.run_tokenized(["sh".into(), "-c".into(), x.into()].into_iter())
                 .await
         } else {
-            self.run_tokenized(parser::tokenize(cmd).into_iter()).await
+            self.run_tokenized(shlex::split(cmd).ok_or(Error::ParseError)?.into_iter())
+                .await
         }
     }
 
@@ -235,6 +236,9 @@ impl From<crate::process::Child> for Child {
 /// An error occured by ACE operations.
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum Error {
+    #[error("parse error")]
+    ParseError,
+
     #[error("wait() failed: {0}")]
     Wait(WaitError),
 

@@ -88,11 +88,15 @@ pub enum ApiError {
 
     /// The operation failed because some dependencies cannot be satisfied.
     #[error("dependency `{name}` cannot be satisfied")]
-    DependencyNotSatisfied { name: String },
+    DepNotSatisfied { name: String },
 
     /// The operation failed because some conflicts exists.
     #[error("the unit conflicts with unit `{name}`")]
     ConflictsWith { name: String },
+
+    /// ACE parse error.
+    #[error("ace: parse error")]
+    AceParseError,
 
     /// An I/O error occured.
     #[error("I/O error: {message}")]
@@ -133,8 +137,8 @@ impl ApiError {
         }
     }
 
-    pub fn dependency_not_satisfied<T: Into<String>>(name: T) -> Self {
-        Self::DependencyNotSatisfied { name: name.into() }
+    pub fn dep_not_satisfied<T: Into<String>>(name: T) -> Self {
+        Self::DepNotSatisfied { name: name.into() }
     }
 
     pub fn unsupported<T: Into<Cow<'static, str>>>(message: T) -> Self {
@@ -173,6 +177,7 @@ impl From<crate::files::ReadError> for ApiError {
 impl From<airupfx::ace::Error> for ApiError {
     fn from(value: airupfx::ace::Error) -> Self {
         match value {
+            airupfx::ace::Error::ParseError => Self::AceParseError,
             airupfx::ace::Error::Wait(err) => Self::internal(err.to_string()),
             airupfx::ace::Error::Io(message) => Self::Io { message },
             airupfx::ace::Error::TimedOut => Self::TimedOut,

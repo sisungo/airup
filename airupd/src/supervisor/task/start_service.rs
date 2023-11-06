@@ -72,7 +72,7 @@ impl StartService {
                     airupd()
                         .make_service_active(dep)
                         .await
-                        .map_err(|_| Error::dependency_not_satisfied(dep))?;
+                        .map_err(|_| Error::dep_not_satisfied(dep))?;
                 }
 
                 Ok(())

@@ -1,7 +1,7 @@
 use airup_sdk::prelude::*;
+use chrono::prelude::*;
 use clap::Parser;
 use console::{style, Emoji};
-use chrono::prelude::*;
 use std::{fmt::Display, ops::Deref};
 
 /// Query system information
@@ -116,7 +116,7 @@ impl PrintedStatusKind {
             Status::Active => Self::Active,
             Status::Stopped => Self::Stopped,
         };
-        if let Some(_) = &query_service.last_error {
+        if query_service.last_error.is_some() {
             result = Self::Failed;
         }
         if let Some(x) = query_service.task.as_deref() {
@@ -170,13 +170,13 @@ impl PrintedStatus {
     fn of_service(query_service: &QueryService) -> Self {
         let kind = PrintedStatusKind::of_service(query_service);
         let error = query_service.last_error.as_ref().map(ToString::to_string);
-        let since = query_service.status_since.clone();
+        let since = query_service.status_since;
         Self { kind, since, error }
     }
 
     fn of_system(query_system: &QuerySystem) -> Self {
         let kind = PrintedStatusKind::of_system(query_system);
-        let since = query_system.status_since.clone();
+        let since = query_system.status_since;
         Self {
             kind,
             since: Some(since),
@@ -197,10 +197,13 @@ impl Display for PrintedStatus {
         let ps = format!(
             "{}; since {}",
             self.error.as_deref().unwrap_or_default(),
-            self.since.map(|x| {
-                let dt = DateTime::from_timestamp(x / 1000, 0);
-                dt.map(|x| Local.from_utc_datetime(&x.naive_utc()).to_string()).unwrap_or_else(|| x.to_string())
-            }).unwrap_or_default(),
+            self.since
+                .map(|x| {
+                    let dt = DateTime::from_timestamp(x / 1000, 0);
+                    dt.map(|x| Local.from_utc_datetime(&x.naive_utc()).to_string())
+                        .unwrap_or_else(|| x.to_string())
+                })
+                .unwrap_or_default(),
         );
         let ps = ps.trim_start_matches("; ");
         if ps != "since " {

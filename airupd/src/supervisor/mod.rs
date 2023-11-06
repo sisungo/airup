@@ -11,9 +11,9 @@ use airup_sdk::{
     Error,
 };
 use airupfx::{ace::Child, prelude::*, process::Wait};
+use atomic_refcell::AtomicRefCell;
 use std::{
     cmp,
-    ops::DerefMut,
     sync::{
         atomic::{self, AtomicBool, AtomicI32, AtomicI64},
         Arc, Mutex, RwLock,
@@ -115,41 +115,38 @@ impl Manager {
     /// the specific service.
     async fn _remove_from(
         name: &str,
-        supervisors: &mut (dyn DerefMut<Target = AHashMap<String, Arc<SupervisorHandle>>>
-                  + Send
-                  + Sync),
-        provided: &mut (dyn DerefMut<Target = AHashMap<String, Arc<SupervisorHandle>>>
-                  + Send
-                  + Sync),
+        supervisors: &mut AHashMap<String, Arc<SupervisorHandle>>,
+        provided: &mut AHashMap<String, Arc<SupervisorHandle>>,
         permissive: bool,
     ) -> Result<(), Error> {
         let handle = supervisors.get(name).ok_or(Error::UnitNotStarted)?.clone();
         let queried = handle.query().await;
-        let removable = queried.status == Status::Stopped
-            && queried.task.is_none()
-            && match permissive {
-                true => true,
-                false => {
-                    queried.last_error.is_none()
-                        && || -> bool {
-                            for i in queried.service.service.provides.iter() {
-                                if let Some(provided_handle) = provided.get(i) {
-                                    if Arc::ptr_eq(&handle, provided_handle) {
-                                        return false;
-                                    }
-                                }
-                            }
-                            true
-                        }()
+        let provided = AtomicRefCell::new(provided);
+
+        let is_providing = |i| {
+            if let Some(provided_handle) = provided.borrow().get(i) {
+                if Arc::ptr_eq(&handle, provided_handle) {
+                    return true;
                 }
-            };
+            }
+            false
+        };
+        let is_provider = queried
+            .service
+            .service
+            .provides
+            .iter()
+            .map(is_providing)
+            .any(|x| x);
+
+        let removable = queried.status == Status::Stopped && queried.task.is_none() && permissive
+            || (queried.last_error.is_none() && !is_provider);
+
         if removable {
             supervisors.remove(name).unwrap();
-            for i in queried.service.service.provides {
-                if let Some(provided_handle) = provided.get(&i) {
-                    if Arc::ptr_eq(&handle, provided_handle) {
-                        provided.remove(&i);
-                    }
+            for i in &queried.service.service.provides {
+                if is_providing(&i) {
+                    provided.borrow_mut().remove(i);
                 }
             }
             Ok(())

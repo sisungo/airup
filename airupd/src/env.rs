@@ -7,6 +7,9 @@ static CMDLINE: OnceLock<Cmdline> = OnceLock::new();
 
 #[derive(Debug, Clone)]
 pub struct Cmdline {
+    /// Enable Airup verbose console outputs
+    pub verbose: bool,
+
     /// Disable Airupd console outputs
     pub quiet: bool,
 
@@ -41,6 +44,7 @@ impl Cmdline {
                 match opt {
                     "quiet" => object.quiet = true,
                     "nocolor" => object.no_color = true,
+                    "verbose" => object.verbose = true,
                     _ => {}
                 }
             }
@@ -54,6 +58,7 @@ impl Default for Cmdline {
         Self {
             quiet: false,
             no_color: false,
+            verbose: false,
             milestone: "default".into(),
         }
     }

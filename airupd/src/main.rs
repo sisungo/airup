@@ -21,6 +21,7 @@ async fn main() {
         .name("airupd")
         .quiet(self::env::cmdline().quiet)
         .color(!self::env::cmdline().no_color)
+        .verbose(self::env::cmdline().verbose)
         .init();
     milestones::early_boot::enter().await;
     app::Airupd::init().await;

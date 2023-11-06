@@ -9,6 +9,7 @@ use tracing_subscriber::{filter::filter_fn, prelude::*};
 pub struct Builder {
     name: String,
     quiet: bool,
+    verbose: bool,
     color: bool,
 }
 impl Builder {
@@ -33,6 +34,13 @@ impl Builder {
         self
     }
 
+    /// Sets whether console output is verbose for the logger.
+    #[inline]
+    pub fn verbose(&mut self, val: bool) -> &mut Self {
+        self.verbose = val;
+        self
+    }
+
     /// Sets whether colorful console output is enabled for the logger.
     #[inline]
     pub fn color(&mut self, val: bool) -> &mut Self {
@@ -43,7 +51,14 @@ impl Builder {
     /// Initializes the logger.
     #[inline]
     pub fn init(&mut self) {
-        let quiet = self.quiet;
+        let verbose = self.verbose;
+        let level_filter = match self.quiet {
+            true => LevelFilter::ERROR,
+            false => match verbose {
+                true => LevelFilter::TRACE,
+                false => LevelFilter::INFO,
+            },
+        };
 
         let stdio_layer = tracing_subscriber::fmt::layer()
             .without_time()
@@ -51,9 +66,10 @@ impl Builder {
             .with_file(false)
             .with_writer(std::io::stderr)
             .with_target(false)
-            .with_filter(filter_fn(|metadata| metadata.target().contains("console")))
-            .with_filter(filter_fn(move |_| !quiet))
-            .with_filter(LevelFilter::INFO);
+            .with_filter(filter_fn(move |metadata| {
+                verbose || metadata.target().contains("console")
+            }))
+            .with_filter(level_filter);
 
         tracing_subscriber::registry().with(stdio_layer).init();
     }
@@ -63,6 +79,7 @@ impl Default for Builder {
         Self {
             name: "airupfx".into(),
             quiet: false,
+            verbose: false,
             color: true,
         }
     }
