@@ -1,7 +1,8 @@
-//! # The `Airup` Supervisor
+//! # The Airup Supervisor
 //! Main module containing full airup supervisor logic.
 
 pub mod task;
+pub mod logger;
 
 use self::task::*;
 use ahash::AHashMap;
@@ -271,19 +272,7 @@ impl Supervisor {
     async fn handle_req(&mut self, req: Request) {
         match req {
             Request::Query(chan) => {
-                let query_result = QueryService {
-                    status: self.context.status.get(),
-                    status_since: Some(self.context.status.timestamp()),
-                    pid: self.context.pid().await,
-                    task: self
-                        .current_task
-                        .0
-                        .as_ref()
-                        .map(|x| x.task_type().to_owned()),
-                    last_error: self.context.last_error.get(),
-                    service: self.context.service.clone(),
-                };
-                chan.send(query_result).ok();
+                chan.send(self.query().await).ok();
             }
             Request::Start(chan) => {
                 chan.send(self.user_start_service()).ok();
@@ -367,9 +356,30 @@ impl Supervisor {
         self.current_task.stop_service(self.context.clone())
     }
 
+    /// Updates service definition of the supervisor. On success, returns the elder service definition.
+    /// 
+    /// # Errors
+    /// This method would fail if the internal context has more than one reference, usually when a task is running for this
+    /// supervisor.
     fn update_def(&mut self, new: Service) -> Result<Service, Error> {
         let context = Arc::get_mut(&mut self.context).ok_or(Error::TaskExists)?;
         Ok(std::mem::replace(&mut context.service, new))
+    }
+
+    /// Queries information about the supervisor.
+    async fn query(&self) -> QueryService {
+        QueryService {
+            status: self.context.status.get(),
+            status_since: Some(self.context.status.timestamp()),
+            pid: self.context.pid().await,
+            task: self
+                .current_task
+                .0
+                .as_ref()
+                .map(|x| x.task_type().to_owned()),
+            last_error: self.context.last_error.get(),
+            service: self.context.service.clone(),
+        }
     }
 }
 
@@ -573,6 +583,14 @@ impl RetryContext {
 }
 
 impl crate::app::Airupd {
+    /// Waits until the specific service is active.
+    /// 
+    /// If the specific service is already active, the method immediately returns. If the service is being started, it waits 
+    /// until the running `StartService` task is done. If the service is stopped, it attempts to start the service and waits the
+    /// task to finish.
+    /// 
+    /// # Errors
+    /// This method would fail if the service is running a task but is not `StartService` or the specific service was not found.
     pub async fn make_service_active(&self, name: &str) -> Result<(), Error> {
         let supervisor = match self.supervisors.get(name).await {
             Some(supervisor) => supervisor,
@@ -585,6 +603,11 @@ impl crate::app::Airupd {
         supervisor.make_active().await
     }
 
+    /// Starts the specific service, returns a handle of the spawned `StartService` task on success.
+    /// 
+    /// # Errors
+    /// This method would fail if the service is already active, having another running task or the specific service was not
+    /// found.
     pub async fn start_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
         match self.supervisors.get(name).await {
             Some(supervisor) => Ok(supervisor.start().await?),
@@ -598,6 +621,10 @@ impl crate::app::Airupd {
         }
     }
 
+    /// Queries the specific service, returns queried information about the service.
+    /// 
+    /// # Errors
+    /// This method would fail if the specific service was not found.
     pub async fn query_service(&self, name: &str) -> Result<QueryService, Error> {
         match self.supervisors.get(name).await {
             Some(supervisor) => Ok(supervisor.query().await),
@@ -607,6 +634,11 @@ impl crate::app::Airupd {
         }
     }
 
+    /// Stops the specific service, returns a handle of the spawned `StopService` task on success.
+    /// 
+    /// # Errors
+    /// This method would fail if the service is not active, having another running task or the specific service was not
+    /// found.
     pub async fn stop_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
         match self.supervisors.get(name).await {
             Some(supervisor) => Ok(supervisor.stop().await?),
@@ -617,6 +649,11 @@ impl crate::app::Airupd {
         }
     }
 
+    /// Reloads the specific service, returns a handle of the spawned `ReloadService` task on success.
+    /// 
+    /// # Errors
+    /// This method would fail if the service is not active, having another running task or the specific service was not
+    /// found.
     pub async fn reload_service(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
         match self.supervisors.get(name).await {
             Some(supervisor) => Ok(supervisor.reload().await?),
@@ -627,6 +664,10 @@ impl crate::app::Airupd {
         }
     }
 
+    /// Caches the specific service.
+    /// 
+    /// # Errors
+    /// This method would fail if the service was not found.
     pub async fn cache_service(&self, name: &str) -> Result<(), Error> {
         self.supervisors
             .supervise(self.storage.services.get(name).await?)
@@ -634,10 +675,18 @@ impl crate::app::Airupd {
         Ok(())
     }
 
+    /// Removes the specific service from cache.
+    /// 
+    /// # Errors
+    /// This method would fail if the service was not previously cached.
     pub async fn uncache_service(&self, name: &str) -> Result<(), Error> {
         self.supervisors.remove(name).await
     }
 
+    /// Interrupts current running task of the specific service, returns a handle of the task.
+    /// 
+    /// # Errors
+    /// This method would fail if the service has no running task.
     pub async fn interrupt_service_task(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
         let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
         match self.supervisors.get(name).await {

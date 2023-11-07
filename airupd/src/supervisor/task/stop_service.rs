@@ -54,7 +54,6 @@ impl StopService {
         }
 
         self.context.last_error.set(None);
-        self.context.last_error.set_autosave(true);
 
         let ace = super::ace(&self.context).await?;
 
@@ -69,7 +68,7 @@ impl StopService {
 
         match &service.exec.stop {
             Some(x) => {
-                ace.run(x).await?.wait().await?;
+                ace.run_wait_timeout(x, self.context.service.exec.stop_timeout()).await??;
             }
             None => {
                 if let Some(x) = self.context.child.write().await.as_mut() {
