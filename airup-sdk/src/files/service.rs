@@ -15,6 +15,9 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub name: String,
 
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<PathBuf>,
+
     #[serde(default)]
     pub service: Metadata,
 
@@ -30,7 +33,7 @@ impl Service {
     pub const EXTENSION: &'static str = "airs";
     pub const SUFFIX: &'static str = ".airs";
 
-    /// Reads a [Service] from given path.
+    /// Reads a [`Service`] from given path.
     pub async fn read_from<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
         let path = path.as_ref();
         let s = tokio::fs::read_to_string(path).await?;
@@ -38,11 +41,12 @@ impl Service {
 
         object.validate()?;
         object.name = path.file_stem().unwrap().to_string_lossy().into();
+        object.path = Some(path.into());
 
         Ok(object)
     }
 
-    /// Reads a [Service] from given path.
+    /// Reads a [`Service`] from given path.
     pub fn read_from_blocking<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
         let path = path.as_ref();
         let s = std::fs::read_to_string(path)?;

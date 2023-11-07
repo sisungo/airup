@@ -139,13 +139,14 @@ impl Manager {
             .map(is_providing)
             .any(|x| x);
 
-        let removable = queried.status == Status::Stopped && queried.task.is_none() && permissive
-            || (queried.last_error.is_none() && !is_provider);
+        let removable = queried.status == Status::Stopped
+            && queried.task.is_none()
+            && (permissive || (queried.last_error.is_none() && !is_provider));
 
         if removable {
             supervisors.remove(name).unwrap();
             for i in &queried.service.service.provides {
-                if is_providing(&i) {
+                if is_providing(i) {
                     provided.borrow_mut().remove(i);
                 }
             }
@@ -159,6 +160,31 @@ impl Manager {
                 message: "something is provided by this or `last_error` is set".into(),
             })
         }
+    }
+
+    /// Refreshes all running supervisors. Returns a list of services that was not successfully refreshed.
+    pub async fn refresh_all(&self) -> Vec<String> {
+        let supervisors = self.supervisors.read().await;
+        let mut errors = vec![];
+
+        for (k, v) in &*supervisors {
+            let queried = v.query().await;
+            if let Some(path) = &queried.service.path {
+                let new = Service::read_from(path).await;
+                let new = match new {
+                    Ok(x) => x,
+                    Err(_) => {
+                        errors.push(k.into());
+                        continue;
+                    }
+                };
+                if let Err(_) = v.update_def(new).await {
+                    errors.push(k.into());
+                }
+            }
+        }
+
+        errors
     }
 }
 
@@ -207,6 +233,12 @@ impl SupervisorHandle {
             Ok(_) | Err(Error::UnitStarted) => Ok(()),
             Err(err) => Err(err),
         }
+    }
+
+    pub async fn update_def(&self, new: Service) -> Result<Service, Error> {
+        let (tx, rx) = oneshot::channel();
+        self.sender.send(Request::UpdateDef(new, tx)).await.unwrap();
+        rx.await.unwrap()
     }
 }
 
@@ -262,6 +294,9 @@ impl Supervisor {
             Request::Reload(chan) => {
                 chan.send(self.current_task.reload_service(self.context.clone()))
                     .ok();
+            }
+            Request::UpdateDef(new, chan) => {
+                chan.send(self.update_def(new)).ok();
             }
             Request::GetTaskHandle(chan) => {
                 chan.send(self.current_task.0.clone().ok_or(Error::TaskNotFound))
@@ -330,6 +365,11 @@ impl Supervisor {
     fn user_stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.context.retry.disable();
         self.current_task.stop_service(self.context.clone())
+    }
+
+    fn update_def(&mut self, new: Service) -> Result<Service, Error> {
+        let context = Arc::get_mut(&mut self.context).ok_or(Error::TaskExists)?;
+        Ok(std::mem::replace(&mut context.service, new))
     }
 }
 
@@ -616,6 +656,7 @@ enum Request {
     Start(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     Stop(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     Reload(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
+    UpdateDef(Service, oneshot::Sender<Result<Service, Error>>),
     GetTaskHandle(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     InterruptTask(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     MakeActive(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),

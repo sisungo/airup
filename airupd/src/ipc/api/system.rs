@@ -30,6 +30,8 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
 fn refresh(_: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move {
         airupfx::env::refresh().await;
+        airupd().supervisors.refresh_all().await;
+
         ok_null()
     })
 }

@@ -4,27 +4,35 @@ Module `system` provides methods for managing the system.
 ## Method: `system.refresh`
 - Name: `system.refresh`
 - Parameters: None
-- Required Permissions: `refresh`
 - Return Value: `null`
-- Description: Refreshes `airupd`'s cached system resources and internal status.
+- Description: Refreshes some of `airupd`'s internal status.
+
+## Method: `system.gc`
+- Name: `system.gc`
+- Parameters: None
+- Return Value: `null`
+- Description: Releases `airupd`'s cached system resources.
 
 ## Method: `system.query_service`
 - Name: `system.query_service`
 - Parameters: `string (name of service to query)` (optional)
-- Required Permissions: `query_services`
-- Return Value: `QueryService` object OR `QuerySystem`
-- Description: If the parameter is `null`, returns queried macro information about the whole system. If not, returns queried information of the service.
+- Return Value: `QueryService` object
+- Description: Returns queried information of the service.
+
+## Method: `system.query_system`
+- Name: `system.query_system`
+- Parameters: None
+- Return Value: `QuerySystem` object
+- Description: Returns queried macro information about the whole system.
 
 ## Method: `system.start_service`
 - Name: `system.start_service`
 - Parameters: `string (name of service to operate)`
-- Required Permissions: `manage_services`
 - Return Value: `null`
 - Description: Starts the specified service.
 
 ## Method: `system.stop_service`
 - Name: `system.stop_service`
 - Parameters: `string (name of service to operate)`
-- Required Permissions: `manage_services`
 - Return Value: `null`
 - Description: Stops the specified service.
