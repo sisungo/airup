@@ -51,14 +51,6 @@ fn shell() -> std::io::Result<()> {
     std::process::Command::new("sh").spawn()?.wait().map(|_| ())
 }
 
-/// Sends the given signal to the specified process.
-///
-/// # Errors
-/// An `Err(_)` is returned if the underlying OS function failed.
-pub async fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
-    sys::process::kill(pid, signum).await
-}
-
 /// Describes the result of calling `wait`-series methods.
 #[derive(Debug, Clone)]
 pub struct Wait {
@@ -122,28 +114,32 @@ impl ExitStatus {
 
 /// Representation of a running or exited child process.
 #[derive(Debug)]
-pub struct Child(sys::process::Child);
+pub struct Child {
+    inner: sys::process::Child,
+}
 impl Child {
     /// Returns OS-assign process ID of the child process.
     pub fn id(&self) -> Pid {
-        self.0.id()
+        self.inner.id()
     }
 
     /// Converts from [`std::process::Child`] to [`Child`].
     pub fn from_std(c: std::process::Child) -> Self {
-        Self(sys::process::Child::from_std(c))
+        Self {
+            inner: sys::process::Child::from_std(c),
+        }
     }
 
     /// Creates a [`Child`] instance from PID. The PID must be a valid PID that belongs to child process of current process, or
     /// the behavior is undefined.
     ///
     /// # Safety
-    /// Current implementation of `AirupFX` process module doesn't cause safety issues when the PID doesn't meet the requirements,
-    /// but the behavior may be changed in the future version.
-    pub unsafe fn from_pid_unchecked(
-        pid: Pid,
-    ) -> Self {
-        Self(sys::process::Child::from_pid_unchecked(pid))
+    /// Current implementation of `AirupFX` process module doesn't cause safety issues when the PID doesn't meet the
+    /// requirements, but the behavior may be changed in the future versions.
+    pub unsafe fn from_pid_unchecked(pid: Pid) -> Self {
+        Self {
+            inner: sys::process::Child::from_pid_unchecked(pid),
+        }
     }
 
     /// Creates a [`Child`] instance from PID.
@@ -151,18 +147,20 @@ impl Child {
     /// # Errors
     /// An `Err(_)` is returned if the process is not a valid child process of current process.
     pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
-        Ok(Self(sys::process::Child::from_pid(pid)?))
+        Ok(Self {
+            inner: sys::process::Child::from_pid(pid)?,
+        })
     }
 
     /// Waits until the process was terminated.
     ///
-    /// ## Cancel Safety
+    /// # Cancel Safety
     /// This method is cancel safe.
     ///
-    /// ## Errors
+    /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
     pub async fn wait(&self) -> Result<Wait, WaitError> {
-        self.0.wait().await.map_err(Into::into)
+        self.inner.wait().await.map_err(Into::into)
     }
 
     /// Sends the specified signal to the child process.
@@ -170,16 +168,13 @@ impl Child {
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
     pub async fn kill(&self, sig: i32) -> std::io::Result<()> {
-        self.0.kill(sig).await
+        self.inner.kill(sig).await
     }
 }
-
-/// Spawns a process associated with given [`std::process::Command`], returning a [`Child`] object.
-///
-/// # Errors
-/// An `Err(_)` is returned if the underlying OS function failed.
-pub async fn spawn(cmd: &mut std::process::Command) -> std::io::Result<Child> {
-    Ok(Child::from_std(cmd.spawn()?))
+impl From<crate::sys::process::Child> for Child {
+    fn from(inner: crate::sys::process::Child) -> Self {
+        Self { inner }
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -348,13 +343,8 @@ impl Command {
     }
 
     #[inline]
-    pub async fn to_std(&self) -> anyhow::Result<std::process::Command> {
-        crate::sys::process::command_to_std(self).await
-    }
-
-    #[inline]
     pub async fn spawn(&self) -> anyhow::Result<Child> {
-        Ok(spawn(&mut self.to_std().await?).await?)
+        Ok(crate::sys::process::spawn(&self).await?.into())
     }
 }
 impl Deref for Command {

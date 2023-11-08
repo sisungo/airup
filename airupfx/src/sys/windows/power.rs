@@ -1,7 +1,7 @@
 //! Microsoft Windows Power Management.
 
-use std::convert::Infallible;
 use crate::power::PowerManager;
+use std::convert::Infallible;
 
 #[derive(Default)]
 pub struct Windows;

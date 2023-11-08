@@ -7,6 +7,7 @@ use std::{
     ffi::OsString,
     path::{Path, PathBuf},
 };
+use tokio::io::AsyncReadExt;
 
 /// Represents to a "directory chain", which has a filesystem layout similar to:
 /// ```text
@@ -120,6 +121,21 @@ impl From<PathBuf> for DirChain<'static> {
     fn from(value: PathBuf) -> Self {
         Self::new(value)
     }
+}
+
+/// Like [`tokio::fs::read_to_string`], but max size of file is limited.
+pub async fn read_to_string_limited(
+    path: impl AsRef<Path>,
+    limit: usize,
+) -> std::io::Result<String> {
+    let file = tokio::fs::File::open(path).await?;
+    let mut capacity = file.metadata().await?.len() as usize;
+    if capacity > limit {
+        capacity = limit;
+    }
+    let mut buffer = String::with_capacity(capacity);
+    file.take(limit as _).read_to_string(&mut buffer).await?;
+    Ok(buffer)
 }
 
 /// Commits filesystem caches to disk.

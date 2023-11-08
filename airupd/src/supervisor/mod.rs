@@ -2,7 +2,6 @@
 //! Main module containing full airup supervisor logic.
 
 pub mod task;
-pub mod logger;
 
 use self::task::*;
 use ahash::AHashMap;
@@ -357,7 +356,7 @@ impl Supervisor {
     }
 
     /// Updates service definition of the supervisor. On success, returns the elder service definition.
-    /// 
+    ///
     /// # Errors
     /// This method would fail if the internal context has more than one reference, usually when a task is running for this
     /// supervisor.
@@ -584,11 +583,11 @@ impl RetryContext {
 
 impl crate::app::Airupd {
     /// Waits until the specific service is active.
-    /// 
-    /// If the specific service is already active, the method immediately returns. If the service is being started, it waits 
+    ///
+    /// If the specific service is already active, the method immediately returns. If the service is being started, it waits
     /// until the running `StartService` task is done. If the service is stopped, it attempts to start the service and waits the
     /// task to finish.
-    /// 
+    ///
     /// # Errors
     /// This method would fail if the service is running a task but is not `StartService` or the specific service was not found.
     pub async fn make_service_active(&self, name: &str) -> Result<(), Error> {
@@ -604,7 +603,7 @@ impl crate::app::Airupd {
     }
 
     /// Starts the specific service, returns a handle of the spawned `StartService` task on success.
-    /// 
+    ///
     /// # Errors
     /// This method would fail if the service is already active, having another running task or the specific service was not
     /// found.
@@ -622,7 +621,7 @@ impl crate::app::Airupd {
     }
 
     /// Queries the specific service, returns queried information about the service.
-    /// 
+    ///
     /// # Errors
     /// This method would fail if the specific service was not found.
     pub async fn query_service(&self, name: &str) -> Result<QueryService, Error> {
@@ -635,7 +634,7 @@ impl crate::app::Airupd {
     }
 
     /// Stops the specific service, returns a handle of the spawned `StopService` task on success.
-    /// 
+    ///
     /// # Errors
     /// This method would fail if the service is not active, having another running task or the specific service was not
     /// found.
@@ -650,7 +649,7 @@ impl crate::app::Airupd {
     }
 
     /// Reloads the specific service, returns a handle of the spawned `ReloadService` task on success.
-    /// 
+    ///
     /// # Errors
     /// This method would fail if the service is not active, having another running task or the specific service was not
     /// found.
@@ -665,7 +664,7 @@ impl crate::app::Airupd {
     }
 
     /// Caches the specific service.
-    /// 
+    ///
     /// # Errors
     /// This method would fail if the service was not found.
     pub async fn cache_service(&self, name: &str) -> Result<(), Error> {
@@ -676,7 +675,7 @@ impl crate::app::Airupd {
     }
 
     /// Removes the specific service from cache.
-    /// 
+    ///
     /// # Errors
     /// This method would fail if the service was not previously cached.
     pub async fn uncache_service(&self, name: &str) -> Result<(), Error> {
@@ -684,7 +683,7 @@ impl crate::app::Airupd {
     }
 
     /// Interrupts current running task of the specific service, returns a handle of the task.
-    /// 
+    ///
     /// # Errors
     /// This method would fail if the service has no running task.
     pub async fn interrupt_service_task(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {

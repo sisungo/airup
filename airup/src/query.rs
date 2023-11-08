@@ -30,7 +30,7 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Prints a [QueryService] to console, in human-friendly format.
+/// Prints a [`QueryService`] to console, in human-friendly format.
 fn print_query_service(query_service: &QueryService) {
     let status = PrintedStatus::of_service(query_service);
 
@@ -40,17 +40,20 @@ fn print_query_service(query_service: &QueryService) {
         query_service.service.display_name(),
         &query_service.service.name
     );
+
     if let Some(x) = &query_service.service.service.description {
         println!("{:>14} {}", "Description:", x);
     }
+
     println!("{:>14} {}", "Status:", status);
+
     println!(
         "{:>14} {}",
         "Main PID:",
         query_service
             .pid
             .map(|x| x.to_string())
-            .unwrap_or_else(|| String::from("null"))
+            .unwrap_or_else(|| format!("{}", style("(null)").dim()))
     );
 }
 

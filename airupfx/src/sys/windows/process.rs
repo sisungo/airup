@@ -1,7 +1,7 @@
 //! Process management on Microsoft Windows.
 
-use std::convert::Infallible;
 use crate::process::Wait;
+use std::convert::Infallible;
 
 pub type Pid = libc::c_int;
 
@@ -88,9 +88,7 @@ impl Child {
         todo!()
     }
 
-    pub unsafe fn from_pid_unchecked(
-        pid: Pid,
-    ) -> Self {
+    pub unsafe fn from_pid_unchecked(pid: Pid) -> Self {
         todo!()
     }
 

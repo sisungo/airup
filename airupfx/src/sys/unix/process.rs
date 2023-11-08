@@ -5,8 +5,8 @@
 //! `waitpid()` completed, if the PID was previously subscribed, the result will be sent to the subscriber and then the
 //! subscription is cancelled.
 
-use crate::process::{ExitStatus, Wait};
 use super::std_port::CommandExt as _;
+use crate::process::{ExitStatus, Wait};
 use ahash::AHashMap;
 use std::{
     cmp,
@@ -15,10 +15,7 @@ use std::{
     sync::{Mutex, OnceLock, RwLock},
 };
 use sysinfo::UserExt;
-use tokio::{
-    signal::unix::SignalKind,
-    sync::mpsc,
-};
+use tokio::{signal::unix::SignalKind, sync::mpsc};
 
 pub type Pid = libc::pid_t;
 
@@ -95,11 +92,7 @@ impl Child {
     /// Converts from [`std::process::Child`] to [`Child`].
     pub fn from_std(c: std::process::Child) -> Self {
         // SAFETY: [std::process::Child] always represents to a valid child process.
-        unsafe {
-            Self::from_pid_unchecked(
-                c.id() as _,
-            )
-        }
+        unsafe { Self::from_pid_unchecked(c.id() as _) }
     }
 
     /// Creates a [`Child`] instance from PID. The PID must be a valid PID that belongs to child process of current process, or
@@ -108,9 +101,7 @@ impl Child {
     /// # Safety
     /// Current implementation of AirupFX process module doesn't cause safety issues when the PID doesn't meet the requirements,
     /// but the behavior may be changed in the future version.
-    pub unsafe fn from_pid_unchecked(
-        pid: Pid,
-    ) -> Self {
+    pub unsafe fn from_pid_unchecked(pid: Pid) -> Self {
         Self {
             pid,
             wait_queue: Some(child_queue().subscribe(pid)).into(),
@@ -199,7 +190,7 @@ impl ChildQueue {
     }
 
     /// Starts the child queue task.
-    /// 
+    ///
     /// # Panics
     /// This method would panic if it is called more than once.
     fn start(&'static self) -> anyhow::Result<()> {
@@ -311,6 +302,10 @@ pub(crate) fn command_login(
     env.uid(uid).gid(gid);
 
     Ok(())
+}
+
+pub async fn spawn(cmd: &crate::process::Command) -> anyhow::Result<Child> {
+    Ok(Child::from_std(command_to_std(cmd).await?.spawn()?))
 }
 
 /// An error occured by calling `wait` on a [`Child`].
