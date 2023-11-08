@@ -4,6 +4,7 @@ pub mod env;
 pub mod fs;
 pub mod process;
 pub mod signal;
+pub mod std_port;
 
 #[allow(unused)]
 pub fn power_manager() -> &'static dyn crate::power::PowerManager {

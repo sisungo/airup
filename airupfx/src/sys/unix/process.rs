@@ -5,10 +5,8 @@
 //! `waitpid()` completed, if the PID was previously subscribed, the result will be sent to the subscriber and then the
 //! subscription is cancelled.
 
-use crate::{
-    process::{ExitStatus, Pid, Wait},
-    std_port::CommandExt as _,
-};
+use crate::process::{ExitStatus, Wait};
+use super::std_port::CommandExt as _;
 use ahash::AHashMap;
 use std::{
     cmp,
@@ -18,10 +16,11 @@ use std::{
 };
 use sysinfo::UserExt;
 use tokio::{
-    process::{ChildStderr, ChildStdout},
     signal::unix::SignalKind,
     sync::mpsc,
 };
+
+pub type Pid = libc::pid_t;
 
 static CHILD_QUEUE: OnceLock<ChildQueue> = OnceLock::new();
 
@@ -64,14 +63,28 @@ pub async fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
     .unwrap()
 }
 
+pub trait ExitStatusExt {
+    /// Converts from a `status` returned by [`libc::waitpid`] to [`ExitStatus`].
+    fn from_unix(status: libc::c_int) -> Self;
+}
+impl ExitStatusExt for crate::process::ExitStatus {
+    fn from_unix(status: libc::c_int) -> Self {
+        if libc::WIFEXITED(status) {
+            Self::Exited(libc::WEXITSTATUS(status))
+        } else if libc::WIFSIGNALED(status) {
+            Self::Signaled(libc::WTERMSIG(status))
+        } else {
+            Self::Other
+        }
+    }
+}
+
 /// Representation of a running or exited child process.
 #[derive(Debug)]
 pub struct Child {
     pid: Pid,
     wait_queue: tokio::sync::Mutex<Option<mpsc::Receiver<Wait>>>,
     wait_cached: Mutex<Option<Wait>>,
-    stdout: Option<ChildStdout>,
-    stderr: Option<ChildStderr>,
 }
 impl Child {
     /// Returns OS-assign process ID of the child process.
@@ -79,19 +92,17 @@ impl Child {
         self.pid
     }
 
-    /// Converts from [std::process::Child] to [Child].
+    /// Converts from [`std::process::Child`] to [`Child`].
     pub fn from_std(c: std::process::Child) -> Self {
         // SAFETY: [std::process::Child] always represents to a valid child process.
         unsafe {
             Self::from_pid_unchecked(
                 c.id() as _,
-                c.stdout.and_then(|x| ChildStdout::from_std(x).ok()),
-                c.stderr.and_then(|x| ChildStderr::from_std(x).ok()),
             )
         }
     }
 
-    /// Creates a [Child] instance from PID. The PID must be a valid PID that belongs to child process of current process, or
+    /// Creates a [`Child`] instance from PID. The PID must be a valid PID that belongs to child process of current process, or
     /// the behavior is undefined.
     ///
     /// # Safety
@@ -99,15 +110,11 @@ impl Child {
     /// but the behavior may be changed in the future version.
     pub unsafe fn from_pid_unchecked(
         pid: Pid,
-        stdout: Option<ChildStdout>,
-        stderr: Option<ChildStderr>,
     ) -> Self {
         Self {
             pid,
             wait_queue: Some(child_queue().subscribe(pid)).into(),
             wait_cached: None.into(),
-            stdout,
-            stderr,
         }
     }
 
@@ -117,14 +124,12 @@ impl Child {
     /// This method is cancel safe.
     pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
         (wait_nonblocking(pid)?).map_or_else(
-            || Ok(unsafe { Self::from_pid_unchecked(pid, None, None) }),
+            || Ok(unsafe { Self::from_pid_unchecked(pid) }),
             |wait| {
                 Ok(Self {
                     pid,
                     wait_queue: None.into(),
                     wait_cached: Some(wait).into(),
-                    stdout: None,
-                    stderr: None,
                 })
             },
         )
@@ -165,16 +170,6 @@ impl Child {
             None => kill(self.pid, sig).await,
         }
     }
-
-    /// Takes the `stdout` out of the option, leaving a `None` in its place.
-    pub fn take_stdout(&mut self) -> Option<ChildStdout> {
-        self.stdout.take()
-    }
-
-    /// Takes the `stderr` out of the option, leaving a `None` in its place.
-    pub fn take_stderr(&mut self) -> Option<ChildStderr> {
-        self.stderr.take()
-    }
 }
 impl Drop for Child {
     fn drop(&mut self) {
@@ -188,22 +183,29 @@ struct ChildQueue {
     queue: RwLock<AHashMap<Pid, mpsc::Sender<Wait>>>,
 }
 impl ChildQueue {
-    /// Creates a new [ChildQueue] instance.
-    pub fn new() -> Self {
+    /// Creates a new [`ChildQueue`] instance.
+    #[must_use]
+    fn new() -> Self {
         Self::default()
     }
 
-    /// Initializes the global unique [ChildQueue] instance.
+    /// Initializes the global unique [`ChildQueue`] instance.
     ///
-    /// ## Panic
-    /// Panics if the instance is already set.
+    /// # Panics
+    /// This method would panic if the instance is already set.
     pub fn init() {
         CHILD_QUEUE.set(Self::new()).unwrap();
         child_queue().start().ok();
     }
 
     /// Starts the child queue task.
-    pub fn start(&'static self) -> anyhow::Result<()> {
+    /// 
+    /// # Panics
+    /// This method would panic if it is called more than once.
+    fn start(&'static self) -> anyhow::Result<()> {
+        static CALLED: OnceLock<()> = OnceLock::new();
+        CALLED.set(()).unwrap();
+
         let mut signal = tokio::signal::unix::signal(SignalKind::child())?;
         tokio::spawn(async move {
             loop {
@@ -228,7 +230,7 @@ impl ChildQueue {
         Ok(())
     }
 
-    /// Creates a new [mpsc::Receiver] handle that will receive [Wait] sent after this call to `subscribe`.
+    /// Creates a new [`mpsc::Receiver`] handle that will receive [`Wait`] sent after this call to `subscribe`.
     pub fn subscribe(&self, pid: Pid) -> mpsc::Receiver<Wait> {
         let mut lock = self.queue.write().unwrap();
         let (tx, rx) = mpsc::channel(1);
@@ -241,7 +243,7 @@ impl ChildQueue {
         self.queue.write().unwrap().remove(&pid).map(|_| ())
     }
 
-    /// Sends the given [Wait] to the queue.
+    /// Sends the given [`Wait`] to the queue.
     pub async fn send(&self, wait: Wait) -> Option<()> {
         let entry = self.queue.write().unwrap().remove(&wait.pid());
         match entry {
@@ -251,7 +253,7 @@ impl ChildQueue {
     }
 }
 
-/// Returns a reference to the global unique [ChildQueue] instance.
+/// Returns a reference to the global unique [`ChildQueue`] instance.
 ///
 /// # Panics
 /// Panics if the instance has not been initialized yet.
@@ -311,7 +313,7 @@ pub(crate) fn command_login(
     Ok(())
 }
 
-/// An error occured by calling `wait` on a [Child].
+/// An error occured by calling `wait` on a [`Child`].
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum WaitError {
     #[error("subscribed queue for pid `{0}` was preempted")]
@@ -321,6 +323,7 @@ pub enum WaitError {
     AlreadyWaited,
 }
 
+/// Initializes the process manager.
 pub fn init() {
     ChildQueue::init();
 }

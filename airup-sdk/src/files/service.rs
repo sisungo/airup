@@ -90,10 +90,10 @@ pub struct Env {
     pub user: Option<String>,
 
     /// UID to execute for the service.
-    pub uid: Option<libc::uid_t>,
+    pub uid: Option<u32>,
 
     /// GID to execute for the service.
-    pub gid: Option<libc::gid_t>,
+    pub gid: Option<u32>,
 
     /// Determines if environment variables from `airupd` process should be removed or not.
     #[serde(default)]

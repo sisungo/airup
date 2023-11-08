@@ -68,7 +68,7 @@ impl StopService {
 
         match &service.exec.stop {
             Some(x) => {
-                ace.run_wait_timeout(x, self.context.service.exec.stop_timeout()).await??;
+                ace.run_wait_timeout(x, countdown.left()).await??;
             }
             None => {
                 if let Some(x) = self.context.child.write().await.as_mut() {

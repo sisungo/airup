@@ -8,17 +8,16 @@ use std::{
     ops::{Deref, DerefMut},
     path::PathBuf,
 };
-use tokio::process::{ChildStderr, ChildStdout};
 
 /// Represents to an OS-assigned process identifier.
-pub type Pid = libc::pid_t;
+pub type Pid = sys::process::Pid;
 
 /// The OS-assigned process identifier associated with this process.
 pub static ID: Lazy<u32> = Lazy::new(std::process::id);
 
 /// Reloads the process image with the version on the filesystem.
 ///
-/// ## Errors
+/// # Errors
 /// An `Err(_)` is returned if the underlying OS function failed.
 pub fn reload_image() -> std::io::Result<Infallible> {
     sys::process::reload_image()
@@ -26,7 +25,7 @@ pub fn reload_image() -> std::io::Result<Infallible> {
 
 /// Called when a fatal error has occured.
 ///
-/// If the process has `pid==1`, this will start a shell and reloads the process image. Otherwise this will make current
+/// If the process has `pid == 1`, this will start a shell and reloads the process image. Otherwise this will make current
 /// process exit.
 pub fn emergency() -> ! {
     if *ID == 1 {
@@ -54,7 +53,7 @@ fn shell() -> std::io::Result<()> {
 
 /// Sends the given signal to the specified process.
 ///
-/// ## Errors
+/// # Errors
 /// An `Err(_)` is returned if the underlying OS function failed.
 pub async fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
     sys::process::kill(pid, signum).await
@@ -115,17 +114,6 @@ impl ExitStatus {
     /// Represents to a successful exit.
     pub const SUCCESS: Self = Self::Exited(0);
 
-    /// Converts from a `status` returned by [`libc::waitpid`] to [`ExitStatus`].
-    pub fn from_unix(status: libc::c_int) -> Self {
-        if libc::WIFEXITED(status) {
-            Self::Exited(libc::WEXITSTATUS(status))
-        } else if libc::WIFSIGNALED(status) {
-            Self::Signaled(libc::WTERMSIG(status))
-        } else {
-            Self::Other
-        }
-    }
-
     /// Returns `true` if the process was successfully completed.
     pub fn is_success(&self) -> bool {
         *self == Self::SUCCESS
@@ -154,18 +142,13 @@ impl Child {
     /// but the behavior may be changed in the future version.
     pub unsafe fn from_pid_unchecked(
         pid: Pid,
-        stdout: Option<ChildStdout>,
-        stderr: Option<ChildStderr>,
     ) -> Self {
-        Self(sys::process::Child::from_pid_unchecked(pid, stdout, stderr))
+        Self(sys::process::Child::from_pid_unchecked(pid))
     }
 
     /// Creates a [`Child`] instance from PID.
     ///
-    /// ## Cancel Safety
-    /// This method is cancel safe.
-    ///
-    /// ## Errors
+    /// # Errors
     /// An `Err(_)` is returned if the process is not a valid child process of current process.
     pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
         Ok(Self(sys::process::Child::from_pid(pid)?))
@@ -184,24 +167,16 @@ impl Child {
 
     /// Sends the specified signal to the child process.
     ///
-    /// ## Errors
+    /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
     pub async fn kill(&self, sig: i32) -> std::io::Result<()> {
         self.0.kill(sig).await
-    }
-
-    pub fn take_stdout(&mut self) -> Option<ChildStdout> {
-        self.0.take_stdout()
-    }
-
-    pub fn take_stderr(&mut self) -> Option<ChildStderr> {
-        self.0.take_stderr()
     }
 }
 
 /// Spawns a process associated with given [`std::process::Command`], returning a [`Child`] object.
 ///
-/// ## Errors
+/// # Errors
 /// An `Err(_)` is returned if the underlying OS function failed.
 pub async fn spawn(cmd: &mut std::process::Command) -> std::io::Result<Child> {
     Ok(Child::from_std(cmd.spawn()?))
@@ -237,9 +212,9 @@ impl Stdio {
 
 #[derive(Debug, Clone, Default)]
 pub struct CommandEnv {
-    pub(crate) uid: Option<libc::uid_t>,
-    pub(crate) gid: Option<libc::gid_t>,
-    pub(crate) groups: Option<Vec<libc::gid_t>>,
+    pub(crate) uid: Option<u32>,
+    pub(crate) gid: Option<u32>,
+    pub(crate) groups: Option<Vec<u32>>,
     pub(crate) clear_vars: bool,
     pub(crate) vars: Vec<(OsString, Option<OsString>)>,
     pub(crate) stdout: Stdio,
@@ -249,12 +224,13 @@ pub struct CommandEnv {
 }
 impl CommandEnv {
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     #[inline]
-    pub fn uid<T: Into<Option<libc::uid_t>>>(&mut self, uid: T) -> &mut Self {
+    pub fn uid<T: Into<Option<u32>>>(&mut self, uid: T) -> &mut Self {
         if let Some(x) = uid.into() {
             self.uid = Some(x);
         }
@@ -262,7 +238,7 @@ impl CommandEnv {
     }
 
     #[inline]
-    pub fn gid<T: Into<Option<libc::gid_t>>>(&mut self, gid: T) -> &mut Self {
+    pub fn gid<T: Into<Option<u32>>>(&mut self, gid: T) -> &mut Self {
         if let Some(x) = gid.into() {
             self.gid = Some(x);
         }
@@ -270,7 +246,7 @@ impl CommandEnv {
     }
 
     #[inline]
-    pub fn groups<T: Into<Option<Vec<libc::gid_t>>>>(&mut self, groups: T) -> &mut Self {
+    pub fn groups<T: Into<Option<Vec<u32>>>>(&mut self, groups: T) -> &mut Self {
         if let Some(x) = groups.into() {
             self.groups = Some(x);
         }

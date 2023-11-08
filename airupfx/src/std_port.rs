@@ -1,9 +1,6 @@
 //! Port of unstable `std` features in stable Rust.
 //!
-//! These will be deleted when the features gets stablized.
-
-use std::os::unix::process::CommandExt as _;
-use sysinfo::Gid;
+//! These will be deleted when the features gets stablized, or moved if they are determined to remove.
 
 /// Port of unstable feature `#![feature(result_option_inspect)]` to stable Rust.
 ///
@@ -33,23 +30,5 @@ impl<T> OptionExt<T> for Option<T> {
         }
 
         self
-    }
-}
-
-/// Port of unstable feature `#![feature(process_setsid)]` and `#![feature(setgroups)]` to stable Rust.
-///
-/// This will be deleted when the feature is stablized.
-pub trait CommandExt {
-    fn setsid(&mut self) -> &mut Self;
-    fn groups(&mut self, groups: &[Gid]) -> &mut Self;
-}
-impl CommandExt for std::process::Command {
-    fn setsid(&mut self) -> &mut Self {
-        unsafe { self.pre_exec(|| crate::sys::env::setsid().map(|_| ())) }
-    }
-
-    fn groups(&mut self, groups: &[Gid]) -> &mut Self {
-        let groups: Vec<_> = groups.iter().map(|x| **x).collect();
-        unsafe { self.pre_exec(move || crate::sys::env::setgroups(&groups[..])) }
     }
 }

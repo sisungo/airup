@@ -10,7 +10,7 @@ use crate::{
 };
 use ahash::AHashMap;
 use std::time::Duration;
-use tokio::{io::AsyncRead, sync::mpsc};
+use tokio::sync::mpsc;
 
 /// The Airup Command Engine.
 #[derive(Debug, Default)]
@@ -199,30 +199,6 @@ impl Child {
             Err(err) => match err {
                 Error::TimedOut => self.kill(SIGKILL).await,
                 other => Err(other),
-            },
-        }
-    }
-
-    pub fn take_stdout(&mut self) -> Option<Box<dyn AsyncRead + Send + Sync>> {
-        match self {
-            Self::AlwaysSuccess(child) => child.take_stdout(),
-            Self::Async(child) => child.take_stdout(),
-            Self::Builtin(_) => None,
-            Self::Process(child) => match child.take_stdout() {
-                Some(x) => Some(Box::new(x)),
-                None => None,
-            },
-        }
-    }
-
-    pub fn take_stderr(&mut self) -> Option<Box<dyn AsyncRead + Send + Sync>> {
-        match self {
-            Self::AlwaysSuccess(child) => child.take_stderr(),
-            Self::Async(child) => child.take_stderr(),
-            Self::Builtin(_) => None,
-            Self::Process(child) => match child.take_stderr() {
-                Some(x) => Some(Box::new(x)),
-                None => None,
             },
         }
     }
