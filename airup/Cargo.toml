@@ -14,3 +14,4 @@ anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 chrono = "0.4"
 console = "0.15"
+tokio = { workspace = true }

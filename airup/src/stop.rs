@@ -1,4 +1,5 @@
 use airup_sdk::prelude::*;
+use anyhow::anyhow;
 use clap::Parser;
 
 /// Stop services
@@ -8,8 +9,9 @@ pub struct Cmdline {
     service: String,
 }
 
-pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = super::connect()?;
-    conn.stop_service(&cmdline.service)??;
+pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = super::connect().await?;
+    conn.stop_service(&cmdline.service).await?
+        .map_err(|e| anyhow!("failed to stop service `{}`: {}", cmdline.service, e))?;
     Ok(())
 }

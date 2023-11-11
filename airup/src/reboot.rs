@@ -45,17 +45,17 @@ pub struct Cmdline {
 }
 
 /// Entrypoint of the `airup reboot` subprogram.
-pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = super::connect()?;
+pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = super::connect().await?;
 
     if cmdline.reboot {
-        conn.reboot()??;
+        conn.reboot().await??;
     }
     if cmdline.poweroff {
-        conn.poweroff()??;
+        conn.poweroff().await??;
     }
     if cmdline.halt {
-        conn.halt()??;
+        conn.halt().await??;
     }
 
     Ok(())

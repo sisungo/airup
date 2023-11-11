@@ -1,4 +1,5 @@
 use airup_sdk::prelude::*;
+use anyhow::anyhow;
 use chrono::prelude::*;
 use clap::Parser;
 use console::{style, Emoji};
@@ -15,16 +16,20 @@ pub struct Cmdline {
     unit: Option<String>,
 }
 
-pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = super::connect()?;
+pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = super::connect().await?;
     match cmdline.unit {
+        Some(x) if x.ends_with(".airm") => {
+            todo!()
+        }
         Some(x) => {
-            let queried = conn.query_service(&x)??;
+            let queried = conn.query_service(&x).await?
+                .map_err(|e| anyhow!("failed to query service `{}`: {}", x, e))?;
             print_query_service(&queried);
         }
         None => {
-            let query_system = conn.query_system()??;
-            print_query_system(&mut conn, &query_system, &cmdline)?;
+            let query_system = conn.query_system().await??;
+            print_query_system(&mut conn, &query_system, &cmdline).await?;
         }
     }
     Ok(())
@@ -58,24 +63,25 @@ fn print_query_service(query_service: &QueryService) {
 }
 
 /// Prints a [`QuerySystem`] to console, in human-friendly format.
-fn print_query_system(
-    conn: &mut BlockingConnection,
+async fn print_query_system(
+    conn: &mut Connection,
     query_system: &QuerySystem,
     cmdline: &Cmdline,
 ) -> anyhow::Result<()> {
     let mut services = Vec::with_capacity(query_system.services.len());
     for i in query_system.services.iter() {
-        let query_service = conn.query_service(i)?.ok();
+        let query_service = conn.query_service(i).await?.ok();
         services.push((
             i.clone(),
             query_service.map(|x| PrintedStatus::of_service(&x)),
         ));
     }
     if cmdline.all {
-        for name in conn.list_services()?? {
+        for name in conn.list_services().await?? {
             services.push((
                 name.clone(),
-                conn.query_service(&name)?
+                conn.query_service(&name)
+                    .await?
                     .ok()
                     .map(|x| PrintedStatus::of_service(&x)),
             ));

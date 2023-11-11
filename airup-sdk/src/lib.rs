@@ -9,7 +9,6 @@ pub mod ipc;
 pub mod prelude;
 pub mod system;
 
-use duplicate::duplicate_item;
 pub use error::ApiError as Error;
 use ipc::Request;
 use serde::{de::DeserializeOwned, ser::Serialize};
@@ -40,33 +39,23 @@ pub fn socket_path() -> &'static Path {
     })
 }
 
-#[duplicate_item(
-    Name;
-    [Connection];
-    [BlockingConnection];
-)]
 #[derive(Debug)]
-pub struct Name {
-    underlying: ipc::Name,
+pub struct Connection {
+    underlying: ipc::Connection,
 }
-#[duplicate_item(
-    Name                    async      may_await(code)    send_to(who, blob)           receive_from(who);
-    [Connection]            [async]    [code.await]       [who.send(blob).await]       [who.recv().await];
-    [BlockingConnection]    []         [code]             [who.send_blocking(blob)]    [who.recv_blocking()];
-)]
-impl Name {
-    pub async fn connect(path: &Path) -> std::io::Result<Name> {
+impl Connection {
+    pub async fn connect<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
         Ok(Self {
-            underlying: may_await([ipc::Name::connect(path)])?,
+            underlying: ipc::Connection::connect(path).await?,
         })
     }
 
     pub async fn send_raw(&mut self, msg: &[u8]) -> anyhow::Result<()> {
-        send_to([self.underlying], [&msg])
+        self.underlying.send(&msg).await
     }
 
     pub async fn recv_raw(&mut self) -> anyhow::Result<Vec<u8>> {
-        receive_from([self.underlying])
+        self.underlying.recv().await
     }
 
     pub async fn invoke<P: Serialize, T: DeserializeOwned>(
@@ -75,28 +64,18 @@ impl Name {
         params: P,
     ) -> anyhow::Result<Result<T, Error>> {
         let req = Request::new(method, params).unwrap();
-        may_await([self.underlying.send(&req)])?;
-        Ok(may_await([self.underlying.recv_resp()])?.into_result())
+        self.underlying.send(&req).await?;
+        Ok(self.underlying.recv_resp().await?.into_result())
     }
 }
-#[duplicate_item(
-    Name;
-    [Connection];
-    [BlockingConnection];
-)]
-impl Deref for Name {
-    type Target = ipc::Name;
+impl Deref for Connection {
+    type Target = ipc::Connection;
 
     fn deref(&self) -> &Self::Target {
         &self.underlying
     }
 }
-#[duplicate_item(
-    Name;
-    [Connection];
-    [BlockingConnection];
-)]
-impl DerefMut for Name {
+impl DerefMut for Connection {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.underlying
     }

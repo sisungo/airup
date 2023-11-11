@@ -1,4 +1,5 @@
 use airup_sdk::{files::Service, prelude::*};
+use anyhow::anyhow;
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -12,11 +13,16 @@ pub struct Cmdline {
     sideload: Option<PathBuf>,
 }
 
-pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = super::connect()?;
+pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = super::connect().await?;
     if let Some(path) = cmdline.sideload {
-        conn.sideload_service(&cmdline.service, &Service::read_from_blocking(path)?)??;
+        let service = Service::read_from(&path)
+            .await
+            .map_err(|e| anyhow!("failed to read service at `{}`: {}", path.display(), e))?;
+        conn.sideload_service(&cmdline.service, &service)
+            .await??;
     }
-    conn.start_service(&cmdline.service)??;
+    conn.start_service(&cmdline.service).await?
+        .map_err(|e| anyhow!("failed to start service `{}`: {}", cmdline.service, e))?;
     Ok(())
 }

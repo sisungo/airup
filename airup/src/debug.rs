@@ -8,11 +8,11 @@ pub struct Cmdline {
     command: Option<String>,
 }
 
-pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = super::connect()?;
+pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = super::connect().await?;
     if let Some(cmd) = cmdline.command {
-        conn.send_raw(cmd.as_bytes())?;
-        println!("{}", String::from_utf8_lossy(&conn.recv_raw()?));
+        conn.send_raw(cmd.as_bytes()).await?;
+        println!("{}", String::from_utf8_lossy(&conn.recv_raw().await?));
         return Ok(());
     }
     Ok(())

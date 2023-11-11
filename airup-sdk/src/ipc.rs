@@ -15,7 +15,6 @@
 
 use crate::error::ApiError;
 use anyhow::anyhow;
-use duplicate::duplicate_item;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
     io::{Read, Write},
@@ -24,39 +23,25 @@ use std::{
 };
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
-    net::UnixListener,
+    net::{UnixListener, UnixStream},
 };
 
-/// Represents to a connection.
-#[duplicate_item(
-    Name                    Stream;
-    [Connection]            [tokio::net::UnixStream];
-    [BlockingConnection]    [std::os::unix::net::UnixStream];
-)]
 #[derive(Debug)]
-pub struct Name(S2D<Stream>);
-#[duplicate_item(
-    Name                     Stream                              async      may_await(code)    receive(code)             send_to(who, blob);
-    [Connection]             [tokio::net::UnixStream]            [async]    [code.await]       [code.recv().await]       [who.send(blob).await];
-    [BlockingConnection]     [std::os::unix::net::UnixStream]    []         [code]             [code.recv_blocking()]    [who.send_blocking(blob)];
-)]
-impl Name {
+pub struct Connection(S2D<UnixStream>);
+impl Connection {
     /// Connects to the specified socket.
     pub async fn connect<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
-        Ok(Self(S2D::new(
-            may_await([Stream::connect(path)])?,
-            usize::MAX,
-        )))
+        Ok(Self(S2D::new(UnixStream::connect(path).await?, usize::MAX)))
     }
 
     /// Receives a datagram and deserializes it from JSON to `T`.
     pub async fn recv<T: DeserializeOwned>(&mut self) -> anyhow::Result<T> {
-        Ok(serde_json::from_slice(&receive([self.0])?)?)
+        Ok(serde_json::from_slice(&self.0.recv().await?)?)
     }
 
     /// Receives a request from the underlying protocol.
     pub async fn recv_req(&mut self) -> anyhow::Result<Request> {
-        let req: Request = serde_json::from_slice(&receive([self.0])?).unwrap_or_else(|err| {
+        let req: Request = serde_json::from_slice(&self.0.recv().await?).unwrap_or_else(|err| {
             Request::new(
                 "debug.echo_raw",
                 Response::Err(ApiError::bad_request("InvalidJson", err.to_string())),
@@ -68,34 +53,28 @@ impl Name {
 
     /// Receives a response from the underlying protocol.
     pub async fn recv_resp(&mut self) -> anyhow::Result<Response> {
-        may_await([self.recv()])
+        self.recv().await
     }
 
     /// Sends a datagram with JSON-serialized given object.
     pub async fn send<T: Serialize>(&mut self, obj: &T) -> anyhow::Result<()> {
-        send_to([self.0], [serde_json::to_string(obj)?.as_bytes()])
+        self.0.send(serde_json::to_string(obj)?.as_bytes()).await
     }
 }
-#[duplicate_item(
-    Name                    Stream;
-    [Connection]            [tokio::net::UnixStream];
-    [BlockingConnection]    [std::os::unix::net::UnixStream];
-)]
-impl Deref for Name {
-    type Target = S2D<Stream>;
+impl Deref for Connection {
+    type Target = S2D<UnixStream>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
-#[duplicate_item(Name; [Connection]; [BlockingConnection];)]
-impl DerefMut for Name {
+impl DerefMut for Connection {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-/// A wrap of `UnixListener` that accepts [Connection].
+/// A wrap of `UnixListener` that accepts [`Connection`].
 #[derive(Debug)]
 pub struct Server(UnixListener);
 impl Server {

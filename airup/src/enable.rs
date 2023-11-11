@@ -7,6 +7,6 @@ pub struct Cmdline {
     unit: String,
 }
 
-pub fn main(_: Cmdline) -> anyhow::Result<()> {
-    Ok(())
+pub async fn main(_: Cmdline) -> anyhow::Result<()> {
+    todo!()
 }

@@ -9,11 +9,11 @@ pub struct Cmdline {
     gc: bool,
 }
 
-pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = super::connect()?;
-    conn.refresh()??;
+pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = super::connect().await?;
+    conn.refresh().await??;
     if cmdline.gc {
-        conn.gc()??;
+        conn.gc().await??;
     }
     Ok(())
 }

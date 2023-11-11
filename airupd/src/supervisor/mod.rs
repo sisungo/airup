@@ -178,7 +178,7 @@ impl Manager {
                         continue;
                     }
                 };
-                if let Err(_) = v.update_def(new).await {
+                if v.update_def(new).await.is_err() {
                     errors.push(k.into());
                 }
             }

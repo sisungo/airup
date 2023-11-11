@@ -46,18 +46,6 @@ impl Service {
         Ok(object)
     }
 
-    /// Reads a [`Service`] from given path.
-    pub fn read_from_blocking<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
-        let path = path.as_ref();
-        let s = std::fs::read_to_string(path)?;
-        let mut object: Self = toml::from_str(&s)?;
-
-        object.validate()?;
-        object.name = path.file_stem().unwrap().to_string_lossy().into();
-
-        Ok(object)
-    }
-
     /// Returns the name to display for this service.
     pub fn display_name(&self) -> &str {
         self.service.display_name.as_deref().unwrap_or(&self.name)

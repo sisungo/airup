@@ -352,7 +352,7 @@ impl Command {
 
     #[inline]
     pub async fn spawn(&self) -> anyhow::Result<Child> {
-        Ok(crate::sys::process::spawn(&self).await?.into())
+        Ok(crate::sys::process::spawn(self).await?.into())
     }
 }
 impl Deref for Command {
