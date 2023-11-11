@@ -167,8 +167,16 @@ impl Child {
     ///
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
-    pub async fn kill(&self, sig: i32) -> std::io::Result<()> {
-        self.inner.kill(sig).await
+    pub async fn send_signal(&self, sig: i32) -> std::io::Result<()> {
+        self.inner.send_signal(sig).await
+    }
+
+    /// Kills the child process.
+    ///
+    /// # Errors
+    /// An `Err(_)` is returned if the underlying OS function failed.
+    pub async fn kill(&self) -> std::io::Result<()> {
+        self.inner.kill().await
     }
 }
 impl From<crate::sys::process::Child> for Child {

@@ -46,8 +46,7 @@ pub fn socket_path() -> &'static Path {
     [BlockingConnection];
 )]
 #[derive(Debug)]
-pub struct Name<'a> {
-    path: &'a Path,
+pub struct Name {
     underlying: ipc::Name,
 }
 #[duplicate_item(
@@ -55,10 +54,9 @@ pub struct Name<'a> {
     [Connection]            [async]    [code.await]       [who.send(blob).await]       [who.recv().await];
     [BlockingConnection]    []         [code]             [who.send_blocking(blob)]    [who.recv_blocking()];
 )]
-impl<'a> Name<'a> {
-    pub async fn connect(path: &'a Path) -> std::io::Result<Name<'a>> {
+impl Name {
+    pub async fn connect(path: &Path) -> std::io::Result<Name> {
         Ok(Self {
-            path,
             underlying: may_await([ipc::Name::connect(path)])?,
         })
     }
@@ -80,17 +78,13 @@ impl<'a> Name<'a> {
         may_await([self.underlying.send(&req)])?;
         Ok(may_await([self.underlying.recv_resp()])?.into_result())
     }
-
-    pub fn path(&self) -> &Path {
-        self.path
-    }
 }
 #[duplicate_item(
     Name;
     [Connection];
     [BlockingConnection];
 )]
-impl<'a> Deref for Name<'a> {
+impl Deref for Name {
     type Target = ipc::Name;
 
     fn deref(&self) -> &Self::Target {
@@ -102,7 +96,7 @@ impl<'a> Deref for Name<'a> {
     [Connection];
     [BlockingConnection];
 )]
-impl<'a> DerefMut for Name<'a> {
+impl DerefMut for Name {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.underlying
     }

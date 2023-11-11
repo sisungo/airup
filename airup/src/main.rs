@@ -12,8 +12,16 @@ mod self_reload;
 mod start;
 mod stop;
 
+use anyhow::anyhow;
 use clap::Parser;
 use console::style;
+
+pub fn connect() -> anyhow::Result<airup_sdk::BlockingConnection> {
+    Ok(
+        airup_sdk::BlockingConnection::connect(airup_sdk::socket_path())
+            .map_err(|e| anyhow!("unable to communicate with airup daemon: {}", e))?,
+    )
+}
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -46,8 +54,9 @@ fn main() {
         Cmdline::Disable(cmdline) => disable::main(cmdline),
         Cmdline::Debug(cmdline) => debug::main(cmdline),
     };
+    
     if let Err(e) = result {
-        eprintln!("{} {}", style("error:").red().bold(), e);
+        eprintln!("airup: {} {}", style("error:").red().bold(), e);
         std::process::exit(1);
     }
 }

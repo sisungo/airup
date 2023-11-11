@@ -84,7 +84,6 @@ pub struct Child {
     wait_cached: Mutex<Option<Wait>>,
 }
 impl Child {
-    /// Returns OS-assign process ID of the child process.
     pub const fn id(&self) -> Pid {
         self.pid
     }
@@ -126,10 +125,6 @@ impl Child {
         )
     }
 
-    /// Waits until the process was terminated.
-    ///
-    /// # Cancel Safety
-    /// This method is cancel safe.
     pub async fn wait(&self) -> Result<Wait, WaitError> {
         let mut wait_queue = self.wait_queue.lock().await;
 
@@ -150,16 +145,16 @@ impl Child {
         Ok(wait)
     }
 
-    /// Sends the specified signal to the child process.
-    ///
-    /// # Errors
-    /// An `Err(_)` is returned if the underlying OS function failed.
-    pub async fn kill(&self, sig: i32) -> std::io::Result<()> {
+    pub async fn send_signal(&self, sig: i32) -> std::io::Result<()> {
         let wait_cached = self.wait_cached.lock().unwrap().clone();
         match wait_cached {
             Some(_) => Err(std::io::ErrorKind::NotFound.into()),
             None => kill(self.pid, sig).await,
         }
+    }
+
+    pub async fn kill(&self) -> std::io::Result<()> {
+        self.send_signal(super::signal::SIGKILL).await
     }
 }
 impl Drop for Child {

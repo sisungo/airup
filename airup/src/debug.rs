@@ -1,4 +1,3 @@
-use airup_sdk::prelude::*;
 use clap::Parser;
 
 /// Debug Airup
@@ -10,7 +9,7 @@ pub struct Cmdline {
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = BlockingConnection::connect(airup_sdk::socket_path())?;
+    let mut conn = super::connect()?;
     if let Some(cmd) = cmdline.command {
         conn.send_raw(cmd.as_bytes())?;
         println!("{}", String::from_utf8_lossy(&conn.recv_raw()?));

@@ -16,7 +16,7 @@ pub struct Cmdline {
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = BlockingConnection::connect(airup_sdk::socket_path())?;
+    let mut conn = super::connect()?;
     match cmdline.unit {
         Some(x) => {
             let queried = conn.query_service(&x)??;
@@ -59,7 +59,7 @@ fn print_query_service(query_service: &QueryService) {
 
 /// Prints a [`QuerySystem`] to console, in human-friendly format.
 fn print_query_system(
-    conn: &mut BlockingConnection<'_>,
+    conn: &mut BlockingConnection,
     query_system: &QuerySystem,
     cmdline: &Cmdline,
 ) -> anyhow::Result<()> {

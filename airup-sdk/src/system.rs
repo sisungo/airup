@@ -103,8 +103,8 @@ pub trait Name {
 }
 #[duplicate_item(
     Name                       async      Connection                         may_await(code);
-    [ConnectionExt]            [async]    [super::Connection<'_>]            [code.await];
-    [BlockingConnectionExt]    []         [super::BlockingConnection<'_>]    [code];
+    [ConnectionExt]            [async]    [super::Connection]            [code.await];
+    [BlockingConnectionExt]    []         [super::BlockingConnection]    [code];
 )]
 #[async_trait::async_trait]
 impl Name for Connection {

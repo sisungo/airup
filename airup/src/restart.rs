@@ -9,7 +9,7 @@ pub struct Cmdline {
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = BlockingConnection::connect(airup_sdk::socket_path())?;
+    let mut conn = super::connect()?;
     conn.stop_service(&cmdline.service)??;
     conn.start_service(&cmdline.service)??;
     Ok(())

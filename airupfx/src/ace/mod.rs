@@ -1,11 +1,11 @@
-//! # Airup Command Engine
+//! ACE, short of Airup Command Engine, is the builtin shell-like command language of Airup.
 
 pub mod builtins;
 pub mod parser;
 
 use crate::{
     process::{CommandEnv, ExitStatus, Pid, Wait, WaitError},
-    signal::{SIGKILL, SIGTERM},
+    signal::SIGTERM,
     util::BoxFuture,
 };
 use ahash::AHashMap;
@@ -173,14 +173,29 @@ impl Child {
         }
     }
 
-    /// Kills the task.
+    /// Sends a signal to the task.
     #[inline]
-    pub fn kill(&self, sig: i32) -> BoxFuture<Result<(), Error>> {
+    pub fn send_signal(&self, sig: i32) -> BoxFuture<Result<(), Error>> {
         Box::pin(async move {
             match self {
-                Self::Async(child) => child.kill(sig).await?,
-                Self::AlwaysSuccess(child) => child.kill(sig).await?,
-                Self::Process(proc) => proc.kill(sig).await?,
+                Self::Async(child) => child.send_signal(sig).await?,
+                Self::AlwaysSuccess(child) => child.send_signal(sig).await?,
+                Self::Process(proc) => proc.send_signal(sig).await?,
+                Self::Builtin(_) => (),
+            };
+
+            Ok(())
+        })
+    }
+
+    /// Kills the task.
+    #[inline]
+    pub fn kill(&self) -> BoxFuture<Result<(), Error>> {
+        Box::pin(async move {
+            match self {
+                Self::Async(child) => child.kill().await?,
+                Self::AlwaysSuccess(child) => child.kill().await?,
+                Self::Process(proc) => proc.kill().await?,
                 Self::Builtin(_) => (),
             };
 
@@ -193,11 +208,11 @@ impl Child {
     ///
     /// Note that this may take too long since that `kill()` may be blocking and it is uninterruptable.
     pub async fn kill_timeout(&self, sig: i32, timeout: Option<Duration>) -> Result<(), Error> {
-        self.kill(sig).await?;
+        self.send_signal(sig).await?;
         match self.wait_timeout(timeout).await {
             Ok(_) => Ok(()),
             Err(err) => match err {
-                Error::TimedOut => self.kill(SIGKILL).await,
+                Error::TimedOut => self.kill().await,
                 other => Err(other),
             },
         }

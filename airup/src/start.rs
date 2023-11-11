@@ -13,7 +13,7 @@ pub struct Cmdline {
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = BlockingConnection::connect(airup_sdk::socket_path())?;
+    let mut conn = super::connect()?;
     if let Some(path) = cmdline.sideload {
         conn.sideload_service(&cmdline.service, &Service::read_from_blocking(path)?)??;
     }

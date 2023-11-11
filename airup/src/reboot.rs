@@ -46,7 +46,7 @@ pub struct Cmdline {
 
 /// Entrypoint of the `airup reboot` subprogram.
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = BlockingConnection::connect(airup_sdk::socket_path())?;
+    let mut conn = super::connect()?;
 
     if cmdline.reboot {
         conn.reboot()??;
