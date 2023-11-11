@@ -54,7 +54,7 @@ fn main() {
         Cmdline::Disable(cmdline) => disable::main(cmdline),
         Cmdline::Debug(cmdline) => debug::main(cmdline),
     };
-    
+
     if let Err(e) = result {
         eprintln!("airup: {} {}", style("error:").red().bold(), e);
         std::process::exit(1);

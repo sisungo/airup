@@ -50,7 +50,7 @@ async fn main() {
         );
     }
 
-    tokio::spawn(app::airupd().enter_milestone(env::cmdline().milestone.to_string()));
+    app::airupd().bootstrap_milestone(env::cmdline().milestone.to_string());
 
     let mut lifetime = app::airupd().lifetime.subscribe();
     if let Ok(event) = lifetime.recv().await {

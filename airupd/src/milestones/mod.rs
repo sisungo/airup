@@ -12,18 +12,37 @@ use airup_sdk::{
     Error,
 };
 use airupfx::prelude::*;
+use std::sync::atomic::{self, AtomicBool};
 
+/// The milestone manager.
 #[derive(Debug, Default)]
-pub struct Manager {}
+pub struct Manager {
+    pub is_booting: AtomicBool,
+}
 impl Manager {
+    /// Creates a new [`Manager`] instance.
     pub fn new() -> Self {
         Self::default()
     }
 }
 
 impl crate::app::Airupd {
+    /// Enters the specific milestone.
     pub async fn enter_milestone(&self, name: String) -> Result<(), Error> {
         enter_milestone(name, &mut AHashSet::with_capacity(8)).await
+    }
+
+    /// Enters the specific milestone as bootstrap milestone.
+    pub fn bootstrap_milestone(&'static self, name: String) {
+        tokio::spawn(async move {
+            self.milestones
+                .is_booting
+                .store(true, atomic::Ordering::Relaxed);
+            self.enter_milestone(name).await.ok();
+            self.milestones
+                .is_booting
+                .store(false, atomic::Ordering::Relaxed);
+        });
     }
 }
 

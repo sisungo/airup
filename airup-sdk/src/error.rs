@@ -6,10 +6,6 @@ use thiserror::Error;
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE", tag = "code")]
 pub enum ApiError {
-    /// The client lacks necessary permission to perform the operation.
-    #[error("permission denied (requires={requires:?})")]
-    PermissionDenied { requires: Vec<String> },
-
     /// The requested method was not found.
     #[error("no such method")]
     NoSuchMethod,
@@ -128,12 +124,6 @@ impl ApiError {
     pub fn invalid_params<E: ToString>(err: E) -> Self {
         Self::InvalidParams {
             message: err.to_string(),
-        }
-    }
-
-    pub fn permission_denied<R: IntoIterator<Item = S>, S: ToString>(requires: R) -> Self {
-        Self::PermissionDenied {
-            requires: requires.into_iter().map(|x| x.to_string()).collect(),
         }
     }
 

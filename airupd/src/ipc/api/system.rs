@@ -22,6 +22,7 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     methods.insert("system.uncache_service", uncache_service);
     methods.insert("system.interrupt_service_task", interrupt_service_task);
     methods.insert("system.list_services", list_services);
+    methods.insert("system.is_booting", is_booting);
     methods.insert("system.poweroff", poweroff);
     methods.insert("system.reboot", reboot);
     methods.insert("system.halt", halt);
@@ -125,6 +126,15 @@ fn uncache_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
 
 fn list_services(_: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move { ok(airupd().storage.services.list().await) })
+}
+
+fn is_booting(_: Arc<SessionContext>, _: Request) -> MethodFuture {
+    Box::pin(async move {
+        ok(airupd()
+            .milestones
+            .is_booting
+            .load(std::sync::atomic::Ordering::Relaxed))
+    })
 }
 
 fn poweroff(_: Arc<SessionContext>, _: Request) -> MethodFuture {
