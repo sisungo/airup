@@ -47,17 +47,13 @@ pub fn reload_image() -> std::io::Result<Infallible> {
 ///
 /// # Errors
 /// An `Err(_)` is returned if the underlying OS function failed.
-pub async fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
-    tokio::task::spawn_blocking(move || {
-        let result = unsafe { libc::kill(pid as _, signum) };
-        match result {
-            0 => Ok(()),
-            -1 => Err(std::io::Error::last_os_error()),
-            _ => unreachable!(),
-        }
-    })
-    .await
-    .unwrap()
+pub fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
+    let result = unsafe { libc::kill(pid as _, signum) };
+    match result {
+        0 => Ok(()),
+        -1 => Err(std::io::Error::last_os_error()),
+        _ => unreachable!(),
+    }
 }
 
 pub trait ExitStatusExt {
@@ -149,7 +145,7 @@ impl Child {
         let wait_cached = self.wait_cached.lock().unwrap().clone();
         match wait_cached {
             Some(_) => Err(std::io::ErrorKind::NotFound.into()),
-            None => kill(self.pid, sig).await,
+            None => kill(self.pid, sig),
         }
     }
 

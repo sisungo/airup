@@ -51,11 +51,11 @@ impl Connection {
     }
 
     pub async fn send_raw(&mut self, msg: &[u8]) -> anyhow::Result<()> {
-        self.underlying.send(&msg).await
+        (*self.underlying).send(&msg).await
     }
 
     pub async fn recv_raw(&mut self) -> anyhow::Result<Vec<u8>> {
-        self.underlying.recv().await
+        (*self.underlying).recv().await
     }
 
     pub async fn invoke<P: Serialize, T: DeserializeOwned>(

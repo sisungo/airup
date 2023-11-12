@@ -17,7 +17,6 @@ use crate::error::ApiError;
 use anyhow::anyhow;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
-    io::{Read, Write},
     ops::{Deref, DerefMut},
     path::Path,
 };
@@ -181,30 +180,6 @@ impl<T: AsyncWrite + Unpin> S2D<T> {
     pub async fn send(&mut self, blob: &[u8]) -> anyhow::Result<()> {
         self.inner.write_u64_le(blob.len() as _).await?;
         self.inner.write_all(blob).await?;
-
-        Ok(())
-    }
-}
-impl<T: Read> S2D<T> {
-    /// Receives a datagram from the stream.
-    pub fn recv_blocking(&mut self) -> anyhow::Result<Vec<u8>> {
-        let mut len = [0u8; std::mem::size_of::<u64>()];
-        self.inner.read_exact(&mut len)?;
-        let len = u64::from_le_bytes(len) as usize;
-        if len > self.size_limit {
-            return Err(anyhow!("datagram is too big ({} bytes)", len));
-        }
-        let mut blob = vec![0u8; len];
-        self.inner.read_exact(&mut blob)?;
-
-        Ok(blob)
-    }
-}
-impl<T: Write> S2D<T> {
-    /// Sends a datagram to the stream.
-    pub fn send_blocking(&mut self, blob: &[u8]) -> anyhow::Result<()> {
-        self.inner.write_all(&u64::to_le_bytes(blob.len() as _))?;
-        self.inner.write_all(blob)?;
 
         Ok(())
     }
