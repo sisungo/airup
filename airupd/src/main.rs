@@ -17,7 +17,6 @@ async fn main() {
     // Initializes Airup subsystems
     airupfx::sys::init();
     env::Cmdline::init();
-    airupfx::config::init().await;
     airupfx::log::Builder::new()
         .name("airupd")
         .quiet(self::env::cmdline().quiet)
@@ -28,6 +27,7 @@ async fn main() {
     app::Airupd::init().await;
 
     // Creates Airup runtime primitives
+    app::airupd().storage.config.system_conf.env.override_env();
     let _lock = app::airupd()
         .storage
         .runtime
@@ -46,7 +46,7 @@ async fn main() {
     if !env::cmdline().quiet {
         println!(
             "Welcome to {}!\n",
-            airupfx::config::system_conf().system.os_name
+            app::airupd().storage.config.system_conf.system.os_name
         );
     }
 

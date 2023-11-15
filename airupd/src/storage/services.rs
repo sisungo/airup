@@ -20,7 +20,7 @@ impl From<DirChain<'static>> for Services {
 impl Services {
     pub fn new() -> Self {
         Self {
-            base_chain: DirChain::new(airupfx::config::build_manifest().service_dir.clone()),
+            base_chain: DirChain::new(airup_sdk::build::manifest().service_dir.clone()),
             sideloaded: RwLock::default(),
         }
     }

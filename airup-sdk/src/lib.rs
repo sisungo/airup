@@ -2,6 +2,7 @@
 //! The Airup SDK provides interface to deal with Airup elements, for example, interacting with the daemon, `airupd`. This
 //! cargo project contains code for the SDK in both `Rust` and `C` programming languages.
 
+pub mod build;
 pub mod error;
 pub mod ffi;
 pub mod files;
@@ -29,11 +30,7 @@ pub fn socket_path() -> &'static Path {
         Box::leak(
             std::env::var("AIRUP_SOCK")
                 .map(PathBuf::from)
-                .unwrap_or_else(|_| {
-                    airupfx::config::build_manifest()
-                        .runtime_dir
-                        .join("airupd.sock")
-                })
+                .unwrap_or_else(|_| build::manifest().runtime_dir.join("airupd.sock"))
                 .into(),
         )
     })
@@ -51,7 +48,7 @@ impl Connection {
     }
 
     pub async fn send_raw(&mut self, msg: &[u8]) -> anyhow::Result<()> {
-        (*self.underlying).send(&msg).await
+        (*self.underlying).send(msg).await
     }
 
     pub async fn recv_raw(&mut self) -> anyhow::Result<Vec<u8>> {

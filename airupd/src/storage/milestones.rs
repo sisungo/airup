@@ -14,7 +14,7 @@ impl From<DirChain<'static>> for Milestones {
 impl Milestones {
     pub fn new() -> Self {
         Self {
-            base_chain: DirChain::new(airupfx::config::build_manifest().milestone_dir.clone()),
+            base_chain: DirChain::new(airup_sdk::build::manifest().milestone_dir.clone()),
         }
     }
 

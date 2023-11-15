@@ -23,7 +23,9 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
             todo!()
         }
         Some(x) => {
-            let queried = conn.query_service(&x).await?
+            let queried = conn
+                .query_service(&x)
+                .await?
                 .map_err(|e| anyhow!("failed to query service `{}`: {}", x, e))?;
             print_query_service(&queried);
         }

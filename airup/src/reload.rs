@@ -11,7 +11,8 @@ pub struct Cmdline {
 
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = super::connect().await?;
-    conn.reload_service(&cmdline.service).await?
+    conn.reload_service(&cmdline.service)
+        .await?
         .map_err(|e| anyhow!("failed to reload service `{}`: {}", cmdline.service, e))?;
     Ok(())
 }

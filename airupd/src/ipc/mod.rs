@@ -5,7 +5,6 @@
 pub mod api;
 
 use crate::app::airupd;
-use airupfx::prelude::*;
 use anyhow::anyhow;
 use std::{path::Path, sync::Arc};
 

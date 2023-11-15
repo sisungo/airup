@@ -2,7 +2,6 @@
 //! Base support library of Airup.
 
 pub mod ace;
-pub mod config;
 pub mod env;
 pub mod fs;
 pub mod log;

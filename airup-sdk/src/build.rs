@@ -1,4 +1,3 @@
-use ahash::HashMap;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, sync::OnceLock};
 
@@ -28,7 +27,7 @@ pub struct BuildManifest {
 
     /// Table of initial environment variables.
     #[serde(default)]
-    pub env_vars: HashMap<String, Option<String>>,
+    pub env_vars: Vec<(String, Option<String>)>,
 
     /// Commands executed in `early_boot` pseudo-milestone.
     #[serde(default)]
@@ -46,7 +45,7 @@ fn default_os_name() -> String {
 /// Panics if the [`BuildManifest`] instance was not initialized yet and the compile-time `build_manifest.json` was invalid.
 pub fn manifest() -> &'static BuildManifest {
     MANIFEST.get_or_init(|| {
-        serde_json::from_str(include_str!("../../../build_manifest.json")).expect("bad airup build")
+        serde_json::from_str(include_str!("../../build_manifest.json")).expect("bad airup build")
     })
 }
 

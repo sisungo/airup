@@ -15,5 +15,5 @@ fn version(_: Arc<SessionContext>, _: Request) -> MethodFuture {
 }
 
 fn build_manifest(_: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async { ok(airupfx::config::build_manifest()) })
+    Box::pin(async { ok(airup_sdk::build::manifest()) })
 }

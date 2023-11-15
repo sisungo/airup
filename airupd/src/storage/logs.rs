@@ -9,10 +9,10 @@ pub struct Logs {
     base_chain: DirChain<'static>,
 }
 impl Logs {
-    /// Creates a new [Logs] instance.
+    /// Creates a new [`Logs`] instance.
     pub fn new() -> Self {
         Self {
-            base_chain: DirChain::new(airupfx::config::build_manifest().log_dir.clone()),
+            base_chain: DirChain::new(airup_sdk::build::manifest().log_dir.clone()),
         }
     }
 

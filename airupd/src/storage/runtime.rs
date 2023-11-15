@@ -12,7 +12,7 @@ pub struct Runtime {
 impl Runtime {
     /// Creates a new [Runtime] instance.
     pub async fn new() -> Self {
-        let base_dir = airupfx::config::build_manifest().runtime_dir.clone();
+        let base_dir = airup_sdk::build::manifest().runtime_dir.clone();
         tokio::fs::create_dir_all(&base_dir).await.ok();
 
         Self { base_dir }
