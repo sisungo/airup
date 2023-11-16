@@ -7,12 +7,26 @@ use clap::Parser;
 #[command(about)]
 pub struct Cmdline {
     service: String,
+
+    #[arg(long)]
+    uncache: bool,
 }
 
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = super::connect().await?;
-    conn.stop_service(&cmdline.service)
-        .await?
-        .map_err(|e| anyhow!("failed to stop service `{}`: {}", cmdline.service, e))?;
+
+    if !cmdline.uncache {
+        conn.stop_service(&cmdline.service)
+            .await?
+            .map_err(|e| anyhow!("failed to stop service `{}`: {}", cmdline.service, e))?;
+    } else {
+        conn.stop_service(&cmdline.service).await?.ok();
+    }
+
+    if cmdline.uncache {
+        conn.uncache_service(&cmdline.service)
+            .await?
+            .map_err(|e| anyhow!("failed to uncache service `{}`: {}", cmdline.service, e))?;
+    }
     Ok(())
 }
