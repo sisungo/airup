@@ -9,9 +9,11 @@ use std::path::PathBuf;
 pub struct Cmdline {
     service: String,
 
+    /// Cache the service only
     #[arg(long)]
     cache: bool,
 
+    /// Sideload a service
     #[arg(long)]
     sideload: Option<PathBuf>,
 }

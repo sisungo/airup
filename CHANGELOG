@@ -1,3 +1,16 @@
+Changes in v0.4.0:
+ * [Feature] Command-line: `airup start --cache` and `airup stop --uncache`
+ * [Feature] `airup self-reload` CLI utility
+ * [Feature] `stdio` setup
+ * [Feature] API: `system.is_booting` and `info.build_manifest`
+ * [Feature] Better ACE
+ * [Feature] Supervisor timestamp
+ * [BREAKING] Environment variables: `AIRUP_SOCK`, `AIRUP_SERVICE`, `AIRUP_SERVICE_MAINPID`
+ * [BREAKING] Deprecate policy model
+ * [Fix] Deadlock with `forking`
+ * [Fix] Corrupt `StopService` failure condition
+ * Performance optimizations
+
 Changes in v0.3.1:
  * [Feature] Support of `airup query -a` CLI tool
  * [Feature] ACE Improvements

@@ -19,7 +19,7 @@ use console::style;
 pub async fn connect() -> anyhow::Result<airup_sdk::Connection> {
     airup_sdk::Connection::connect(airup_sdk::socket_path())
         .await
-        .map_err(|e| anyhow!("unable to communicate with airup daemon: {}", e))
+        .map_err(|e| anyhow!("cannot connect to airup daemon: {}", e))
 }
 
 #[derive(Parser)]

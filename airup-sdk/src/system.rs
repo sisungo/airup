@@ -2,6 +2,7 @@ use super::Error;
 use crate::files::Service;
 use airupfx::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::future::Future;
 
 /// Representation of the status of a service.
 #[derive(Debug, Clone, Default, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -47,58 +48,75 @@ pub struct QuerySystem {
     pub services: Vec<String>,
 }
 
-#[async_trait::async_trait]
 pub trait ConnectionExt {
     /// Sideloads a service.
-    async fn sideload_service(
+    fn sideload_service(
         &mut self,
         name: &str,
         service: &Service,
-    ) -> anyhow::Result<Result<(), Error>>;
+    ) -> impl Future<Output = anyhow::Result<Result<(), Error>>> + Send;
 
     /// Starts the specified service.
-    async fn start_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>>;
+    fn start_service(
+        &mut self,
+        name: &str,
+    ) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
     /// Stops the specified service.
-    async fn stop_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>>;
+    fn stop_service(
+        &mut self,
+        name: &str,
+    ) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
     /// Reloads the specified service.
-    async fn reload_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>>;
+    fn reload_service(
+        &mut self,
+        name: &str,
+    ) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
     /// Caches the specified service.
-    async fn cache_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>>;
+    fn cache_service(
+        &mut self,
+        name: &str,
+    ) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
     /// Uncaches the specified service.
-    async fn uncache_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>>;
+    fn uncache_service(
+        &mut self,
+        name: &str,
+    ) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
     /// Queries the specified service.
-    async fn query_service(&mut self, name: &str) -> anyhow::Result<Result<QueryService, Error>>;
+    fn query_service(
+        &mut self,
+        name: &str,
+    ) -> impl Future<Output = anyhow::Result<Result<QueryService, Error>>>;
 
     /// Queries information about the whole system.
-    async fn query_system(&mut self) -> anyhow::Result<Result<QuerySystem, Error>>;
+    fn query_system(&mut self) -> impl Future<Output = anyhow::Result<Result<QuerySystem, Error>>>;
 
     /// Lists all services.
-    async fn list_services(&mut self) -> anyhow::Result<Result<Vec<String>, Error>>;
+    fn list_services(&mut self)
+        -> impl Future<Output = anyhow::Result<Result<Vec<String>, Error>>>;
 
     /// Refreshes cached system information in the `airupd` daemon.
-    async fn refresh(&mut self) -> anyhow::Result<Result<(), Error>>;
+    fn refresh(&mut self) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
     /// Returns `true` of the system is booting.
-    async fn is_booting(&mut self) -> anyhow::Result<Result<bool, Error>>;
+    fn is_booting(&mut self) -> impl Future<Output = anyhow::Result<Result<bool, Error>>>;
 
     /// Deletes cached system information in the `airupd` daemon.
-    async fn gc(&mut self) -> anyhow::Result<Result<(), Error>>;
+    fn gc(&mut self) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
     /// Powers the system off.
-    async fn poweroff(&mut self) -> anyhow::Result<Result<(), Error>>;
+    fn poweroff(&mut self) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
     /// Reboots the system.
-    async fn reboot(&mut self) -> anyhow::Result<Result<(), Error>>;
+    fn reboot(&mut self) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
     /// Halts the system.
-    async fn halt(&mut self) -> anyhow::Result<Result<(), Error>>;
+    fn halt(&mut self) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 }
-#[async_trait::async_trait]
 impl ConnectionExt for super::Connection {
     async fn sideload_service(
         &mut self,

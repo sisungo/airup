@@ -5,6 +5,7 @@ use clap::Parser;
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
+    /// Run garbage collector
     #[arg(long)]
     gc: bool,
 }

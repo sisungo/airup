@@ -40,8 +40,6 @@ pub struct Cmdline {
         conflicts_with = "reboot"
     )]
     userspace: bool,
-
-    args: Option<Vec<String>>,
 }
 
 /// Entrypoint of the `airup reboot` subprogram.

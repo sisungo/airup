@@ -8,6 +8,7 @@ use clap::Parser;
 pub struct Cmdline {
     service: String,
 
+    /// Uncache the service
     #[arg(long)]
     uncache: bool,
 }
