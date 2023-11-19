@@ -9,7 +9,7 @@ use std::{
     path::PathBuf,
 };
 use tokio::{
-    io::{AsyncBufReadExt, AsyncRead, BufReader},
+    io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader},
     sync::mpsc,
 };
 
@@ -121,7 +121,7 @@ impl ExitStatus {
 pub struct Child(sys::process::Child);
 impl Child {
     /// Returns OS-assign process ID of the child process.
-    pub fn id(&self) -> Pid {
+    pub const fn id(&self) -> Pid {
         self.0.id()
     }
 
@@ -409,8 +409,10 @@ impl<R: AsyncRead + Unpin + Send + 'static> Piper<R> {
         let mut buf = Vec::new();
         let mut buf_reader = BufReader::new(self.reader);
         loop {
-            buf_reader.read_until(b'\n', &mut buf).await.ok()?;
-            self.tx.send(buf.clone()).await.unwrap();
+            let mut limited = (&mut buf_reader).take(1024 * 4);
+            limited.read_until(b'\n', &mut buf).await.ok()?;
+            self.tx.send(buf.clone()).await.ok()?;
+            buf.clear();
         }
     }
 }

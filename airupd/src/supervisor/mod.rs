@@ -258,7 +258,9 @@ impl Supervisor {
         loop {
             tokio::select! {
                 req = self.receiver.recv() => self.handle_req(req?).await,
-                Some(wait) = wait(&self.context, self.current_task.has_task()) => self.handle_wait(wait).await,
+                Some(do_child) = do_child(&self.context, self.current_task.has_task()) => match do_child {
+                    DoChild::Wait(wait) => self.handle_wait(wait).await,
+                },
                 Some(rslt) = self.current_task.wait() => self.handle_wait_task(rslt).await,
             }
         }
@@ -710,20 +712,25 @@ enum Request {
     MakeActive(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
 }
 
-async fn wait(context: &SupervisorContext, has_task: bool) -> Option<Wait> {
-    if has_task {
+enum DoChild {
+    Wait(Wait),
+}
+
+async fn do_child(context: &SupervisorContext, has_task: bool) -> Option<DoChild> {
+    let mut lock = context.child.write().await;
+
+    if has_task || lock.is_none() {
         return None;
     }
 
-    let mut lock = context.child.write().await;
-    let wait = match lock.as_mut() {
-        Some(x) => x.wait().await.ok(),
-        None => None,
-    };
-
-    if wait.is_some() {
-        *lock = None;
+    tokio::select! {
+        Some(wait) = wait(&mut lock) => Some(DoChild::Wait(wait)),
     }
+}
 
+async fn wait(lock: &mut Option<Child>) -> Option<Wait> {
+    debug_assert!(lock.is_some());
+    let wait = lock.as_mut().unwrap().wait().await.ok();
+    *lock = None;
     wait
 }

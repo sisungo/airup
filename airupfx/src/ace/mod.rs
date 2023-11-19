@@ -125,7 +125,7 @@ pub enum Child {
 impl Child {
     /// Returns process ID of the child.
     #[inline]
-    pub fn id(&self) -> Pid {
+    pub const fn id(&self) -> Pid {
         match self {
             Self::Async(child) => child.id(),
             Self::AlwaysSuccess(child) => child.id(),
@@ -204,9 +204,7 @@ impl Child {
     }
 
     /// Attempts to kill the process with given signal number. If the process did not terminate in specified time, it will be
-    /// forcefully killed using [SIGKILL].
-    ///
-    /// Note that this may take too long since that `kill()` may be blocking and it is uninterruptable.
+    /// forcefully killed.
     pub async fn kill_timeout(&self, sig: i32, timeout: Option<Duration>) -> Result<(), Error> {
         self.send_signal(sig).await?;
         match self.wait_timeout(timeout).await {
@@ -215,6 +213,24 @@ impl Child {
                 Error::TimedOut => self.kill().await,
                 other => Err(other),
             },
+        }
+    }
+
+    pub fn stdout(&self) -> Option<&super::process::PiperHandle> {
+        match self {
+            Self::Async(child) => child.stdout(),
+            Self::AlwaysSuccess(child) => child.stdout(),
+            Self::Process(proc) => proc.stdout(),
+            Self::Builtin(_) => None,
+        }
+    }
+
+    pub fn stderr(&self) -> Option<&super::process::PiperHandle> {
+        match self {
+            Self::Async(child) => child.stderr(),
+            Self::AlwaysSuccess(child) => child.stderr(),
+            Self::Process(proc) => proc.stderr(),
+            Self::Builtin(_) => None,
         }
     }
 }

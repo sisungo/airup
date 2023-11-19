@@ -26,11 +26,14 @@ use tokio::{
 };
 
 #[derive(Debug)]
-pub struct Connection(S2D<UnixStream>);
+pub struct Connection(MessageProto<UnixStream>);
 impl Connection {
     /// Connects to the specified socket.
     pub async fn connect<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
-        Ok(Self(S2D::new(UnixStream::connect(path).await?, usize::MAX)))
+        Ok(Self(MessageProto::new(
+            UnixStream::connect(path).await?,
+            usize::MAX,
+        )))
     }
 
     /// Receives a datagram and deserializes it from JSON to `T`.
@@ -61,7 +64,7 @@ impl Connection {
     }
 }
 impl Deref for Connection {
-    type Target = S2D<UnixStream>;
+    type Target = MessageProto<UnixStream>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -145,24 +148,24 @@ impl Response {
     }
 }
 
-/// A connection.
+/// A middle layer that splits a stream into messages.
 #[derive(Debug)]
-pub struct S2D<T> {
+pub struct MessageProto<T> {
     inner: T,
     size_limit: usize,
 }
-impl<T> S2D<T> {
+impl<T> MessageProto<T> {
     /// Sets received datagram size limitation.
     pub fn set_size_limit(&mut self, new: usize) -> usize {
         std::mem::replace(&mut self.size_limit, new)
     }
 
-    /// Creates a new [`S2D`] with provided stream.
+    /// Creates a new [`MessageProto`] with provided stream.
     pub fn new(inner: T, size_limit: usize) -> Self {
         Self { inner, size_limit }
     }
 }
-impl<T: AsyncRead + Unpin> S2D<T> {
+impl<T: AsyncRead + Unpin> MessageProto<T> {
     /// Receives a datagram from the stream.
     pub async fn recv(&mut self) -> anyhow::Result<Vec<u8>> {
         let len = self.inner.read_u64_le().await? as usize;
@@ -175,7 +178,7 @@ impl<T: AsyncRead + Unpin> S2D<T> {
         Ok(blob)
     }
 }
-impl<T: AsyncWrite + Unpin> S2D<T> {
+impl<T: AsyncWrite + Unpin> MessageProto<T> {
     /// Sends a datagram to the stream.
     pub async fn send(&mut self, blob: &[u8]) -> anyhow::Result<()> {
         self.inner.write_u64_le(blob.len() as _).await?;
@@ -184,17 +187,17 @@ impl<T: AsyncWrite + Unpin> S2D<T> {
         Ok(())
     }
 }
-impl<T> AsRef<T> for S2D<T> {
+impl<T> AsRef<T> for MessageProto<T> {
     fn as_ref(&self) -> &T {
         &self.inner
     }
 }
-impl<T> AsMut<T> for S2D<T> {
+impl<T> AsMut<T> for MessageProto<T> {
     fn as_mut(&mut self) -> &mut T {
         &mut self.inner
     }
 }
-impl<T: AsyncRead + AsyncWrite + Unpin> From<T> for S2D<T> {
+impl<T: AsyncRead + AsyncWrite + Unpin> From<T> for MessageProto<T> {
     fn from(inner: T) -> Self {
         Self::new(inner, 6 * 1024 * 1024)
     }
