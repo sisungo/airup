@@ -39,3 +39,7 @@ pub async fn setup_stdio<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
         }
     }
 }
+
+pub fn current_uid() -> sysinfo::Uid {
+    sysinfo::Uid::try_from(unsafe { libc::getuid() as usize }).unwrap()
+}

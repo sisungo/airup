@@ -7,14 +7,14 @@ use std::convert::Infallible;
 pub struct Windows;
 impl PowerManager for Windows {
     fn poweroff(&self) -> std::io::Result<Infallible> {
-        todo!()
+        unimplemented!()
     }
 
     fn reboot(&self) -> std::io::Result<Infallible> {
-        todo!()
+        unimplemented!()
     }
 
     fn halt(&self) -> std::io::Result<Infallible> {
-        todo!()
+        unimplemented!()
     }
 }

@@ -6,7 +6,7 @@
 //! subscription is cancelled.
 
 use super::std_port::CommandExt as _;
-use crate::process::{ExitStatus, Wait};
+use crate::process::{ExitStatus, PiperHandle, Wait};
 use ahash::AHashMap;
 use std::{
     cmp,
@@ -36,7 +36,6 @@ fn wait_nonblocking(pid: Pid) -> std::io::Result<Option<Wait>> {
     }
 }
 
-/// Reloads the process image with the version on the filesystem.
 pub fn reload_image() -> std::io::Result<Infallible> {
     Err(std::process::Command::new(std::env::current_exe()?)
         .args(std::env::args_os().skip(1))
@@ -78,36 +77,47 @@ pub struct Child {
     pid: Pid,
     wait_queue: tokio::sync::Mutex<Option<mpsc::Receiver<Wait>>>,
     wait_cached: Mutex<Option<Wait>>,
+    stdout: Option<PiperHandle>,
+    stderr: Option<PiperHandle>,
 }
 impl Child {
     pub const fn id(&self) -> Pid {
         self.pid
     }
 
-    /// Converts from [`std::process::Child`] to [`Child`].
-    pub fn from_std(c: std::process::Child) -> Self {
-        // SAFETY: [std::process::Child] always represents to a valid child process.
-        unsafe { Self::from_pid_unchecked(c.id() as _) }
+    fn from_std(c: std::process::Child) -> Self {
+        let pid = c.id();
+        let stdout = c
+            .stdout
+            .and_then(|x| tokio::process::ChildStdout::from_std(x).ok())
+            .map(PiperHandle::new);
+        let stderr = c
+            .stderr
+            .and_then(|x| tokio::process::ChildStderr::from_std(x).ok())
+            .map(PiperHandle::new);
+        Self {
+            pid: pid as _,
+            wait_queue: Some(child_queue().subscribe(pid as _)).into(),
+            wait_cached: None.into(),
+            stdout,
+            stderr,
+        }
     }
 
-    /// Creates a [`Child`] instance from PID. The PID must be a valid PID that belongs to child process of current process, or
-    /// the behavior is undefined.
+    /// Converts from process ID to [`Child`].
     ///
     /// # Safety
-    /// Current implementation of AirupFX process module doesn't cause safety issues when the PID doesn't meet the requirements,
-    /// but the behavior may be changed in the future version.
-    pub unsafe fn from_pid_unchecked(pid: Pid) -> Self {
+    /// The behavior converting from an invalid child PID to [`Child`] is not guaranteed.
+    unsafe fn from_pid_unchecked(pid: Pid) -> Self {
         Self {
             pid,
             wait_queue: Some(child_queue().subscribe(pid)).into(),
             wait_cached: None.into(),
+            stdout: None,
+            stderr: None,
         }
     }
 
-    /// Creates a [`Child`] instance from PID.
-    ///
-    /// # Cancel Safety
-    /// This method is cancel safe.
     pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
         (wait_nonblocking(pid)?).map_or_else(
             || Ok(unsafe { Self::from_pid_unchecked(pid) }),
@@ -116,6 +126,8 @@ impl Child {
                     pid,
                     wait_queue: None.into(),
                     wait_cached: Some(wait).into(),
+                    stdout: None,
+                    stderr: None,
                 })
             },
         )
@@ -151,6 +163,14 @@ impl Child {
 
     pub async fn kill(&self) -> std::io::Result<()> {
         self.send_signal(super::signal::SIGKILL).await
+    }
+
+    pub fn stdout(&self) -> Option<&PiperHandle> {
+        self.stdout.as_ref()
+    }
+
+    pub fn stderr(&self) -> Option<&PiperHandle> {
+        self.stderr.as_ref()
     }
 }
 impl Drop for Child {

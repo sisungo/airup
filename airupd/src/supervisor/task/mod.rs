@@ -143,7 +143,7 @@ pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
         })?;
     ace.env.var("AIRUP_SERVICE", context.service.name.clone());
     if let Some(pid) = context.pid().await {
-        ace.env.var("AIRUP_SERVICE_MAINPID", pid.to_string());
+        ace.env.var("AIRUP_SERVICE_MAIN_PID", pid.to_string());
     }
 
     Ok(ace)

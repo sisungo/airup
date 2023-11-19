@@ -8,6 +8,10 @@ use std::{
     ops::{Deref, DerefMut},
     path::PathBuf,
 };
+use tokio::{
+    io::{AsyncBufReadExt, AsyncRead, BufReader},
+    sync::mpsc,
+};
 
 /// Represents to an OS-assigned process identifier.
 pub type Pid = sys::process::Pid;
@@ -58,7 +62,7 @@ pub struct Wait {
     pub exit_status: ExitStatus,
 }
 impl Wait {
-    /// Creates a new [Wait] object.
+    /// Creates a new [`Wait`] object.
     pub fn new(pid: Pid, exit_status: ExitStatus) -> Self {
         Self { pid, exit_status }
     }
@@ -114,32 +118,11 @@ impl ExitStatus {
 
 /// Representation of a running or exited child process.
 #[derive(Debug)]
-pub struct Child {
-    inner: sys::process::Child,
-}
+pub struct Child(sys::process::Child);
 impl Child {
     /// Returns OS-assign process ID of the child process.
     pub fn id(&self) -> Pid {
-        self.inner.id()
-    }
-
-    /// Converts from [`std::process::Child`] to [`Child`].
-    pub fn from_std(c: std::process::Child) -> Self {
-        Self {
-            inner: sys::process::Child::from_std(c),
-        }
-    }
-
-    /// Creates a [`Child`] instance from PID. The PID must be a valid PID that belongs to child process of current process, or
-    /// the behavior is undefined.
-    ///
-    /// # Safety
-    /// Current implementation of `AirupFX` process module doesn't cause safety issues when the PID doesn't meet the
-    /// requirements, but the behavior may be changed in the future versions.
-    pub unsafe fn from_pid_unchecked(pid: Pid) -> Self {
-        Self {
-            inner: sys::process::Child::from_pid_unchecked(pid),
-        }
+        self.0.id()
     }
 
     /// Creates a [`Child`] instance from PID.
@@ -147,9 +130,7 @@ impl Child {
     /// # Errors
     /// An `Err(_)` is returned if the process is not a valid child process of current process.
     pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
-        Ok(Self {
-            inner: sys::process::Child::from_pid(pid)?,
-        })
+        Ok(Self(sys::process::Child::from_pid(pid)?))
     }
 
     /// Waits until the process was terminated.
@@ -160,7 +141,7 @@ impl Child {
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
     pub async fn wait(&self) -> Result<Wait, WaitError> {
-        self.inner.wait().await.map_err(Into::into)
+        self.0.wait().await.map_err(Into::into)
     }
 
     /// Sends the specified signal to the child process.
@@ -168,7 +149,7 @@ impl Child {
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
     pub async fn send_signal(&self, sig: i32) -> std::io::Result<()> {
-        self.inner.send_signal(sig).await
+        self.0.send_signal(sig).await
     }
 
     /// Kills the child process.
@@ -176,12 +157,22 @@ impl Child {
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
     pub async fn kill(&self) -> std::io::Result<()> {
-        self.inner.kill().await
+        self.0.kill().await
+    }
+
+    /// Returns a reference to the `stdout` piper handle of the child process.
+    pub fn stdout(&self) -> Option<&PiperHandle> {
+        self.0.stdout()
+    }
+
+    /// Returns a reference to the `stderr` piper handle of the child process.
+    pub fn stderr(&self) -> Option<&PiperHandle> {
+        self.0.stderr()
     }
 }
 impl From<crate::sys::process::Child> for Child {
     fn from(inner: crate::sys::process::Child) -> Self {
-        Self { inner }
+        Self(inner)
     }
 }
 
@@ -224,6 +215,8 @@ pub struct CommandEnv {
     pub(crate) stderr: Stdio,
     pub(crate) working_dir: Option<PathBuf>,
     pub(crate) setsid: bool,
+    pub(crate) cpu_limit: Option<u64>,
+    pub(crate) mem_limit: Option<u64>,
 }
 impl CommandEnv {
     #[inline]
@@ -318,6 +311,18 @@ impl CommandEnv {
         self.setsid = val;
         self
     }
+
+    #[inline]
+    pub fn cpu_limit<T: Into<Option<u64>>>(&mut self, val: T) -> &mut Self {
+        self.cpu_limit = val.into();
+        self
+    }
+
+    #[inline]
+    pub fn mem_limit<T: Into<Option<u64>>>(&mut self, val: T) -> &mut Self {
+        self.mem_limit = val.into();
+        self
+    }
 }
 
 #[derive(Debug)]
@@ -365,6 +370,48 @@ impl Deref for Command {
 impl DerefMut for Command {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.env
+    }
+}
+
+#[derive(Debug)]
+pub struct PiperHandle {
+    rx: tokio::sync::Mutex<mpsc::Receiver<Vec<u8>>>,
+}
+impl PiperHandle {
+    pub fn new(reader: impl AsyncRead + Unpin + Send + 'static) -> Self {
+        let (tx, rx) = mpsc::channel(128);
+        Piper::new(reader, tx).start();
+        Self { rx: rx.into() }
+    }
+
+    pub async fn read_line(&self) -> Option<Vec<u8>> {
+        self.rx.lock().await.recv().await
+    }
+}
+
+#[derive(Debug)]
+struct Piper<R> {
+    reader: R,
+    tx: mpsc::Sender<Vec<u8>>,
+}
+impl<R: AsyncRead + Unpin + Send + 'static> Piper<R> {
+    fn new(reader: R, tx: mpsc::Sender<Vec<u8>>) -> Self {
+        Self { reader, tx }
+    }
+
+    fn start(self) {
+        tokio::spawn(async move {
+            self.run().await;
+        });
+    }
+
+    async fn run(self) -> Option<()> {
+        let mut buf = Vec::new();
+        let mut buf_reader = BufReader::new(self.reader);
+        loop {
+            buf_reader.read_until(b'\n', &mut buf).await.ok()?;
+            self.tx.send(buf.clone()).await.unwrap();
+        }
     }
 }
 

@@ -1,25 +1,16 @@
 //! Process management on Microsoft Windows.
 
-use crate::process::Wait;
+use crate::process::{ExitStatus, Wait};
 use std::convert::Infallible;
 
 pub type Pid = libc::c_int;
 
-/// Reloads the process image with the version on the filesystem.
 pub fn reload_image() -> std::io::Result<Infallible> {
     std::process::Command::new(std::env::current_exe()?)
         .args(std::env::args_os().skip(1))
         .spawn()?
         .wait()?;
     Ok(std::process::exit(0))
-}
-
-/// Sends the given signal to the specified process.
-///
-/// # Errors
-/// An `Err(_)` is returned if the underlying OS function failed.
-pub async fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
-    todo!()
 }
 
 pub(crate) fn command_login(
@@ -29,11 +20,10 @@ pub(crate) fn command_login(
     todo!()
 }
 
-/// Converts from [`crate::process::Command`] to [`std::process::Command`].
-pub(crate) async fn command_to_std(
+pub(crate) async fn command_to_tokio(
     command: &crate::process::Command,
-) -> anyhow::Result<std::process::Command> {
-    let mut result = std::process::Command::new(&command.program);
+) -> anyhow::Result<tokio::process::Command> {
+    let mut result = tokio::process::Command::new(&command.program);
     command.args.iter().for_each(|x| {
         result.arg(x);
     });
@@ -58,50 +48,41 @@ pub(crate) async fn command_to_std(
     Ok(result)
 }
 
-/// Representation of a running or exited child process.
+pub async fn spawn(cmd: &crate::process::Command) -> anyhow::Result<Child> {
+    Ok(Child(command_to_tokio(cmd).await?.spawn()?.into()))
+}
+
 #[derive(Debug)]
-pub struct Child;
+pub struct Child(tokio::sync::RwLock<tokio::process::Child>);
 impl Child {
-    /// Returns OS-assign process ID of the child process.
     pub const fn id(&self) -> Pid {
         todo!()
     }
 
-    /// Converts from [std::process::Child] to [Child].
-    pub fn from_std(c: std::process::Child) -> Self {
-        todo!()
-    }
-
-    /// Waits until the process was terminated.
-    ///
-    /// # Cancel Safety
-    /// This method is cancel safe.
     pub async fn wait(&self) -> Result<Wait, WaitError> {
-        todo!()
+        self.0
+            .write()
+            .await
+            .wait()
+            .await
+            .map(|x| Wait::new(0, ExitStatus::Exited(x.code().unwrap())))
     }
 
-    /// Sends the specified signal to the child process.
-    ///
-    /// # Errors
-    /// An `Err(_)` is returned if the underlying OS function failed.
-    pub async fn kill(&self, _: i32) -> std::io::Result<()> {
-        todo!()
+    pub async fn send_signal(&self, _: i32) -> std::io::Result<()> {
+        Err(std::io::ErrorKind::Unsupported.into())
+    }
+
+    pub async fn kill(&self) -> std::io::Result<()> {
+        self.0.write().await.kill().await
     }
 
     pub unsafe fn from_pid_unchecked(pid: Pid) -> Self {
-        todo!()
+        unimplemented!()
     }
 
-    /// Creates a [`Child`] instance from PID.
-    ///
-    /// # Errors
-    /// An `Err(_)` is returned if the process is not a valid child process of current process.
     pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
-        todo!()
+        Err(std::io::ErrorKind::Unsupported.into())
     }
 }
 
-/// An error occured by calling `wait` on a [`Child`].
-#[derive(Debug, Clone, thiserror::Error)]
-#[error("todo")]
-pub struct WaitError;
+pub type WaitError = std::io::Error;

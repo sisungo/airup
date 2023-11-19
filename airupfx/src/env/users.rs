@@ -64,7 +64,7 @@ pub fn with_current_user<F: FnOnce(&User) -> T, T>(f: F) -> Option<T> {
 
 /// Returns UID of current user.
 pub fn current_uid() -> Uid {
-    Uid::try_from(unsafe { libc::getuid() as usize }).unwrap()
+    crate::sys::env::current_uid()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
