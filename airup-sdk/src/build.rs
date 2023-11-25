@@ -52,7 +52,7 @@ pub fn manifest() -> &'static BuildManifest {
 /// Sets the build manifest to the specific value.
 ///
 /// # Panics
-/// Panics if the manifest is already set, which may be done by any call of [manifest] or [set_manifest].
+/// Panics if the manifest is already set, which may be done by any call of [`manifest`] or [`set_manifest`].
 pub fn set_manifest(manifest: BuildManifest) {
     MANIFEST.set(manifest).unwrap();
 }

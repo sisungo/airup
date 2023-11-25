@@ -1,6 +1,6 @@
 use super::*;
 use crate::supervisor::SupervisorContext;
-use airup_sdk::{files::service::Kind, system::Status, Error};
+use airup_sdk::{system::Status, Error};
 use airupfx::{signal::SIGTERM, util::BoxFuture};
 use std::sync::Arc;
 
@@ -47,17 +47,16 @@ impl StopService {
     }
 
     pub async fn run(&mut self) -> Result<(), Error> {
-        let service = &self.context.service;
-
+        // The task immediately fails if the service is not active
         if self.context.status.get() != Status::Active {
             return Err(Error::UnitNotStarted);
         }
 
+        // Auto saving of last error is disabled for this task
         self.context.last_error.set(None);
 
         let ace = super::ace(&self.context).await?;
-
-        let countdown = airupfx::time::countdown(service.exec.stop_timeout());
+        let countdown = airupfx::time::countdown(self.context.service.exec.stop_timeout());
 
         if let Some(x) = &self.context.service.exec.pre_stop {
             for line in x.lines() {
@@ -66,7 +65,7 @@ impl StopService {
             }
         }
 
-        match &service.exec.stop {
+        match &self.context.service.exec.stop {
             Some(x) => {
                 ace.run_wait_timeout(x, countdown.left()).await??;
             }
@@ -78,12 +77,6 @@ impl StopService {
                 }
             }
         };
-
-        if let Some(x) = &self.context.service.service.pid_file {
-            if self.context.service.service.kind == Kind::Simple {
-                tokio::fs::remove_file(x).await.ok();
-            }
-        }
 
         self.context.status.set(Status::Stopped);
 

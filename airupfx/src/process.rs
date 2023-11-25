@@ -6,7 +6,8 @@ use std::{
     convert::Infallible,
     ffi::OsString,
     ops::{Deref, DerefMut},
-    path::PathBuf, sync::Arc,
+    path::PathBuf,
+    sync::Arc,
 };
 use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader},

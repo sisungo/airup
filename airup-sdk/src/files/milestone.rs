@@ -137,16 +137,16 @@ impl FromStr for Item {
         let mut splited = s.splitn(2, ' ');
         let verb = splited
             .next()
-            .ok_or_else(|| anyhow!("missing verb for milestone items"))?;
+            .ok_or_else(|| anyhow!("missing verb in milestone items"))?;
         let entity = splited
             .next()
-            .ok_or_else(|| anyhow!("missing entity for milestone items"))?;
+            .ok_or_else(|| anyhow!("missing unit in milestone items"))?;
         match verb {
             "cache" => Ok(Self::Cache(entity.into())),
             "start" => Ok(Self::Start(entity.into())),
             "run_cmd" => Ok(Self::RunCmd(entity.into())),
             _ => Err(anyhow!(
-                "verb `{verb}` is not considered for milestone items"
+                "verb `{verb}` is not considered in milestone items"
             )),
         }
     }

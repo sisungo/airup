@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 ahash = "0.8"
 anyhow = "1"
+async-trait = "0.1"
 atomic_refcell = "0.1"
 airupfx = { path = "../airupfx" }
 airup-sdk = { path = "../airup-sdk" }

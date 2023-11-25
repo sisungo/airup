@@ -9,10 +9,10 @@ pub struct System(broadcast::Sender<Event>);
 impl System {
     /// Creates a new instance with default settings.
     pub fn new() -> Self {
-        Self(broadcast::channel(2).0)
+        Self(broadcast::channel(1).0)
     }
 
-    /// Creates a new [broadcast::Receiver] handle that will receive events sent after this call to `subscribe`.
+    /// Creates a new [`broadcast::Receiver`] handle that will receive events sent after this call to `subscribe`.
     pub fn subscribe(&self) -> broadcast::Receiver<Event> {
         self.0.subscribe()
     }

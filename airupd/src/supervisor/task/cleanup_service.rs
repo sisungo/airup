@@ -94,6 +94,10 @@ pub async fn cleanup_service(
     service: &Service,
     countdown: &airupfx::time::Countdown,
 ) -> Result<(), Error> {
+    if let Some(x) = &service.service.pid_file {
+        tokio::fs::remove_file(x).await.ok();
+    }
+
     if let Some(x) = &service.exec.post_stop {
         for line in x.lines() {
             ace.run_wait_timeout(line.trim(), countdown.left())

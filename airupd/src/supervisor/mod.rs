@@ -1,16 +1,20 @@
 //! # The Airup Supervisor
 //! Main module containing full airup supervisor logic.
 
+pub mod logger;
 pub mod task;
 
-use self::task::*;
 use ahash::AHashMap;
 use airup_sdk::{
     files::Service,
     system::{QueryService, Status},
     Error,
 };
-use airupfx::{ace::Child, prelude::*, process::{Wait, PiperHandle}};
+use airupfx::{
+    ace::Child,
+    prelude::*,
+    process::{PiperHandle, Wait},
+};
 use atomic_refcell::AtomicRefCell;
 use std::{
     cmp,
@@ -19,6 +23,7 @@ use std::{
         Arc, Mutex, RwLock,
     },
 };
+use task::*;
 use tokio::sync::{mpsc, oneshot};
 
 macro_rules! supervisor_req {
@@ -723,8 +728,8 @@ enum DoChild {
 async fn do_child(context: &SupervisorContext, has_task: bool) -> Option<DoChild> {
     let mut lock = context.child.write().await;
 
-    let stdout = lock.as_ref().map(|x| x.stdout()).flatten();
-    let stderr = lock.as_ref().map(|x| x.stderr()).flatten();
+    let stdout = lock.as_ref().and_then(|x| x.stdout());
+    let stderr = lock.as_ref().and_then(|x| x.stderr());
 
     if has_task || lock.is_none() {
         return None;

@@ -12,7 +12,7 @@ use std::{
     cmp,
     convert::Infallible,
     os::unix::process::CommandExt,
-    sync::{Mutex, OnceLock, RwLock, Arc},
+    sync::{Arc, Mutex, OnceLock, RwLock},
 };
 use sysinfo::UserExt;
 use tokio::{signal::unix::SignalKind, sync::mpsc};

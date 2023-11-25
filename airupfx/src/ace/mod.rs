@@ -9,7 +9,7 @@ use crate::{
     util::BoxFuture,
 };
 use ahash::AHashMap;
-use std::{time::Duration, sync::Arc};
+use std::{sync::Arc, time::Duration};
 use tokio::sync::mpsc;
 
 /// The Airup Command Engine.

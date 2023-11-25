@@ -47,27 +47,31 @@ impl StartService {
     }
 
     pub async fn run(&mut self) -> Result<(), Error> {
+        // The task immediately fails if the service is already active
         if self.context.status.get() == Status::Active {
             return Err(Error::UnitStarted);
         }
 
+        // Auto saving of last error is enabled for this task
         self.context.last_error.set(None);
         self.context.last_error.set_autosave(true);
 
         let ace = super::ace(&self.context).await?;
 
-        for i in self.context.service.service.conflicts_with.iter() {
-            if let Some(handle) = airupd().supervisors.get(i).await {
-                if handle.query().await.status == Status::Active {
-                    return Err(Error::ConflictsWith {
-                        name: i.to_string(),
-                    });
-                }
-            }
-        }
-
         self.helper
             .interruptable_scope::<Result<(), Error>, _>(async {
+                // If any of conflict services are active, the task fails
+                for i in self.context.service.service.conflicts_with.iter() {
+                    if let Some(handle) = airupd().supervisors.get(i).await {
+                        if handle.query().await.status == Status::Active {
+                            return Err(Error::ConflictsWith {
+                                name: i.to_string(),
+                            });
+                        }
+                    }
+                }
+
+                // Start dependencies
                 for dep in self.context.service.service.dependencies.iter() {
                     airupd()
                         .make_service_active(dep)
@@ -123,7 +127,12 @@ impl StartService {
                 ace.run_wait_timeout(&self.context.service.exec.start, countdown.left())
                     .await??;
             }
-            Kind::Notify => {}
+            Kind::Notify => {
+                // TODO: Implement `notify`
+                self.context
+                    .set_child(ace.run(&self.context.service.exec.start).await?)
+                    .await;
+            }
         }
 
         if let Some(x) = &self.context.service.exec.post_start {
