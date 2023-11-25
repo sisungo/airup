@@ -9,7 +9,7 @@ use crate::{
     util::BoxFuture,
 };
 use ahash::AHashMap;
-use std::time::Duration;
+use std::{time::Duration, sync::Arc};
 use tokio::sync::mpsc;
 
 /// The Airup Command Engine.
@@ -216,7 +216,7 @@ impl Child {
         }
     }
 
-    pub fn stdout(&self) -> Option<&super::process::PiperHandle> {
+    pub fn stdout(&self) -> Option<Arc<super::process::PiperHandle>> {
         match self {
             Self::Async(child) => child.stdout(),
             Self::AlwaysSuccess(child) => child.stdout(),
@@ -225,7 +225,7 @@ impl Child {
         }
     }
 
-    pub fn stderr(&self) -> Option<&super::process::PiperHandle> {
+    pub fn stderr(&self) -> Option<Arc<super::process::PiperHandle>> {
         match self {
             Self::Async(child) => child.stderr(),
             Self::AlwaysSuccess(child) => child.stderr(),

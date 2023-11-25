@@ -6,7 +6,7 @@ use std::{
     convert::Infallible,
     ffi::OsString,
     ops::{Deref, DerefMut},
-    path::PathBuf,
+    path::PathBuf, sync::Arc,
 };
 use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader},
@@ -161,12 +161,12 @@ impl Child {
     }
 
     /// Returns a reference to the `stdout` piper handle of the child process.
-    pub fn stdout(&self) -> Option<&PiperHandle> {
+    pub fn stdout(&self) -> Option<Arc<PiperHandle>> {
         self.0.stdout()
     }
 
     /// Returns a reference to the `stderr` piper handle of the child process.
-    pub fn stderr(&self) -> Option<&PiperHandle> {
+    pub fn stderr(&self) -> Option<Arc<PiperHandle>> {
         self.0.stderr()
     }
 }
@@ -379,7 +379,7 @@ pub struct PiperHandle {
 }
 impl PiperHandle {
     pub fn new(reader: impl AsyncRead + Unpin + Send + 'static) -> Self {
-        let (tx, rx) = mpsc::channel(128);
+        let (tx, rx) = mpsc::channel(4);
         Piper::new(reader, tx).start();
         Self { rx: rx.into() }
     }

@@ -10,7 +10,7 @@ use airup_sdk::{
     system::{QueryService, Status},
     Error,
 };
-use airupfx::{ace::Child, prelude::*, process::Wait};
+use airupfx::{ace::Child, prelude::*, process::{Wait, PiperHandle}};
 use atomic_refcell::AtomicRefCell;
 use std::{
     cmp,
@@ -260,6 +260,8 @@ impl Supervisor {
                 req = self.receiver.recv() => self.handle_req(req?).await,
                 Some(do_child) = do_child(&self.context, self.current_task.has_task()) => match do_child {
                     DoChild::Wait(wait) => self.handle_wait(wait).await,
+                    DoChild::Stdout(_) => (),
+                    DoChild::Stderr(_) => (),
                 },
                 Some(rslt) = self.current_task.wait() => self.handle_wait_task(rslt).await,
             }
@@ -714,10 +716,15 @@ enum Request {
 
 enum DoChild {
     Wait(Wait),
+    Stdout(Vec<u8>),
+    Stderr(Vec<u8>),
 }
 
 async fn do_child(context: &SupervisorContext, has_task: bool) -> Option<DoChild> {
     let mut lock = context.child.write().await;
+
+    let stdout = lock.as_ref().map(|x| x.stdout()).flatten();
+    let stderr = lock.as_ref().map(|x| x.stderr()).flatten();
 
     if has_task || lock.is_none() {
         return None;
@@ -725,6 +732,8 @@ async fn do_child(context: &SupervisorContext, has_task: bool) -> Option<DoChild
 
     tokio::select! {
         Some(wait) = wait(&mut lock) => Some(DoChild::Wait(wait)),
+        Some(line) = wait_piper(stdout) => Some(DoChild::Stdout(line)),
+        Some(line) = wait_piper(stderr) => Some(DoChild::Stderr(line)),
     }
 }
 
@@ -733,4 +742,8 @@ async fn wait(lock: &mut Option<Child>) -> Option<Wait> {
     let wait = lock.as_mut().unwrap().wait().await.ok();
     *lock = None;
     wait
+}
+
+async fn wait_piper(piper: Option<Arc<PiperHandle>>) -> Option<Vec<u8>> {
+    piper?.read_line().await
 }

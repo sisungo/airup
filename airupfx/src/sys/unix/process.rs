@@ -12,7 +12,7 @@ use std::{
     cmp,
     convert::Infallible,
     os::unix::process::CommandExt,
-    sync::{Mutex, OnceLock, RwLock},
+    sync::{Mutex, OnceLock, RwLock, Arc},
 };
 use sysinfo::UserExt;
 use tokio::{signal::unix::SignalKind, sync::mpsc};
@@ -77,8 +77,8 @@ pub struct Child {
     pid: Pid,
     wait_queue: tokio::sync::Mutex<Option<mpsc::Receiver<Wait>>>,
     wait_cached: Mutex<Option<Wait>>,
-    stdout: Option<PiperHandle>,
-    stderr: Option<PiperHandle>,
+    stdout: Option<Arc<PiperHandle>>,
+    stderr: Option<Arc<PiperHandle>>,
 }
 impl Child {
     pub const fn id(&self) -> Pid {
@@ -90,11 +90,13 @@ impl Child {
         let stdout = c
             .stdout
             .and_then(|x| tokio::process::ChildStdout::from_std(x).ok())
-            .map(PiperHandle::new);
+            .map(PiperHandle::new)
+            .map(Arc::new);
         let stderr = c
             .stderr
             .and_then(|x| tokio::process::ChildStderr::from_std(x).ok())
-            .map(PiperHandle::new);
+            .map(PiperHandle::new)
+            .map(Arc::new);
         Self {
             pid: pid as _,
             wait_queue: Some(child_queue().subscribe(pid as _)).into(),
@@ -165,12 +167,12 @@ impl Child {
         self.send_signal(super::signal::SIGKILL).await
     }
 
-    pub fn stdout(&self) -> Option<&PiperHandle> {
-        self.stdout.as_ref()
+    pub fn stdout(&self) -> Option<Arc<PiperHandle>> {
+        self.stdout.clone()
     }
 
-    pub fn stderr(&self) -> Option<&PiperHandle> {
-        self.stderr.as_ref()
+    pub fn stderr(&self) -> Option<Arc<PiperHandle>> {
+        self.stderr.clone()
     }
 }
 impl Drop for Child {

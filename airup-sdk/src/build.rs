@@ -27,7 +27,7 @@ pub struct BuildManifest {
 
     /// Table of initial environment variables.
     #[serde(default)]
-    pub env_vars: Vec<(String, Option<String>)>,
+    pub env_vars: ahash::HashMap<String, Option<String>>,
 
     /// Commands executed in `early_boot` pseudo-milestone.
     #[serde(default)]
