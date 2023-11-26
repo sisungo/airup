@@ -4,6 +4,7 @@ pub mod app;
 pub mod env;
 pub mod ipc;
 pub mod lifetime;
+pub mod logger;
 pub mod milestones;
 pub mod storage;
 pub mod supervisor;

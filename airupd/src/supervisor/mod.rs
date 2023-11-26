@@ -1,7 +1,6 @@
 //! # The Airup Supervisor
 //! Main module containing full airup supervisor logic.
 
-pub mod logger;
 pub mod task;
 
 use ahash::AHashMap;

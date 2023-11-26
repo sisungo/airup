@@ -1,6 +1,6 @@
 //! The Airupd application
 
-use crate::{ipc, lifetime, milestones, storage::Storage, supervisor};
+use crate::{ipc, lifetime, logger, milestones, storage::Storage, supervisor};
 use airup_sdk::system::{QuerySystem, Status};
 use airupfx::signal::*;
 use std::sync::OnceLock;
@@ -27,6 +27,9 @@ pub struct Airupd {
     /// The supervisor manager.
     pub supervisors: supervisor::Manager,
 
+    /// The logger.
+    pub logger: logger::Manager,
+
     /// Timestamp generated on creation of the struct.
     pub creation_time: i64,
 }
@@ -39,6 +42,7 @@ impl Airupd {
             lifetime: lifetime::System::new(),
             milestones: milestones::Manager::new(),
             supervisors: supervisor::Manager::new(),
+            logger: logger::Manager::new(),
             creation_time: airupfx::time::timestamp_ms(),
         };
 

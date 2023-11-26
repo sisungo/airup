@@ -24,21 +24,11 @@ pub struct Cmdline {
     poweroff: bool,
 
     /// Reboot the device
-    #[arg(
-        long,
-        conflicts_with = "halt",
-        conflicts_with = "poweroff",
-        conflicts_with = "userspace"
-    )]
+    #[arg(long, conflicts_with = "halt", conflicts_with = "poweroff")]
     reboot: bool,
 
     /// Perform a userspace reboot
-    #[arg(
-        long,
-        conflicts_with = "halt",
-        conflicts_with = "poweroff",
-        conflicts_with = "reboot"
-    )]
+    #[arg(long, conflicts_with = "halt", conflicts_with = "poweroff")]
     userspace: bool,
 }
 

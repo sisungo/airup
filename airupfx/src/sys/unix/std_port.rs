@@ -17,7 +17,7 @@ impl CommandExt for std::process::Command {
     }
 
     fn groups(&mut self, groups: &[libc::gid_t]) -> &mut Self {
-        let groups: Vec<_> = groups.to_vec();
+        let groups = groups.to_vec();
         unsafe { self.pre_exec(move || crate::sys::env::setgroups(&groups[..])) }
     }
 }

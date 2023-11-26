@@ -1,5 +1,5 @@
 //! # Airup Service File Format
-//! This module contains [Service], the main file format of an Airup service and its combinations.
+//! This module contains [`Service`], the main file format of an Airup service and its combinations.
 
 use super::ReadError;
 use serde::{Deserialize, Serialize};
@@ -28,6 +28,9 @@ pub struct Service {
 
     #[serde(default)]
     pub helper: Vec<Helper>,
+
+    #[serde(default)]
+    pub retry: Retry,
 }
 impl Service {
     pub const EXTENSION: &'static str = "airs";
@@ -71,7 +74,7 @@ impl Service {
     }
 }
 
-/// Representation of environment of a service.
+/// Executation environment of a service.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Env {
     /// User to execute for the service.
@@ -203,46 +206,42 @@ pub enum Kind {
     Notify,
 }
 
-/// Represents to commands related to the service, like start, stop, etc.
+/// Executation of a service, like start, stop, etc.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Exec {
-    /// Command to be executed before starting the service.
+    /// Command to be executed before starting the service
     pub pre_start: Option<String>,
 
-    /// Command to start the service.
+    /// Command to start the service
     pub start: String,
 
-    /// Command to be executed after starting the service.
+    /// Command to be executed after starting the service
     pub post_start: Option<String>,
 
-    /// Command to reload the service.
+    /// Command to reload the service
     pub reload: Option<String>,
 
-    /// Command to be executed before stopping the service.
+    /// Command to be executed before stopping the service
     pub pre_stop: Option<String>,
 
-    /// Command to stop the service.
+    /// Command to stop the service
     pub stop: Option<String>,
 
-    /// Command to be executed after stopping the service.
+    /// Command to be executed after stopping the service
     pub post_stop: Option<String>,
 
-    /// Timeout of executing commands, in milliseconds.
+    /// Timeout of executing commands, in milliseconds
     all_timeout: Option<u64>,
 
-    /// Timeout of starting the service until it's active.
+    /// Timeout of starting the service until it's active, in milliseconds
     start_timeout: Option<u64>,
 
-    /// Timeout of stopping the service.
+    /// Timeout of stopping the service, in milliseconds
     stop_timeout: Option<u64>,
 
-    /// Timeout of reloading the service.
+    /// Timeout of reloading the service, in milliseconds
     reload_timeout: Option<u64>,
-
-    /// Maximum times to retry executing.
-    #[serde(default)]
-    pub retry: i32,
 }
 impl Exec {
     #[inline]
@@ -267,7 +266,26 @@ impl Exec {
     }
 }
 
+/// Retry conditions of a service.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Retry {
+    /// Maximum attempts to retry executing
+    #[serde(default)]
+    pub max_attempts: i32,
+
+    /// Also retry the service on successful exits (`$? == 0`)
+    #[serde(default)]
+    pub successful_exit: bool,
+
+    /// Delay time of retrying the service, in milliseconds
+    #[serde(default)]
+    pub delay: u64,
+}
+
 /// Represents to `[[helper]]` section in a service TOML file.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct Helper {}
+pub struct Helper {
+    pub name: String,
+}

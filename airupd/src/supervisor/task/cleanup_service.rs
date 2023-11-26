@@ -16,7 +16,11 @@ impl CleanupServiceHandle {
     pub fn new(context: Arc<SupervisorContext>, wait: Wait) -> Arc<dyn TaskHandle> {
         let (handle, helper) = task_helper();
 
-        let retry = context.retry.check_and_mark(context.service.exec.retry);
+        let retry_cond1 = context.service.retry.successful_exit || !wait.is_success();
+        let retry_cond2 = context
+            .retry
+            .check_and_mark(context.service.retry.max_attempts);
+        let retry = retry_cond1 && retry_cond2;
 
         let cleanup_service = CleanupService {
             helper,
@@ -79,7 +83,7 @@ impl CleanupService {
             super::StartServiceHandle::new(self.context.clone())
                 .wait()
                 .await?;
-        } else if self.context.retry.enabled() {
+        } else if self.context.retry.enabled() && self.context.service.retry.successful_exit {
             self.context
                 .last_error
                 .set::<Error>(CommandExitError::from_wait_force(&self.wait).into());
