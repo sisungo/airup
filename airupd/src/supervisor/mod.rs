@@ -173,8 +173,8 @@ impl Manager {
 
         for (k, v) in &*supervisors {
             let queried = v.query().await;
-            if let Some(path) = &queried.service.path {
-                let new = Service::read_from(path).await;
+            if !queried.service.paths.is_empty() {
+                let new = Service::read_merge(&queried.service.paths).await;
                 let new = match new {
                     Ok(x) => x,
                     Err(_) => {
@@ -378,7 +378,7 @@ impl Supervisor {
         QueryService {
             status: self.context.status.get(),
             status_since: Some(self.context.status.timestamp()),
-            pid: self.context.pid().await,
+            pid: self.context.pid().await.map(|x| x as _),
             task: self
                 .current_task
                 .0

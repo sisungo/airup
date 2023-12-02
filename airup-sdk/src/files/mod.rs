@@ -27,6 +27,11 @@ impl From<toml::de::Error> for ReadError {
         Self::Parse(value.to_string())
     }
 }
+impl From<serde_json::Error> for ReadError {
+    fn from(value: serde_json::Error) -> Self {
+        Self::Parse(value.to_string())
+    }
+}
 impl From<&'static str> for ReadError {
     fn from(value: &'static str) -> Self {
         Self::Validation(value.into())

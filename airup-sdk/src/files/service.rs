@@ -15,8 +15,8 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub name: String,
 
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub path: Option<PathBuf>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub paths: Vec<PathBuf>,
 
     #[serde(default)]
     pub service: Metadata,
@@ -36,15 +36,36 @@ impl Service {
     pub const EXTENSION: &'static str = "airs";
     pub const SUFFIX: &'static str = ".airs";
 
-    /// Reads a [`Service`] from given path.
-    pub async fn read_from<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
-        let path = path.as_ref();
-        let s = tokio::fs::read_to_string(path).await?;
-        let mut object: Self = toml::from_str(&s)?;
+    /// Reads multiple [`Service`]'s from given paths, then merge them into a single [`Service`] instance. The first element in
+    /// parameter `paths` is seen as the "main".
+    ///
+    /// # Panics
+    /// Panics if parameter `paths` is empty.
+    pub async fn read_merge(paths: &[impl AsRef<Path>]) -> Result<Self, ReadError> {
+        if paths.is_empty() {
+            panic!("parameter `paths` must not be empty");
+        }
+
+        let main_path = paths.get(0).unwrap().as_ref();
+        let main = tokio::fs::read_to_string(main_path).await?;
+        let mut main: serde_json::Value = toml::from_str(&main)?;
+
+        let mut patches: Vec<serde_json::Value> = Vec::with_capacity(paths.len());
+        for path in &paths[1..] {
+            let path = path.as_ref();
+            let content = tokio::fs::read_to_string(path).await?;
+            patches.push(toml::from_str(&content)?);
+        }
+
+        for patch in &patches {
+            json_patch::merge(&mut main, patch);
+        }
+
+        let mut object: Self = serde_json::from_value(main)?;
 
         object.validate()?;
-        object.name = path.file_stem().unwrap().to_string_lossy().into();
-        object.path = Some(path.into());
+        object.name = main_path.file_stem().unwrap().to_string_lossy().into();
+        object.paths = paths.iter().map(|x| x.as_ref().to_path_buf()).collect();
 
         Ok(object)
     }

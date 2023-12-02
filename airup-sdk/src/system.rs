@@ -1,6 +1,5 @@
 use super::Error;
 use crate::files::Service;
-use airupfx::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::future::Future;
 
@@ -21,7 +20,7 @@ pub enum Status {
 pub struct QueryService {
     pub status: Status,
     pub status_since: Option<i64>,
-    pub pid: Option<Pid>,
+    pub pid: Option<i64>,
     pub task: Option<String>,
     pub last_error: Option<Error>,
     pub service: Service,

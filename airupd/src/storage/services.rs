@@ -61,7 +61,7 @@ impl Services {
             .find(format!("{name}{}", Service::SUFFIX))
             .await
         {
-            Some(x) => Service::read_from(x).await,
+            Some(x) => Service::read_merge(&[x]).await,
             None => Err(std::io::ErrorKind::NotFound.into()),
         }
     }
