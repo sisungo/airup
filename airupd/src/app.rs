@@ -31,7 +31,7 @@ pub struct Airupd {
     pub logger: logger::Manager,
 
     /// Timestamp generated on creation of the struct.
-    pub creation_time: i64,
+    pub boot_timestamp: i64,
 }
 impl Airupd {
     /// Initializes the Airupd app for use of [`airupd`].
@@ -43,7 +43,7 @@ impl Airupd {
             milestones: milestones::Manager::new(),
             supervisors: supervisor::Manager::new(),
             logger: logger::Manager::new(),
-            creation_time: airupfx::time::timestamp_ms(),
+            boot_timestamp: airupfx::time::timestamp_ms(),
         };
 
         AIRUPD.set(object).unwrap();
@@ -53,7 +53,9 @@ impl Airupd {
     pub async fn query_system(&self) -> QuerySystem {
         QuerySystem {
             status: Status::Active,
-            status_since: self.creation_time,
+            boot_timestamp: self.boot_timestamp,
+            booted_since: self.booted_since(),
+            is_booting: self.is_booting(),
             hostname: airupfx::env::host_name(),
             services: self.supervisors.list().await,
         }

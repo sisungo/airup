@@ -1,12 +1,14 @@
 //! Logger interface of the Airup supervisor.
 
+pub mod simple_logger;
+
 use anyhow::anyhow;
 
 /// Represents to a client of a logger system.
 #[async_trait::async_trait]
 pub trait Logger {
     /// Writes an log record to the logger.
-    async fn write(&mut self) -> anyhow::Result<()>;
+    async fn write(&mut self, subject: &str, msg: &[u8]) -> anyhow::Result<()>;
 }
 
 /// A wrapper around [`Logger`] to provide management.
@@ -35,8 +37,8 @@ impl Manager {
     }
 
     /// Invokes [`Logger::write`] on the inner logger.
-    pub async fn write(&self) -> anyhow::Result<()> {
-        self.inner.write().await.write().await
+    pub async fn write(&self, subject: &str, msg: &[u8]) -> anyhow::Result<()> {
+        self.inner.write().await.write(subject, msg).await
     }
 }
 impl std::fmt::Debug for Manager {
@@ -54,7 +56,7 @@ impl Default for Manager {
 struct NulLogger;
 #[async_trait::async_trait]
 impl Logger for NulLogger {
-    async fn write(&mut self) -> anyhow::Result<()> {
-        Err(anyhow!("no such logger"))
+    async fn write(&mut self, _: &str, _: &[u8]) -> anyhow::Result<()> {
+        Err(anyhow!("no available loggers"))
     }
 }

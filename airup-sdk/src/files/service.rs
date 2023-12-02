@@ -33,9 +33,6 @@ pub struct Service {
     pub retry: Retry,
 }
 impl Service {
-    pub const EXTENSION: &'static str = "airs";
-    pub const SUFFIX: &'static str = ".airs";
-
     /// Reads multiple [`Service`]'s from given paths, then merge them into a single [`Service`] instance. The first element in
     /// parameter `paths` is seen as the "main".
     ///
@@ -50,15 +47,11 @@ impl Service {
         let main = tokio::fs::read_to_string(main_path).await?;
         let mut main: serde_json::Value = toml::from_str(&main)?;
 
-        let mut patches: Vec<serde_json::Value> = Vec::with_capacity(paths.len());
         for path in &paths[1..] {
             let path = path.as_ref();
             let content = tokio::fs::read_to_string(path).await?;
-            patches.push(toml::from_str(&content)?);
-        }
-
-        for patch in &patches {
-            json_patch::merge(&mut main, patch);
+            let patch: serde_json::Value = toml::from_str(&content)?;
+            json_patch::merge(&mut main, &patch);
         }
 
         let mut object: Self = serde_json::from_value(main)?;

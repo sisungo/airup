@@ -1,6 +1,7 @@
 use airup_sdk::files::{ReadError, Service};
 use airup_sdk::Error;
 use airupfx::prelude::*;
+use std::path::PathBuf;
 use std::{collections::HashMap, sync::RwLock};
 
 /// Represents to Airup's services directory.
@@ -27,7 +28,7 @@ impl Services {
 
     /// Sideloads a service, fails if the service already exists or is invalid.
     pub fn load(&self, name: &str, mut service: Service) -> Result<(), Error> {
-        let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
+        let name = name.strip_suffix(".airs").unwrap_or(name);
         let mut lock = self.sideloaded.write().unwrap();
         if lock.contains_key(name) {
             return Err(Error::UnitExists);
@@ -41,7 +42,7 @@ impl Services {
 
     /// Unloads a sideloaded service, fails if the specified service does not exist.
     pub fn unload(&self, name: &str) -> Result<(), Error> {
-        let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
+        let name = name.strip_suffix(".airs").unwrap_or(name);
         self.sideloaded
             .write()
             .unwrap()
@@ -50,20 +51,26 @@ impl Services {
             .map(|_| ())
     }
 
-    /// Attempts to find and parse a service.
-    pub async fn get(&self, name: &str) -> Result<Service, ReadError> {
-        let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
+    /// Returns path of the specified service.
+    pub async fn get_patch(&self, name: &str, patch: Option<PathBuf>) -> Result<Service, ReadError> {
+        let name = name.strip_suffix(".airs").unwrap_or(name);
         if let Some(x) = self.sideloaded.read().unwrap().get(name).cloned() {
             return Ok(x);
         }
-        match self
+
+        let main_path = self
             .base_chain
-            .find(format!("{name}{}", Service::SUFFIX))
+            .find(format!("{name}.airs"))
             .await
-        {
-            Some(x) => Service::read_merge(&[x]).await,
-            None => Err(std::io::ErrorKind::NotFound.into()),
+            .ok_or_else(|| ReadError::from(std::io::ErrorKind::NotFound))?;
+
+        let mut paths = Vec::with_capacity(2);
+        paths.push(main_path);
+        if let Some(path) = patch {
+            paths.push(path);
         }
+
+        Service::read_merge(&paths).await
     }
 
     pub async fn list(&self) -> Vec<String> {
@@ -81,7 +88,7 @@ impl Services {
             .flatten()
             .for_each(|x| {
                 let name = x.to_string_lossy();
-                let name = name.strip_suffix(Service::SUFFIX).unwrap_or(&name);
+                let name = name.strip_suffix(".airs").unwrap_or(&name);
                 result.push(name.into());
             });
         result

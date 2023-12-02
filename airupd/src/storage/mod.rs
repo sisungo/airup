@@ -6,6 +6,7 @@ mod milestones;
 mod runtime;
 mod services;
 
+use airup_sdk::files::{Service, ReadError};
 use self::config::Config;
 use self::logs::Logs;
 use self::milestones::Milestones;
@@ -22,7 +23,7 @@ pub struct Storage {
     pub logs: Logs,
 }
 impl Storage {
-    /// Creates a new [Storage] instance.
+    /// Creates a new [`Storage`] instance.
     pub async fn new() -> Self {
         Self {
             config: Config::new().await,
@@ -31,5 +32,10 @@ impl Storage {
             milestones: Milestones::new(),
             logs: Logs::new(),
         }
+    }
+
+    pub async fn get_service_patched(&self, name: &str) -> Result<Service, ReadError> {
+        let patch = self.config.of_service(name).await;
+        self.services.get_patch(name, patch).await
     }
 }

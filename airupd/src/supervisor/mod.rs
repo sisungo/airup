@@ -71,7 +71,7 @@ impl Manager {
 
     /// Gets a supervisor in the set.
     pub async fn get(&self, name: &str) -> Option<Arc<SupervisorHandle>> {
-        let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
+        let name = name.strip_suffix(".airs").unwrap_or(name);
 
         if let Some(name) = name.strip_suffix(".provided") {
             return self.provided.read().await.get(name).cloned();
@@ -603,7 +603,7 @@ impl crate::app::Airupd {
             Some(supervisor) => supervisor,
             None => {
                 self.supervisors
-                    .supervise(self.storage.services.get(name).await?)
+                    .supervise(self.storage.get_service_patched(name).await?)
                     .await
             }
         };
@@ -621,7 +621,7 @@ impl crate::app::Airupd {
             None => {
                 let supervisor = self
                     .supervisors
-                    .supervise(self.storage.services.get(name).await?)
+                    .supervise(self.storage.get_service_patched(name).await?)
                     .await;
                 Ok(supervisor.start().await?)
             }
@@ -636,7 +636,7 @@ impl crate::app::Airupd {
         match self.supervisors.get(name).await {
             Some(supervisor) => Ok(supervisor.query().await),
             None => Ok(QueryService::default_of(
-                self.storage.services.get(name).await?,
+                self.storage.get_service_patched(name).await?,
             )),
         }
     }
@@ -650,7 +650,7 @@ impl crate::app::Airupd {
         match self.supervisors.get(name).await {
             Some(supervisor) => Ok(supervisor.stop().await?),
             None => {
-                self.storage.services.get(name).await?;
+                self.storage.get_service_patched(name).await?;
                 Err(Error::UnitNotStarted)
             }
         }
@@ -665,7 +665,7 @@ impl crate::app::Airupd {
         match self.supervisors.get(name).await {
             Some(supervisor) => Ok(supervisor.reload().await?),
             None => {
-                self.storage.services.get(name).await?;
+                self.storage.get_service_patched(name).await?;
                 Err(Error::UnitNotStarted)
             }
         }
@@ -677,7 +677,7 @@ impl crate::app::Airupd {
     /// This method would fail if the service was not found.
     pub async fn cache_service(&self, name: &str) -> Result<(), Error> {
         self.supervisors
-            .supervise(self.storage.services.get(name).await?)
+            .supervise(self.storage.get_service_patched(name).await?)
             .await;
         Ok(())
     }
@@ -695,11 +695,11 @@ impl crate::app::Airupd {
     /// # Errors
     /// This method would fail if the service has no running task.
     pub async fn interrupt_service_task(&self, name: &str) -> Result<Arc<dyn TaskHandle>, Error> {
-        let name = name.strip_suffix(Service::SUFFIX).unwrap_or(name);
+        let name = name.strip_suffix(".airs").unwrap_or(name);
         match self.supervisors.get(name).await {
             Some(supervisor) => Ok(supervisor.interrupt_task().await?),
             None => {
-                self.storage.services.get(name).await?;
+                self.storage.get_service_patched(name).await?;
                 Err(Error::UnitNotStarted)
             }
         }

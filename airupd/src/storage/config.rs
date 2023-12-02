@@ -1,21 +1,35 @@
 //! Represents to Airup's system config.
 
 use ahash::HashMap;
+use airupfx::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, path::Path};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
 #[derive(Debug)]
 pub struct Config {
+    pub base_dir: DirChain<'static>,
     pub system_conf: SystemConf,
 }
 impl Config {
     /// Creates a new [`Config`] instance.
     pub async fn new() -> Self {
         let base_dir = airup_sdk::build::manifest().config_dir.clone();
-        let system_conf = SystemConf::read_from(&base_dir.join("system.conf"))
+        let system_conf = SystemConf::read_from(&base_dir.join("system.airc"))
             .await
             .unwrap_or_default();
-        Self { system_conf }
+
+        Self {
+            base_dir: base_dir.into(),
+            system_conf,
+        }
+    }
+
+    /// Returns path of separated config file for specified service.
+    pub async fn of_service(&self, name: &str) -> Option<PathBuf> {
+        self.base_dir.find(format!("{name}.service.airc")).await
     }
 }
 

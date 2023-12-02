@@ -142,6 +142,10 @@ impl PrintedStatusKind {
     }
 
     fn of_system(query_system: &QuerySystem) -> Self {
+        if query_system.is_booting {
+            return Self::Starting;
+        }
+
         match query_system.status {
             Status::Active => Self::Active,
             Status::Stopped => Self::Stopped,
@@ -187,7 +191,9 @@ impl PrintedStatus {
 
     fn of_system(query_system: &QuerySystem) -> Self {
         let kind = PrintedStatusKind::of_system(query_system);
-        let since = query_system.status_since;
+        let since = query_system
+            .booted_since
+            .unwrap_or(query_system.boot_timestamp);
         Self {
             kind,
             since: Some(since),

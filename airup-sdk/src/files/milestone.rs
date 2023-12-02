@@ -57,7 +57,7 @@ impl Milestone {
 
         if let Ok(read_chain) = self.base_chain.read_chain().await {
             for i in read_chain {
-                if i.to_string_lossy().ends_with(".list.airc") {
+                if i.to_string_lossy().ends_with(".list.airf") {
                     if let Some(path) = self.base_chain.find(&i).await {
                         tokio::fs::read_to_string(&path)
                             .await
@@ -83,7 +83,7 @@ pub struct Manifest {
     pub milestone: Metadata,
 }
 impl Manifest {
-    pub const FILE_NAME: &'static str = "milestone.airc";
+    pub const FILE_NAME: &'static str = "milestone.airf";
 
     async fn read_from<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
         Ok(toml::from_str(&tokio::fs::read_to_string(path).await?)?)

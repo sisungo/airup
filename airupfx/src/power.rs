@@ -29,9 +29,6 @@ pub trait PowerManager: Send + Sync {
 /// to standard error stream and parks the thread if we are `pid == 1`. Otherwise, it directly exits with code `0`.
 #[derive(Default)]
 pub struct Fallback;
-impl Fallback {
-    pub const GLOBAL: &'static Self = &Self;
-}
 impl PowerManager for Fallback {
     fn poweroff(&self) -> std::io::Result<Infallible> {
         Self::halt_process();
@@ -60,11 +57,14 @@ impl Fallback {
 }
 
 /// Returns a reference to the global unique [`PowerManager`] instance.
+///
+/// If the process is `pid == 1`, the platform power manager is used, otherwise the fallback power manager [`Fallback`] is
+/// always returned.
 #[must_use]
 pub fn power_manager() -> &'static dyn PowerManager {
     if *crate::process::ID == 1 {
         crate::sys::power_manager()
     } else {
-        Fallback::GLOBAL
+        &Fallback
     }
 }

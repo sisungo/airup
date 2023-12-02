@@ -42,7 +42,9 @@ impl QueryService {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuerySystem {
     pub status: Status,
-    pub status_since: i64,
+    pub boot_timestamp: i64,
+    pub booted_since: Option<i64>,
+    pub is_booting: bool,
     pub hostname: Option<String>,
     pub services: Vec<String>,
 }

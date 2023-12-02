@@ -12,12 +12,16 @@ use airup_sdk::{
     Error,
 };
 use airupfx::prelude::*;
-use std::sync::atomic::{self, AtomicBool};
+use std::sync::{
+    atomic::{self, AtomicBool},
+    RwLock,
+};
 
 /// The milestone manager.
 #[derive(Debug, Default)]
 pub struct Manager {
-    pub is_booting: AtomicBool,
+    is_booting: AtomicBool,
+    booted_since: RwLock<Option<i64>>,
 }
 impl Manager {
     /// Creates a new [`Manager`] instance.
@@ -38,11 +42,24 @@ impl crate::app::Airupd {
             self.milestones
                 .is_booting
                 .store(true, atomic::Ordering::Relaxed);
+
             self.enter_milestone(name).await.ok();
+
+            *self.milestones.booted_since.write().unwrap() = Some(airupfx::time::timestamp_ms());
             self.milestones
                 .is_booting
                 .store(false, atomic::Ordering::Relaxed);
         });
+    }
+
+    /// Returns `true` if the system is booting.
+    pub fn is_booting(&self) -> bool {
+        self.milestones.is_booting.load(atomic::Ordering::Relaxed)
+    }
+
+    /// Returns a timestamp of boot completion.
+    pub fn booted_since(&self) -> Option<i64> {
+        self.milestones.booted_since.read().unwrap().clone()
     }
 }
 
