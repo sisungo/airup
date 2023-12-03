@@ -29,6 +29,7 @@ impl Config {
 
     /// Returns path of separated config file for specified service.
     pub async fn of_service(&self, name: &str) -> Option<PathBuf> {
+        let name = name.strip_suffix(".airs").unwrap_or(name);
         self.base_dir.find(format!("{name}.service.airc")).await
     }
 }

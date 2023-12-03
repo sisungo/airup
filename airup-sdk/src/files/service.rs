@@ -43,7 +43,7 @@ impl Service {
             panic!("parameter `paths` must not be empty");
         }
 
-        let main_path = paths.get(0).unwrap().as_ref();
+        let main_path = paths.first().unwrap().as_ref();
         let main = tokio::fs::read_to_string(main_path).await?;
         let mut main: serde_json::Value = toml::from_str(&main)?;
 
@@ -63,11 +63,6 @@ impl Service {
         Ok(object)
     }
 
-    /// Returns the name to display for this service.
-    pub fn display_name(&self) -> &str {
-        self.service.display_name.as_deref().unwrap_or(&self.name)
-    }
-
     /// Returns `Ok(())` if the service is correct, otherwise returns `Err(_)`.
     pub fn validate(&self) -> Result<(), ReadError> {
         if self.env.user.is_some() && self.env.uid.is_some() {
@@ -85,6 +80,11 @@ impl Service {
                 _ => Ok(()),
             },
         }
+    }
+
+    /// Returns the name to display for this service.
+    pub fn display_name(&self) -> &str {
+        self.service.display_name.as_deref().unwrap_or(&self.name)
     }
 }
 

@@ -19,6 +19,9 @@ pub struct Cmdline {
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = super::connect().await?;
     match cmdline.unit {
+        Some(x) if x.starts_with("pid=") => {
+            todo!()
+        }
         Some(x) if x.ends_with(".airm") => {
             todo!()
         }

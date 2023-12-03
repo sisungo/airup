@@ -20,12 +20,8 @@ impl Milestones {
 
     /// Attempts to find and parse a milestone.
     pub async fn get(&self, name: &str) -> Result<Milestone, ReadError> {
-        let name = name.strip_suffix(Milestone::SUFFIX).unwrap_or(name);
-        match self
-            .base_chain
-            .find(format!("{name}{}", Milestone::SUFFIX))
-            .await
-        {
+        let name = name.strip_suffix(".airm").unwrap_or(name);
+        match self.base_chain.find(format!("{name}.airm")).await {
             Some(x) => Milestone::read_from(x).await,
             None => Err(std::io::ErrorKind::NotFound.into()),
         }

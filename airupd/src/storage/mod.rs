@@ -6,12 +6,12 @@ mod milestones;
 mod runtime;
 mod services;
 
-use airup_sdk::files::{Service, ReadError};
 use self::config::Config;
 use self::logs::Logs;
 use self::milestones::Milestones;
 use self::runtime::Runtime;
 use self::services::Services;
+use airup_sdk::files::{ReadError, Service};
 
 /// Main navigator of Airup's storage.
 #[derive(Debug)]
@@ -36,6 +36,6 @@ impl Storage {
 
     pub async fn get_service_patched(&self, name: &str) -> Result<Service, ReadError> {
         let patch = self.config.of_service(name).await;
-        self.services.get_patch(name, patch).await
+        self.services.get_and_patch(name, patch).await
     }
 }

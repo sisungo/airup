@@ -59,13 +59,13 @@ impl crate::app::Airupd {
 
     /// Returns a timestamp of boot completion.
     pub fn booted_since(&self) -> Option<i64> {
-        self.milestones.booted_since.read().unwrap().clone()
+        *self.milestones.booted_since.read().unwrap()
     }
 }
 
 fn enter_milestone(name: String, hist: &mut AHashSet<String>) -> BoxFuture<'_, Result<(), Error>> {
     Box::pin(async move {
-        let name = name.strip_suffix(Milestone::SUFFIX).unwrap_or(&name);
+        let name = name.strip_suffix(".airm").unwrap_or(&name);
         let def = match app::airupd().storage.milestones.get(name).await {
             Ok(x) => x,
             Err(err) => {

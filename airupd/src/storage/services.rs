@@ -52,7 +52,11 @@ impl Services {
     }
 
     /// Returns path of the specified service.
-    pub async fn get_patch(&self, name: &str, patch: Option<PathBuf>) -> Result<Service, ReadError> {
+    pub async fn get_and_patch(
+        &self,
+        name: &str,
+        patch: Option<PathBuf>,
+    ) -> Result<Service, ReadError> {
         let name = name.strip_suffix(".airs").unwrap_or(name);
         if let Some(x) = self.sideloaded.read().unwrap().get(name).cloned() {
             return Ok(x);

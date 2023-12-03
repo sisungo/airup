@@ -14,9 +14,6 @@ pub struct Milestone {
     pub base_chain: DirChain<'static>,
 }
 impl Milestone {
-    pub const EXTENSION: &'static str = "airm";
-    pub const SUFFIX: &'static str = ".airm";
-
     /// Reads a [`Milestone`] from given directory.
     pub async fn read_from<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
         Self::_read_from(path.as_ref()).await

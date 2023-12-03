@@ -1,18 +1,17 @@
 //! Represents to Airup's logs directory.
 
-use airupfx::prelude::*;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Main navigator of Airup's logs directory.
 #[derive(Debug)]
 pub struct Logs {
-    base_chain: DirChain<'static>,
+    base_dir: PathBuf,
 }
 impl Logs {
     /// Creates a new [`Logs`] instance.
     pub fn new() -> Self {
         Self {
-            base_chain: DirChain::new(airup_sdk::build::manifest().log_dir.clone()),
+            base_dir: airup_sdk::build::manifest().log_dir.clone(),
         }
     }
 
@@ -20,11 +19,7 @@ impl Logs {
     ///
     /// If the file does not exist, it will be created.
     pub async fn open_append<P: AsRef<Path>>(&self, path: P) -> std::io::Result<tokio::fs::File> {
-        let path = self
-            .base_chain
-            .find(path)
-            .await
-            .ok_or_else(|| std::io::Error::from(std::io::ErrorKind::NotFound))?;
+        let path = self.base_dir.join(path);
         tokio::fs::File::options()
             .create(true)
             .append(true)
@@ -34,11 +29,7 @@ impl Logs {
 
     /// Attempts to open a log file for reading.
     pub async fn open_read<P: AsRef<Path>>(&self, path: P) -> std::io::Result<tokio::fs::File> {
-        let path = self
-            .base_chain
-            .find(path)
-            .await
-            .ok_or_else(|| std::io::Error::from(std::io::ErrorKind::NotFound))?;
+        let path = self.base_dir.join(path);
         tokio::fs::File::options().read(true).open(path).await
     }
 }

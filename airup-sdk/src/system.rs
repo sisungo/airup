@@ -103,9 +103,6 @@ pub trait ConnectionExt {
     /// Refreshes cached system information in the `airupd` daemon.
     fn refresh(&mut self) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
-    /// Returns `true` of the system is booting.
-    fn is_booting(&mut self) -> impl Future<Output = anyhow::Result<Result<bool, Error>>>;
-
     /// Deletes cached system information in the `airupd` daemon.
     fn gc(&mut self) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
@@ -166,10 +163,6 @@ impl ConnectionExt for super::Connection {
 
     async fn gc(&mut self) -> anyhow::Result<Result<(), Error>> {
         self.invoke("system.gc", ()).await
-    }
-
-    async fn is_booting(&mut self) -> anyhow::Result<Result<bool, Error>> {
-        self.invoke("system.is_booting", ()).await
     }
 
     async fn poweroff(&mut self) -> anyhow::Result<Result<(), Error>> {
