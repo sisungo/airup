@@ -16,12 +16,12 @@ use airupfx::prelude::*;
 async fn main() {
     // Initializes Airup subsystems
     airupfx::sys::init();
-    env::Cmdline::init();
+    let cmdline = self::env::cmdline();
     airupfx::log::Builder::new()
         .name("airupd")
-        .quiet(self::env::cmdline().quiet)
-        .color(!self::env::cmdline().no_color)
-        .verbose(self::env::cmdline().verbose)
+        .quiet(cmdline.quiet)
+        .color(!cmdline.no_color)
+        .verbose(cmdline.verbose)
         .init();
     milestones::early_boot::enter().await;
     app::Airupd::init().await;

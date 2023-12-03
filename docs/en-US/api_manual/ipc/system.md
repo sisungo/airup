@@ -36,3 +36,9 @@ Module `system` provides methods for managing the system.
 - Parameters: `string (name of service to operate)`
 - Return Value: `null`
 - Description: Stops the specified service.
+
+## Method: `system.reload_service`
+- Name: `system.reload_service`
+- Parameters: `string (name of service to operate)`
+- Return Value: `null`
+- Description: Notifies the specified service to reload.

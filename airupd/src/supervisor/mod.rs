@@ -3,6 +3,7 @@
 
 pub mod task;
 
+use crate::app::airupd;
 use ahash::AHashMap;
 use airup_sdk::{
     files::Service,
@@ -264,8 +265,8 @@ impl Supervisor {
                 req = self.receiver.recv() => self.handle_req(req?).await,
                 Some(do_child) = do_child(&self.context, self.current_task.has_task()) => match do_child {
                     DoChild::Wait(wait) => self.handle_wait(wait).await,
-                    DoChild::Stdout(_) => (),
-                    DoChild::Stderr(_) => (),
+                    DoChild::Stdout(msg) => self.log(&msg).await,
+                    DoChild::Stderr(msg) => self.log(&msg).await,
                 },
                 Some(rslt) = self.current_task.wait() => self.handle_wait_task(rslt).await,
             }
@@ -387,6 +388,14 @@ impl Supervisor {
             last_error: self.context.last_error.get(),
             service: self.context.service.clone(),
         }
+    }
+
+    pub async fn log(&self, msg: &[u8]) {
+        airupd()
+            .logger
+            .write(&format!("airup_service_{}", self.context.service.name), msg)
+            .await
+            .ok();
     }
 }
 

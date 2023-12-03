@@ -3,8 +3,6 @@
 use std::borrow::Cow;
 use std::sync::OnceLock;
 
-static CMDLINE: OnceLock<Cmdline> = OnceLock::new();
-
 #[derive(Debug, Clone)]
 pub struct Cmdline {
     /// Enable Airup verbose console outputs
@@ -20,13 +18,14 @@ pub struct Cmdline {
     pub milestone: Cow<'static, str>,
 }
 impl Cmdline {
-    /// Parses command-line arguments for use of [cmdline].
-    pub fn init() {
-        CMDLINE.set(Self::parse()).unwrap();
+    /// Parses a new [`Cmdline`] instance from the command-line arguments. This function will automatically detect the
+    /// environment to detect the style of the parser.
+    pub fn parse() -> Self {
+        Self::parse_linux_init()
     }
 
-    /// Parses a new [Cmdline] instance from the command-line arguments.
-    pub fn parse() -> Self {
+    /// A command-line argument parser that assumes arguments are Linux-init styled.
+    fn parse_linux_init() -> Self {
         let mut object = Self::default();
 
         for arg in std::env::args() {
@@ -64,7 +63,9 @@ impl Default for Cmdline {
     }
 }
 
-/// Returns a reference to the unique [Cmdline].
+/// Returns a reference to the unique [`Cmdline`] instance.
 pub fn cmdline() -> &'static Cmdline {
-    CMDLINE.get().unwrap()
+    static CMDLINE: OnceLock<Cmdline> = OnceLock::new();
+
+    CMDLINE.get_or_init(|| Cmdline::parse())
 }

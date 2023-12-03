@@ -1,5 +1,5 @@
 # Airup
-![Airup Logo](docs/artwork/airup_logo.png)
+![Airup Logo](docs/artwork/airup_logo_320x200.png)
 
 ![License Badge](https://img.shields.io/badge/license-MIT-blue)
 
@@ -7,7 +7,7 @@ Airup is a modern, portable and fast implementation of daemon supervisors and th
 
 ## Project Status
 Maintained Versions:
- - Current Mainline Version: `0.4.0`
+ - Current Mainline Version: `0.5.0-alpha.1`
  - Current Release Version: `0.4.0`
 
 ⚠️ **WARNING**: The project is currently in **unstable** stage and should **NOT** be used in production environments. It may contain errors, bugs or quality issues. Welcome to open an issue to report bugs.
