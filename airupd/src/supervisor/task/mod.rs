@@ -15,7 +15,7 @@ pub use stop_service::StopServiceHandle;
 use super::SupervisorContext;
 use airup_sdk::Error;
 use airupfx::prelude::*;
-use std::future::Future;
+use std::{future::Future, path::PathBuf};
 use tokio::sync::watch;
 
 /// Representation of handle to a task.
@@ -133,10 +133,32 @@ pub fn task_helper() -> (TaskHelperHandle, TaskHelper) {
 pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
     let mut ace = Ace::new();
 
-    ace.env = context
-        .service
-        .env
-        .into_airupfx()
+    async fn env_convert(
+        env: &airup_sdk::files::service::Env,
+    ) -> anyhow::Result<airupfx::process::CommandEnv> {
+        let mut result = airupfx::process::CommandEnv::new();
+
+        let to_ace = |x| match x {
+            airup_sdk::files::service::Stdio::Inherit => airupfx::process::Stdio::Inherit,
+            airup_sdk::files::service::Stdio::File(path) => airupfx::process::Stdio::File(path),
+            airup_sdk::files::service::Stdio::Log => airupfx::process::Stdio::Piped,
+        };
+
+        result
+            .login(env.user.as_deref())?
+            .uid(env.uid)
+            .gid(env.gid)
+            .stdout(to_ace(env.stdout.clone()))
+            .stderr(to_ace(env.stderr.clone()))
+            .clear_vars(env.clear_vars)
+            .vars::<_, String, _, String>(env.vars.clone().into_iter())
+            .working_dir::<PathBuf, _>(env.working_dir.clone())
+            .setsid(true);
+
+        Ok(result)
+    }
+
+    ace.env = env_convert(&context.service.env)
         .await
         .map_err(|x| Error::Io {
             message: x.to_string(),

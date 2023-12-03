@@ -4,6 +4,7 @@ pub mod service;
 pub use milestone::Milestone;
 pub use service::Service;
 
+use crate::prelude::*;
 use std::{borrow::Cow, sync::Arc};
 
 #[derive(Debug, Clone, thiserror::Error)]
@@ -45,5 +46,19 @@ impl From<String> for ReadError {
 impl From<std::io::ErrorKind> for ReadError {
     fn from(value: std::io::ErrorKind) -> Self {
         Self::from(std::io::Error::from(value))
+    }
+}
+impl IntoApiError for ReadError {
+    fn into_api_error(self) -> crate::Error {
+        match self {
+            Self::Io(err) => match err.kind() {
+                std::io::ErrorKind::NotFound => crate::Error::UnitNotFound,
+                _ => crate::Error::Io {
+                    message: err.to_string(),
+                },
+            },
+            Self::Parse(x) => crate::Error::BadUnit { message: x.into() },
+            Self::Validation(x) => crate::Error::BadUnit { message: x },
+        }
     }
 }

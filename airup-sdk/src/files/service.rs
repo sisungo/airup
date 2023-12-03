@@ -123,24 +123,6 @@ pub struct Env {
     #[serde(default)]
     pub vars: BTreeMap<String, Option<String>>,
 }
-impl Env {
-    pub async fn into_airupfx(&self) -> anyhow::Result<airupfx::process::CommandEnv> {
-        let mut result = airupfx::process::CommandEnv::new();
-
-        result
-            .login(self.user.as_deref())?
-            .uid(self.uid)
-            .gid(self.gid)
-            .stdout(self.stdout.clone().into_ace())
-            .stderr(self.stderr.clone().into_ace())
-            .clear_vars(self.clear_vars)
-            .vars::<_, String, _, String>(self.vars.clone().into_iter())
-            .working_dir::<PathBuf, _>(self.working_dir.clone())
-            .setsid(true);
-
-        Ok(result)
-    }
-}
 
 /// Representation of Standard I/O redirection.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -155,15 +137,6 @@ pub enum Stdio {
     /// Use the Airup logger to record `stdio` outputs.
     #[default]
     Log,
-}
-impl Stdio {
-    pub fn into_ace(self) -> airupfx::process::Stdio {
-        match self {
-            Self::Inherit => airupfx::process::Stdio::Inherit,
-            Self::File(path) => airupfx::process::Stdio::File(path),
-            Self::Log => airupfx::process::Stdio::Piped,
-        }
-    }
 }
 
 /// Represents to `[service]` section in a service TOML file.

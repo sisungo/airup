@@ -67,5 +67,5 @@ impl Default for Cmdline {
 pub fn cmdline() -> &'static Cmdline {
     static CMDLINE: OnceLock<Cmdline> = OnceLock::new();
 
-    CMDLINE.get_or_init(|| Cmdline::parse())
+    CMDLINE.get_or_init(Cmdline::parse)
 }

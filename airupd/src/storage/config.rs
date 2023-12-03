@@ -1,7 +1,7 @@
 //! Represents to Airup's system config.
 
 use ahash::HashMap;
-use airupfx::prelude::*;
+use airup_sdk::fs::DirChain;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,

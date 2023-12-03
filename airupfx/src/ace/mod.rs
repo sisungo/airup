@@ -9,6 +9,7 @@ use crate::{
     util::BoxFuture,
 };
 use ahash::AHashMap;
+use airup_sdk::error::IntoApiError;
 use std::{sync::Arc, time::Duration};
 use tokio::sync::mpsc;
 
@@ -270,6 +271,16 @@ impl From<WaitError> for Error {
         Self::Wait(value)
     }
 }
+impl IntoApiError for Error {
+    fn into_api_error(self) -> airup_sdk::Error {
+        match self {
+            Self::ParseError => airup_sdk::Error::AceParseError,
+            Self::Wait(err) => airup_sdk::Error::internal(err.to_string()),
+            Self::Io(message) => airup_sdk::Error::Io { message },
+            Self::TimedOut => airup_sdk::Error::TimedOut,
+        }
+    }
+}
 
 /// An error that the command failed.
 #[derive(Debug, Clone, thiserror::Error)]
@@ -295,6 +306,14 @@ impl CommandExitError {
         match wait.code() {
             Some(code) => Self::Exited(code),
             None => Self::Signaled(wait.signal().unwrap()),
+        }
+    }
+}
+impl IntoApiError for CommandExitError {
+    fn into_api_error(self) -> airup_sdk::Error {
+        match self {
+            Self::Exited(exit_code) => airup_sdk::Error::Exited { exit_code },
+            Self::Signaled(signum) => airup_sdk::Error::Signaled { signum },
         }
     }
 }

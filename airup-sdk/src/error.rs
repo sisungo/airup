@@ -149,36 +149,13 @@ impl ApiError {
         }
     }
 }
-impl From<crate::files::ReadError> for ApiError {
-    fn from(value: crate::files::ReadError) -> Self {
-        match value {
-            crate::files::ReadError::Io(err) => match err.kind() {
-                std::io::ErrorKind::NotFound => Self::UnitNotFound,
-                _ => Self::Io {
-                    message: err.to_string(),
-                },
-            },
-            crate::files::ReadError::Parse(x) => Self::BadUnit { message: x.into() },
-            crate::files::ReadError::Validation(x) => Self::BadUnit { message: x },
-        }
-    }
+
+pub trait IntoApiError {
+    fn into_api_error(self) -> ApiError;
 }
 
-impl From<airupfx::ace::Error> for ApiError {
-    fn from(value: airupfx::ace::Error) -> Self {
-        match value {
-            airupfx::ace::Error::ParseError => Self::AceParseError,
-            airupfx::ace::Error::Wait(err) => Self::internal(err.to_string()),
-            airupfx::ace::Error::Io(message) => Self::Io { message },
-            airupfx::ace::Error::TimedOut => Self::TimedOut,
-        }
-    }
-}
-impl From<airupfx::ace::CommandExitError> for ApiError {
-    fn from(value: airupfx::ace::CommandExitError) -> Self {
-        match value {
-            airupfx::ace::CommandExitError::Exited(exit_code) => Self::Exited { exit_code },
-            airupfx::ace::CommandExitError::Signaled(signum) => Self::Signaled { signum },
-        }
+impl<T: IntoApiError> From<T> for ApiError {
+    fn from(value: T) -> Self {
+        value.into_api_error()
     }
 }

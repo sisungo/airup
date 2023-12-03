@@ -1,7 +1,7 @@
 //! # Milestones
 
 use super::ReadError;
-use airupfx::prelude::*;
+use crate::fs::DirChain;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::{path::Path, str::FromStr};
@@ -52,21 +52,23 @@ impl Milestone {
     pub async fn items(&self) -> Vec<Item> {
         let mut services = Vec::new();
 
-        if let Ok(read_chain) = self.base_chain.read_chain().await {
-            for i in read_chain {
-                if i.to_string_lossy().ends_with(".list.airf") {
-                    if let Some(path) = self.base_chain.find(&i).await {
-                        tokio::fs::read_to_string(&path)
-                            .await
-                            .map(|x| {
-                                x.lines().for_each(|y| {
-                                    if let Ok(item) = y.parse() {
-                                        services.push(item);
-                                    }
-                                })
-                            })
-                            .ok();
-                    }
+        let Ok(read_chain) = self.base_chain.read_chain().await else {
+            return services;
+        };
+
+        for i in read_chain {
+            if !i.to_string_lossy().ends_with(".list.airf") {
+                continue;
+            }
+            let Some(path) = self.base_chain.find(&i).await else {
+                continue;
+            };
+            let Ok(list_str) = tokio::fs::read_to_string(&path).await else {
+                continue;
+            };
+            for line in list_str.lines() {
+                if let Ok(item) = line.parse() {
+                    services.push(item);
                 }
             }
         }
