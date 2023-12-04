@@ -1,6 +1,9 @@
 [package]
 name = "airup-sdk"
 authors = ["sisungo <sisungo@icloud.com>"]
+description = "SDK library of Airup"
+documentation = "https://docs.rs/airup-sdk"
+repository = "https://github.com/sisungo/airup"
 version = "0.5.0-alpha.1"
 edition = "2021"
 license = "MIT"
@@ -9,6 +12,9 @@ license = "MIT"
 
 [lib]
 crate-type = ["rlib", "cdylib"]
+
+[features]
+_internal = []
 
 [dependencies]
 anyhow = "1"

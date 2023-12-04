@@ -44,9 +44,18 @@ fn default_os_name() -> String {
 /// # Panics
 /// Panics if the [`BuildManifest`] instance was not initialized yet and the compile-time `build_manifest.json` was invalid.
 pub fn manifest() -> &'static BuildManifest {
-    MANIFEST.get_or_init(|| {
-        serde_json::from_str(include_str!("../../build_manifest.json")).expect("bad airup build")
-    })
+    #[cfg(feature = "_internal")]
+    {
+        MANIFEST.get_or_init(|| {
+            serde_json::from_str(include_str!("../../build_manifest.json"))
+                .expect("bad airup build")
+        })
+    }
+
+    #[cfg(not(feature = "_internal"))]
+    {
+        MANIFEST.get().unwrap()
+    }
 }
 
 /// Sets the build manifest to the specific value.
