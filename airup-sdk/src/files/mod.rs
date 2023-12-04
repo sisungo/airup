@@ -25,7 +25,7 @@ impl From<std::io::Error> for ReadError {
 }
 impl From<toml::de::Error> for ReadError {
     fn from(value: toml::de::Error) -> Self {
-        Self::Parse(value.to_string())
+        Self::Parse(value.message().to_owned())
     }
 }
 impl From<serde_json::Error> for ReadError {

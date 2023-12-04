@@ -137,7 +137,7 @@ impl Manager {
             false
         };
         let is_provider = queried
-            .service
+            .definition
             .service
             .provides
             .iter()
@@ -150,7 +150,7 @@ impl Manager {
 
         if removable {
             supervisors.remove(name).unwrap();
-            for i in &queried.service.service.provides {
+            for i in &queried.definition.service.provides {
                 if is_providing(i) {
                     provided.borrow_mut().remove(i);
                 }
@@ -174,8 +174,8 @@ impl Manager {
 
         for (k, v) in &*supervisors {
             let queried = v.query().await;
-            if !queried.service.paths.is_empty() {
-                let new = Service::read_merge(&queried.service.paths).await;
+            if !queried.definition.paths.is_empty() {
+                let new = Service::read_merge(&queried.definition.paths).await;
                 let new = match new {
                     Ok(x) => x,
                     Err(_) => {
@@ -265,8 +265,8 @@ impl Supervisor {
                 req = self.receiver.recv() => self.handle_req(req?).await,
                 Some(do_child) = do_child(&self.context, self.current_task.has_task()) => match do_child {
                     DoChild::Wait(wait) => self.handle_wait(wait).await,
-                    DoChild::Stdout(msg) => self.log(&msg).await,
-                    DoChild::Stderr(msg) => self.log(&msg).await,
+                    DoChild::Stdout(msg) => self.log("stdout", &msg).await,
+                    DoChild::Stderr(msg) => self.log("stderr", &msg).await,
                 },
                 Some(rslt) = self.current_task.wait() => self.handle_wait_task(rslt).await,
             }
@@ -386,14 +386,18 @@ impl Supervisor {
                 .as_ref()
                 .map(|x| x.task_type().to_owned()),
             last_error: self.context.last_error.get(),
-            service: self.context.service.clone(),
+            definition: self.context.service.clone(),
         }
     }
 
-    pub async fn log(&self, msg: &[u8]) {
+    pub async fn log(&self, module: &str, msg: &[u8]) {
         airupd()
             .logger
-            .write(&format!("airup_service_{}", self.context.service.name), msg)
+            .write(
+                &format!("airup_service_{}", self.context.service.name),
+                module,
+                msg,
+            )
             .await
             .ok();
     }

@@ -22,6 +22,8 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     methods.insert("system.uncache_service", uncache_service);
     methods.insert("system.interrupt_service_task", interrupt_service_task);
     methods.insert("system.list_services", list_services);
+    methods.insert("system.use_logger", use_logger);
+    methods.insert("system.tail_logs", tail_logs);
     methods.insert("system.poweroff", poweroff);
     methods.insert("system.reboot", reboot);
     methods.insert("system.halt", halt);
@@ -125,6 +127,26 @@ fn uncache_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
 
 fn list_services(_: Arc<SessionContext>, _: Request) -> MethodFuture {
     Box::pin(async move { ok(airupd().storage.services.list().await) })
+}
+
+fn use_logger(_: Arc<SessionContext>, req: Request) -> MethodFuture {
+    Box::pin(async move {
+        let logger: String = req.extract_params()?;
+        airupd().logger.set_logger_by_name(&logger).await?;
+        ok_null()
+    })
+}
+
+fn tail_logs(_: Arc<SessionContext>, req: Request) -> MethodFuture {
+    Box::pin(async move {
+        let (subject, n): (String, usize) = req.extract_params()?;
+        let queried = airupd()
+            .logger
+            .tail(&subject, n)
+            .await
+            .map_err(|err| airup_sdk::Error::custom(err))?;
+        ok(queried)
+    })
 }
 
 fn poweroff(_: Arc<SessionContext>, _: Request) -> MethodFuture {

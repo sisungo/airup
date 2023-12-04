@@ -101,6 +101,10 @@ pub enum ApiError {
     /// An internal error.
     #[error("internal error: {message}")]
     Internal { message: Cow<'static, str> },
+
+    /// A custom error.
+    #[error("{message}")]
+    Custom { message: String },
 }
 impl ApiError {
     pub fn bad_request<K: Into<String>, M: Into<String>>(kind: K, message: M) -> Self {
@@ -145,6 +149,12 @@ impl ApiError {
 
     pub fn pid_file<T: ToString>(err: T) -> Self {
         Self::PidFile {
+            message: err.to_string(),
+        }
+    }
+
+    pub fn custom<T: ToString>(err: T) -> Self {
+        Self::Custom {
             message: err.to_string(),
         }
     }

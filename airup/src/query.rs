@@ -31,6 +31,13 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
                 .await?
                 .map_err(|e| anyhow!("failed to query service `{}`: {}", x, e))?;
             print_query_service(&queried);
+
+            if let Ok(Ok(logs)) = conn.tail_logs(&format!("airup_service_{}", x), 4).await {
+                println!("\n{}", style("Logs:").bold().underlined());
+                for log in logs {
+                    println!("{}", log.message);
+                }
+            }
         }
         None => {
             let query_system = conn.query_system().await??;
@@ -47,11 +54,11 @@ fn print_query_service(query_service: &QueryService) {
     println!(
         "{} {} ({})",
         status.theme_dot(),
-        query_service.service.display_name(),
-        &query_service.service.name
+        query_service.definition.display_name(),
+        &query_service.definition.name
     );
 
-    if let Some(x) = &query_service.service.service.description {
+    if let Some(x) = &query_service.definition.service.description {
         println!("{:>14} {}", "Description:", x);
     }
 

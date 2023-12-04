@@ -216,7 +216,7 @@ async fn display_name(name: &str) -> String {
     app::airupd()
         .query_service(name)
         .await
-        .map(|x| x.service.display_name().into())
+        .map(|x| x.definition.display_name().into())
         .unwrap_or_else(|_| name.into())
 }
 

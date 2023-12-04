@@ -3,18 +3,6 @@ use crate::files::Service;
 use serde::{Deserialize, Serialize};
 use std::future::Future;
 
-/// Representation of the status of a service.
-#[derive(Debug, Clone, Default, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum Status {
-    /// The service is active.
-    Active,
-
-    /// The service has stopped.
-    #[default]
-    Stopped,
-}
-
 /// Result of querying a service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryService {
@@ -23,17 +11,17 @@ pub struct QueryService {
     pub pid: Option<i64>,
     pub task: Option<String>,
     pub last_error: Option<Error>,
-    pub service: Service,
+    pub definition: Service,
 }
 impl QueryService {
-    pub fn default_of(service: Service) -> Self {
+    pub fn default_of(definition: Service) -> Self {
         Self {
             status: Status::Stopped,
             status_since: None,
             pid: None,
             task: None,
             last_error: None,
-            service,
+            definition,
         }
     }
 }
@@ -47,6 +35,25 @@ pub struct QuerySystem {
     pub is_booting: bool,
     pub hostname: Option<String>,
     pub services: Vec<String>,
+}
+
+/// Representation of the status of a service.
+#[derive(Debug, Clone, Default, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Status {
+    /// The service is active.
+    Active,
+
+    /// The service has stopped.
+    #[default]
+    Stopped,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LogRecord {
+    pub timestamp: i64,
+    pub module: String,
+    pub message: String,
 }
 
 pub trait ConnectionExt {
@@ -114,6 +121,13 @@ pub trait ConnectionExt {
 
     /// Halts the system.
     fn halt(&mut self) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
+
+    /// Queries latest `n` log records from the logger.
+    fn tail_logs(
+        &mut self,
+        subject: &str,
+        n: usize,
+    ) -> impl Future<Output = anyhow::Result<Result<Vec<LogRecord>, Error>>>;
 }
 impl ConnectionExt for super::Connection {
     async fn sideload_service(
@@ -175,5 +189,13 @@ impl ConnectionExt for super::Connection {
 
     async fn halt(&mut self) -> anyhow::Result<Result<(), Error>> {
         self.invoke("system.halt", ()).await
+    }
+
+    async fn tail_logs(
+        &mut self,
+        subject: &str,
+        n: usize,
+    ) -> anyhow::Result<Result<Vec<LogRecord>, Error>> {
+        self.invoke("system.tail_logs", (subject, n)).await
     }
 }
