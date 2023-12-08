@@ -122,6 +122,10 @@ pub trait ConnectionExt {
     /// Halts the system.
     fn halt(&mut self) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
+    /// Indicates `airupd` to register the specified logger.
+    fn use_logger(&mut self, name: &str)
+        -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
+
     /// Queries latest `n` log records from the logger.
     fn tail_logs(
         &mut self,
@@ -189,6 +193,10 @@ impl ConnectionExt for super::Connection {
 
     async fn halt(&mut self) -> anyhow::Result<Result<(), Error>> {
         self.invoke("system.halt", ()).await
+    }
+
+    async fn use_logger(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
+        self.invoke("system.use_logger", name).await
     }
 
     async fn tail_logs(

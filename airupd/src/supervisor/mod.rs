@@ -505,14 +505,14 @@ impl StatusContext {
 
     /// Gets the timestamp of last status change.
     pub fn timestamp(&self) -> i64 {
-        self.timestamp.load(atomic::Ordering::Relaxed)
+        self.timestamp.load(atomic::Ordering::Acquire)
     }
 
     /// Changes current status updating timestamp.
     pub fn set(&self, new: Status) -> Status {
         let mut lock = self.data.lock().unwrap();
         self.timestamp
-            .store(airupfx::time::timestamp_ms(), atomic::Ordering::Relaxed);
+            .store(airupfx::time::timestamp_ms(), atomic::Ordering::Release);
         std::mem::replace(&mut lock, new)
     }
 }
@@ -578,17 +578,17 @@ impl RetryContext {
 
     /// Sets the retry count to zero.
     pub fn reset_count(&self) {
-        self.count.store(0, atomic::Ordering::Relaxed);
+        self.count.store(0, atomic::Ordering::SeqCst);
     }
 
     /// Enables retrying if disabled.
     pub fn enable(&self) {
-        self.disabled.store(false, atomic::Ordering::Relaxed);
+        self.disabled.store(false, atomic::Ordering::Release);
     }
 
     /// Disables retrying if enabled.
     pub fn disable(&self) {
-        self.disabled.store(true, atomic::Ordering::Relaxed);
+        self.disabled.store(true, atomic::Ordering::Release);
     }
 
     /// Returns `true` if retrying is enabled.
@@ -598,7 +598,7 @@ impl RetryContext {
 
     /// Returns `true` if retrying is disabled.
     pub fn disabled(&self) -> bool {
-        self.disabled.load(atomic::Ordering::Relaxed)
+        self.disabled.load(atomic::Ordering::Acquire)
     }
 }
 

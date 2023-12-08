@@ -3,7 +3,7 @@ This guide describes how to build, configure and install Airup.
 
 ## Build Dependencies
 To build Airup, you need to install the few dependencies first:
- - [Rust](https://rust-lang.org)
+ - [Rust](https://rust-lang.org): The programming language used to implement Airup.
 
 Some build dependencies are optional, as they are only required when the feature is used:
  - [cbindgen](https://github.com/mozilla/cbindgen): A tool to generated C headers from Rust code.
@@ -31,3 +31,6 @@ To build release version of Airup, run:
 ```shell
 cargo build --release
 ```
+
+## Install
+Read the [documents](docs/README.md) to learn more about installation.

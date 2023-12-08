@@ -1,5 +1,7 @@
+# An `.airs` service definition file that describes the Airup daemon itself.
+
 [service]
-display-name = "Airup Daemon"
+display-name = "Airup"
 description = "System init and service supervisor"
 kind = "oneshot"
 
