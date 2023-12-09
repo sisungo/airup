@@ -32,7 +32,7 @@ fn wait_nonblocking(pid: Pid) -> std::io::Result<Option<Wait>> {
     match pid.cmp(&0) {
         cmp::Ordering::Equal => Ok(None),
         cmp::Ordering::Less => Err(std::io::Error::last_os_error()),
-        cmp::Ordering::Greater => Ok(Some(Wait::new(pid, ExitStatus::from_unix(status)))),
+        cmp::Ordering::Greater => Ok(Some(Wait::new(pid as _, ExitStatus::from_unix(status)))),
     }
 }
 
@@ -249,7 +249,7 @@ impl ChildQueue {
 
     /// Sends the given [`Wait`] to the queue.
     pub async fn send(&self, wait: Wait) -> Option<()> {
-        let entry = self.queue.write().unwrap().remove(&wait.pid());
+        let entry = self.queue.write().unwrap().remove(&(wait.pid() as _));
         match entry {
             Some(x) => x.send(wait).await.ok().map(|_| ()),
             None => None,

@@ -39,14 +39,14 @@ struct ReloadService {
     context: Arc<SupervisorContext>,
 }
 impl ReloadService {
-    pub fn start(mut self) {
+    fn start(mut self) {
         tokio::spawn(async move {
             let val = self.run().await;
             self.helper.finish(val);
         });
     }
 
-    pub async fn run(&mut self) -> Result<(), Error> {
+    async fn run(&mut self) -> Result<(), Error> {
         if self.context.status.get() != Status::Active {
             return Err(Error::UnitNotStarted);
         }

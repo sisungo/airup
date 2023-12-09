@@ -144,7 +144,7 @@ fn tail_logs(_: Arc<SessionContext>, req: Request) -> MethodFuture {
             .logger
             .tail(&subject, n)
             .await
-            .map_err(|err| airup_sdk::Error::custom(err))?;
+            .map_err(airup_sdk::Error::custom)?;
         ok(queried)
     })
 }

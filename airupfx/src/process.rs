@@ -14,9 +14,6 @@ use tokio::{
     sync::mpsc,
 };
 
-/// Represents to an OS-assigned process identifier.
-pub type Pid = sys::process::Pid;
-
 /// The OS-assigned process identifier associated with this process.
 pub static ID: Lazy<u32> = Lazy::new(std::process::id);
 
@@ -59,17 +56,17 @@ fn shell() -> std::io::Result<()> {
 /// Describes the result of calling `wait`-series methods.
 #[derive(Debug, Clone)]
 pub struct Wait {
-    pid: Pid,
+    pid: i64,
     pub exit_status: ExitStatus,
 }
 impl Wait {
     /// Creates a new [`Wait`] object.
-    pub fn new(pid: Pid, exit_status: ExitStatus) -> Self {
+    pub fn new(pid: i64, exit_status: ExitStatus) -> Self {
         Self { pid, exit_status }
     }
 
     /// Returns the OS-assigned process identifier associated with the wait result.
-    pub fn pid(&self) -> Pid {
+    pub fn pid(&self) -> i64 {
         self.pid
     }
 
@@ -122,16 +119,16 @@ impl ExitStatus {
 pub struct Child(sys::process::Child);
 impl Child {
     /// Returns OS-assign process ID of the child process.
-    pub const fn id(&self) -> Pid {
-        self.0.id()
+    pub const fn id(&self) -> i64 {
+        self.0.id() as _
     }
 
     /// Creates a [`Child`] instance from PID.
     ///
     /// # Errors
     /// An `Err(_)` is returned if the process is not a valid child process of current process.
-    pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
-        Ok(Self(sys::process::Child::from_pid(pid)?))
+    pub fn from_pid(pid: i64) -> std::io::Result<Self> {
+        Ok(Self(sys::process::Child::from_pid(pid as _)?))
     }
 
     /// Waits until the process was terminated.

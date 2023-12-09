@@ -39,14 +39,14 @@ struct StopService {
     context: Arc<SupervisorContext>,
 }
 impl StopService {
-    pub fn start(mut self) {
+    fn start(mut self) {
         tokio::spawn(async move {
             let val = self.run().await;
             self.helper.finish(val);
         });
     }
 
-    pub async fn run(&mut self) -> Result<(), Error> {
+    async fn run(&mut self) -> Result<(), Error> {
         // The task immediately fails if the service is not active
         if self.context.status.get() != Status::Active {
             return Err(Error::UnitNotStarted);

@@ -1,6 +1,7 @@
 //! # Airup Milestones
 
 pub mod early_boot;
+mod reboot;
 
 use crate::app;
 use ahash::AHashSet;
@@ -33,7 +34,12 @@ impl Manager {
 impl crate::app::Airupd {
     /// Enters the specific milestone.
     pub async fn enter_milestone(&self, name: String) -> Result<(), Error> {
-        enter_milestone(name, &mut AHashSet::with_capacity(8)).await
+        let name = name.strip_suffix(".airm").unwrap_or(&name).to_owned();
+        if reboot::PRESETS.contains(&&name[..]) {
+            reboot::enter(&name).await
+        } else {
+            enter_milestone(name, &mut AHashSet::with_capacity(8)).await
+        }
     }
 
     /// Enters the specific milestone as bootstrap milestone.
@@ -65,8 +71,7 @@ impl crate::app::Airupd {
 
 fn enter_milestone(name: String, hist: &mut AHashSet<String>) -> BoxFuture<'_, Result<(), Error>> {
     Box::pin(async move {
-        let name = name.strip_suffix(".airm").unwrap_or(&name);
-        let def = match app::airupd().storage.milestones.get(name).await {
+        let def = match app::airupd().storage.milestones.get(&name).await {
             Ok(x) => x,
             Err(err) => {
                 tracing::error!(target: "console", "Failed to enter milestone `{}`: {}", name, err);
@@ -74,9 +79,9 @@ fn enter_milestone(name: String, hist: &mut AHashSet<String>) -> BoxFuture<'_, R
             }
         };
 
-        // Detects if dependency loop exists. If a dependency loop is detected, it's automatically broken, then a warning
+        // Detects if dependency ring exists. If a dependency ring is detected, it's automatically broken, then a warning
         // event is recorded, and the method immediately returns.
-        if !hist.insert(name.into()) {
+        if !hist.insert(name.clone()) {
             tracing::warn!(
                 target: "console",
                 "Dependency loop detected for milestone `{}`. Breaking loop.",
@@ -94,7 +99,7 @@ fn enter_milestone(name: String, hist: &mut AHashSet<String>) -> BoxFuture<'_, R
 
         // By default, Airup sets `AIRUP_MILESTONE` environment variable to indicate services which milestone is the system
         // in as it is started.
-        std::env::set_var("AIRUP_MILESTONE", name);
+        std::env::set_var("AIRUP_MILESTONE", &name);
 
         // Starts services
         exec_milestone(&def).await;

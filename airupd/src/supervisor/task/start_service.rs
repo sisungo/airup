@@ -39,14 +39,14 @@ struct StartService {
     context: Arc<SupervisorContext>,
 }
 impl StartService {
-    pub fn start(mut self) {
+    fn start(mut self) {
         tokio::spawn(async move {
             let val = self.run().await;
             self.helper.finish(val);
         });
     }
 
-    pub async fn run(&mut self) -> Result<(), Error> {
+    async fn run(&mut self) -> Result<(), Error> {
         // The task immediately fails if the service is already active
         if self.context.status.get() == Status::Active {
             return Err(Error::UnitStarted);
@@ -58,30 +58,7 @@ impl StartService {
 
         let ace = super::ace(&self.context).await?;
 
-        self.helper
-            .interruptable_scope::<Result<(), Error>, _>(async {
-                // If any of conflict services are active, the task fails
-                for i in self.context.service.service.conflicts_with.iter() {
-                    if let Some(handle) = airupd().supervisors.get(i).await {
-                        if handle.query().await.status == Status::Active {
-                            return Err(Error::ConflictsWith {
-                                name: i.to_string(),
-                            });
-                        }
-                    }
-                }
-
-                // Start dependencies
-                for dep in self.context.service.service.dependencies.iter() {
-                    airupd()
-                        .make_service_active(dep)
-                        .await
-                        .map_err(|_| Error::dep_not_satisfied(dep))?;
-                }
-
-                Ok(())
-            })
-            .await??;
+        self.helper.would_interrupt(self.solve_deps()).await??;
 
         let countdown = airupfx::time::countdown(self.context.service.exec.start_timeout());
 
@@ -107,7 +84,8 @@ impl StartService {
             Kind::Forking => {
                 ace.run_wait_timeout(&self.context.service.exec.start, countdown.left())
                     .await??;
-                let pid: Pid = tokio::fs::read_to_string(
+
+                let pid: i64 = tokio::fs::read_to_string(
                     &self.context.service.service.pid_file.as_ref().unwrap(),
                 )
                 .await
@@ -115,13 +93,13 @@ impl StartService {
                 .trim()
                 .parse()
                 .map_err(Error::pid_file)?;
-                self.context
-                    .set_child(airupfx::ace::Child::Process(
-                        airupfx::process::Child::from_pid(pid).map_err(|err| Error::Io {
-                            message: err.to_string(),
-                        })?,
-                    ))
-                    .await;
+
+                let child = airupfx::ace::Child::Process(
+                    airupfx::process::Child::from_pid(pid).map_err(|err| Error::Io {
+                        message: err.to_string(),
+                    })?,
+                );
+                self.context.set_child(child).await;
             }
             Kind::Oneshot => {
                 ace.run_wait_timeout(&self.context.service.exec.start, countdown.left())
@@ -143,6 +121,29 @@ impl StartService {
         }
 
         self.context.status.set(Status::Active);
+
+        Ok(())
+    }
+
+    async fn solve_deps(&self) -> Result<(), Error> {
+        // If any of conflict services are active, the task fails
+        for i in self.context.service.service.conflicts_with.iter() {
+            if let Some(handle) = airupd().supervisors.get(i).await {
+                if handle.query().await.status == Status::Active {
+                    return Err(Error::ConflictsWith {
+                        name: i.to_string(),
+                    });
+                }
+            }
+        }
+
+        // Start dependencies
+        for dep in self.context.service.service.dependencies.iter() {
+            airupd()
+                .make_service_active(dep)
+                .await
+                .map_err(|_| Error::dep_not_satisfied(dep))?;
+        }
 
         Ok(())
     }

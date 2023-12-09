@@ -61,14 +61,14 @@ struct CleanupService {
     wait: Wait,
 }
 impl CleanupService {
-    pub fn start(mut self) {
+    fn start(mut self) {
         tokio::spawn(async move {
             let val = self.run().await;
             self.helper.finish(val);
         });
     }
 
-    pub async fn run(&mut self) -> Result<(), Error> {
+    async fn run(&mut self) -> Result<(), Error> {
         let ace = super::ace(&self.context).await?;
 
         cleanup_service(

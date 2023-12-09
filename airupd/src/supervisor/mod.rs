@@ -12,7 +12,6 @@ use airup_sdk::{
 };
 use airupfx::{
     ace::Child,
-    prelude::*,
     process::{PiperHandle, Wait},
 };
 use atomic_refcell::AtomicRefCell;
@@ -482,7 +481,7 @@ impl SupervisorContext {
     }
 
     /// Returns main PID of the service supervised by the supervisor.
-    pub async fn pid(&self) -> Option<Pid> {
+    pub async fn pid(&self) -> Option<i64> {
         self.child.read().await.as_ref().map(|x| x.id())
     }
 

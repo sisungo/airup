@@ -4,7 +4,7 @@ pub mod builtins;
 pub mod parser;
 
 use crate::{
-    process::{CommandEnv, ExitStatus, Pid, Wait, WaitError},
+    process::{CommandEnv, ExitStatus, Wait, WaitError},
     signal::SIGTERM,
     util::BoxFuture,
 };
@@ -126,7 +126,7 @@ pub enum Child {
 impl Child {
     /// Returns process ID of the child.
     #[inline]
-    pub const fn id(&self) -> Pid {
+    pub const fn id(&self) -> i64 {
         match self {
             Self::Async(child) => child.id(),
             Self::AlwaysSuccess(child) => child.id(),

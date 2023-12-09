@@ -87,10 +87,7 @@ pub struct TaskHelper {
 impl TaskHelper {
     /// Executes a [`Future`] in an interruptable scope. If this task is interrupted, returns `Err(Error::TaskInterrupted)`,
     /// otherwise returns `Ok(_)`.
-    pub async fn interruptable_scope<T, F: Future<Output = T>>(
-        &self,
-        future: F,
-    ) -> Result<T, Error> {
+    pub async fn would_interrupt<T>(&self, future: impl Future<Output = T>) -> Result<T, Error> {
         let mut int_flag = self.int_flag.clone();
         tokio::select! {
             val = future => Ok(val),
