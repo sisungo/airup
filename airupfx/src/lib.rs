@@ -4,6 +4,7 @@
 pub mod ace;
 pub mod env;
 pub mod fs;
+pub mod io;
 pub mod log;
 pub mod power;
 pub mod prelude;

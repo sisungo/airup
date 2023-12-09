@@ -11,6 +11,7 @@ pub use feedback::TaskFeedback;
 pub use reload_service::ReloadServiceHandle;
 pub use start_service::StartServiceHandle;
 pub use stop_service::StopServiceHandle;
+use tokio_util::sync::CancellationToken;
 
 use super::SupervisorContext;
 use airup_sdk::Error;
@@ -54,7 +55,7 @@ impl TaskHandle for EmptyTaskHandle {
 /// A helper type for implementing [`TaskHandle`].
 #[derive(Debug)]
 pub struct TaskHelperHandle {
-    int_flag: watch::Sender<bool>,
+    cancellation_token: CancellationToken,
     done: watch::Receiver<Option<Result<TaskFeedback, Error>>>,
 }
 impl TaskHandle for TaskHelperHandle {
@@ -63,7 +64,7 @@ impl TaskHandle for TaskHelperHandle {
     }
 
     fn send_interrupt(&self) {
-        let _ = self.int_flag.send(true);
+        self.cancellation_token.cancel();
     }
 
     fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>> {
@@ -81,23 +82,22 @@ impl TaskHandle for TaskHelperHandle {
 /// A helper type for implementing [`TaskHandle`], which acts as backend type of [`TaskHelperHandle`].
 #[derive(Debug)]
 pub struct TaskHelper {
-    int_flag: watch::Receiver<bool>,
+    cancellation_token: CancellationToken,
     done: watch::Sender<Option<Result<TaskFeedback, Error>>>,
 }
 impl TaskHelper {
     /// Executes a [`Future`] in an interruptable scope. If this task is interrupted, returns `Err(Error::TaskInterrupted)`,
     /// otherwise returns `Ok(_)`.
     pub async fn would_interrupt<T>(&self, future: impl Future<Output = T>) -> Result<T, Error> {
-        let mut int_flag = self.int_flag.clone();
         tokio::select! {
             val = future => Ok(val),
-            Ok(_) = int_flag.wait_for(|x| *x) => Err(Error::TaskInterrupted),
+            _ = self.cancellation_token.cancelled() => Err(Error::TaskInterrupted),
         }
     }
 
     /// If this task is interrupted, returns `Err(Error::TaskInterrupted)`, otherwise returns `Ok(_)`.
     pub fn interruptable_point(&self) -> Result<(), Error> {
-        match *self.int_flag.borrow() {
+        match self.cancellation_token.is_cancelled() {
             true => Err(Error::TaskInterrupted),
             false => Ok(()),
         }
@@ -111,15 +111,15 @@ impl TaskHelper {
 
 /// Returns a pair of [`TaskHelper`] and [`TaskHelperHandle`].
 pub fn task_helper() -> (TaskHelperHandle, TaskHelper) {
-    let (int_flag_tx, int_flag_rx) = watch::channel(false);
+    let cancellation_token = CancellationToken::new();
     let (done_tx, done_rx) = watch::channel(None);
 
     let helper = TaskHelper {
-        int_flag: int_flag_rx,
+        cancellation_token: cancellation_token.clone(),
         done: done_tx,
     };
     let handle = TaskHelperHandle {
-        int_flag: int_flag_tx,
+        cancellation_token,
         done: done_rx,
     };
 

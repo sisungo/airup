@@ -131,8 +131,12 @@ fn list_services(_: Arc<SessionContext>, _: Request) -> MethodFuture {
 
 fn use_logger(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
-        let logger: String = req.extract_params()?;
-        airupd().logger.set_logger_by_name(&logger).await?;
+        let logger: Option<String> = req.extract_params()?;
+        if let Some(name) = logger {
+            airupd().logger.set_logger_by_name(&name).await?;
+        } else {
+            airupd().logger.remove_logger().await;
+        }
         ok_null()
     })
 }

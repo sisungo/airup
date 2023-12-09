@@ -6,7 +6,10 @@
 //! subscription is cancelled.
 
 use super::std_port::CommandExt as _;
-use crate::process::{ExitStatus, PiperHandle, Wait};
+use crate::{
+    io::PiperHandle,
+    process::{ExitStatus, Wait},
+};
 use ahash::AHashMap;
 use std::{
     cmp,

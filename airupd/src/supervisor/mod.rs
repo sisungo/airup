@@ -10,11 +10,7 @@ use airup_sdk::{
     system::{QueryService, Status},
     Error,
 };
-use airupfx::{
-    ace::Child,
-    process::{PiperHandle, Wait},
-};
-use atomic_refcell::AtomicRefCell;
+use airupfx::{ace::Child, io::PiperHandle, process::Wait};
 use std::{
     cmp,
     sync::{
@@ -125,10 +121,9 @@ impl Manager {
     ) -> Result<(), Error> {
         let handle = supervisors.get(name).ok_or(Error::UnitNotStarted)?.clone();
         let queried = handle.query().await;
-        let provided = AtomicRefCell::new(provided);
 
-        let is_providing = |i| {
-            if let Some(provided_handle) = provided.borrow().get(i) {
+        let is_providing = |provided: &mut AHashMap<_, _>, i| {
+            if let Some(provided_handle) = provided.get(i) {
                 if Arc::ptr_eq(&handle, provided_handle) {
                     return true;
                 }
@@ -140,7 +135,7 @@ impl Manager {
             .service
             .provides
             .iter()
-            .map(is_providing)
+            .map(|x| is_providing(provided, x))
             .any(|x| x);
 
         let removable = queried.status == Status::Stopped
@@ -150,8 +145,8 @@ impl Manager {
         if removable {
             supervisors.remove(name).unwrap();
             for i in &queried.definition.service.provides {
-                if is_providing(i) {
-                    provided.borrow_mut().remove(i);
+                if is_providing(provided, i) {
+                    provided.remove(i);
                 }
             }
             Ok(())

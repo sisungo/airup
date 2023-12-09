@@ -217,7 +217,7 @@ impl Child {
         }
     }
 
-    pub fn stdout(&self) -> Option<Arc<super::process::PiperHandle>> {
+    pub fn stdout(&self) -> Option<Arc<super::io::PiperHandle>> {
         match self {
             Self::Async(child) => child.stdout(),
             Self::AlwaysSuccess(child) => child.stdout(),
@@ -226,7 +226,7 @@ impl Child {
         }
     }
 
-    pub fn stderr(&self) -> Option<Arc<super::process::PiperHandle>> {
+    pub fn stderr(&self) -> Option<Arc<super::io::PiperHandle>> {
         match self {
             Self::Async(child) => child.stderr(),
             Self::AlwaysSuccess(child) => child.stderr(),
