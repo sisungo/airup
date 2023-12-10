@@ -55,6 +55,6 @@ async fn main() {
     let mut lifetime = app::airupd().lifetime.subscribe();
     if let Ok(event) = lifetime.recv().await {
         drop(_lock);
-        event.handle();
+        event.handle().await;
     }
 }

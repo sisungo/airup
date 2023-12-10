@@ -6,16 +6,26 @@ use std::convert::Infallible;
 
 #[derive(Default)]
 pub struct FreeBsd;
+impl FreeBsd {
+    async fn prepare(&self) {
+        crate::sys::process::kill_all(Duration::from_millis(5000)).await;
+        crate::sys::fs::sync();
+    }
+}
+#[async_trait::async_trait]
 impl PowerManager for FreeBsd {
-    fn poweroff(&self) -> std::io::Result<Infallible> {
+    async fn poweroff(&self) -> std::io::Result<Infallible> {
+        self.prepare().await;
         freebsd_reboot(RB_POWEROFF)
     }
 
-    fn reboot(&self) -> std::io::Result<Infallible> {
+    async fn reboot(&self) -> std::io::Result<Infallible> {
+        self.prepare().await;
         freebsd_reboot(RB_AUTOBOOT)
     }
 
-    fn halt(&self) -> std::io::Result<Infallible> {
+    async fn halt(&self) -> std::io::Result<Infallible> {
+        self.prepare().await;
         freebsd_reboot(RB_HALT)
     }
 }

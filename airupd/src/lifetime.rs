@@ -73,12 +73,15 @@ pub enum Event {
 }
 impl Event {
     /// Handles the event.
-    pub fn handle(&self) -> ! {
+    pub async fn handle(&self) -> ! {
         match self {
             Self::Exit(code) => std::process::exit(*code),
-            Self::Poweroff => power_manager().poweroff().unwrap_log("poweroff() failed"),
-            Self::Reboot => power_manager().reboot().unwrap_log("reboot() failed"),
-            Self::Halt => power_manager().halt().unwrap_log("halt() failed"),
+            Self::Poweroff => power_manager()
+                .poweroff()
+                .await
+                .unwrap_log("poweroff() failed"),
+            Self::Reboot => power_manager().reboot().await.unwrap_log("reboot() failed"),
+            Self::Halt => power_manager().halt().await.unwrap_log("halt() failed"),
             Self::ReloadImage => {
                 airupfx::process::reload_image().unwrap_log("reload_image() failed")
             }

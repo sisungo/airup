@@ -3,8 +3,8 @@
 use crate::app::airupd;
 use ahash::AHashSet;
 use airup_sdk::Error;
-use tokio::task::JoinHandle;
 use std::time::Duration;
+use tokio::task::JoinHandle;
 
 pub const PRESETS: &[&str] = &["reboot", "poweroff", "halt", "ctrlaltdel"];
 
@@ -29,7 +29,8 @@ async fn enter_reboot() -> Result<(), Error> {
         .ok();
 
     stop_all_services(Duration::from_millis(5000)).await;
-    
+    airupd().lifetime.reboot();
+
     Ok(())
 }
 
@@ -40,6 +41,7 @@ async fn enter_poweroff() -> Result<(), Error> {
         .ok();
 
     stop_all_services(Duration::from_millis(5000)).await;
+    airupd().lifetime.poweroff();
 
     Ok(())
 }
@@ -51,6 +53,7 @@ async fn enter_halt() -> Result<(), Error> {
         .ok();
 
     stop_all_services(Duration::from_millis(5000)).await;
+    airupd().lifetime.halt();
 
     Ok(())
 }

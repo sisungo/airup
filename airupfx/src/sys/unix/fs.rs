@@ -18,10 +18,8 @@ pub async fn set_sock_permission<P: AsRef<Path>>(path: P) -> std::io::Result<()>
 }
 
 /// Commits filesystem caches to disk.
-pub async fn sync() {
-    tokio::task::spawn_blocking(|| unsafe {
+pub fn sync() {
+    unsafe {
         libc::sync();
-    })
-    .await
-    .unwrap();
+    }
 }

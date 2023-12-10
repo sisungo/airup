@@ -16,6 +16,7 @@ use std::{
     convert::Infallible,
     os::unix::process::CommandExt,
     sync::{Arc, Mutex, OnceLock, RwLock},
+    time::Duration,
 };
 use sysinfo::UserExt;
 use tokio::{signal::unix::SignalKind, sync::mpsc};
@@ -49,13 +50,36 @@ pub fn reload_image() -> std::io::Result<Infallible> {
 ///
 /// # Errors
 /// An `Err(_)` is returned if the underlying OS function failed.
-pub fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
+fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
     let result = unsafe { libc::kill(pid as _, signum) };
     match result {
         0 => Ok(()),
         -1 => Err(std::io::Error::last_os_error()),
         _ => unreachable!(),
     }
+}
+
+/// Sends a signal to all running processes, then wait for them to be terminated. If the timeout expired, the processes are
+/// force-killed.
+///
+/// On systems without signal support, forces all running processes to be killed.
+pub(crate) async fn kill_all(timeout: Duration) {
+    eprintln!("Sending SIGTERM to all processes");
+    kill(-1, super::signal::SIGTERM).ok();
+    eprintln!("Waiting for all processes to be terminated");
+    let _lock = child_queue().lock.lock().await;
+    tokio::time::timeout(
+        timeout,
+        tokio::task::spawn_blocking(|| {
+            let mut status = 0;
+            while unsafe { libc::wait(&mut status) > 0 } {}
+        }),
+    )
+    .await
+    .ok();
+    drop(_lock);
+    eprintln!("Sending SIGKILL to all processes");
+    kill(-1, super::signal::SIGKILL).ok();
 }
 
 pub trait ExitStatusExt {
@@ -188,6 +212,7 @@ impl Drop for Child {
 #[derive(Debug, Default)]
 struct ChildQueue {
     queue: RwLock<AHashMap<Pid, mpsc::Sender<Wait>>>,
+    lock: tokio::sync::Mutex<()>,
 }
 impl ChildQueue {
     /// Creates a new [`ChildQueue`] instance.
@@ -206,18 +231,13 @@ impl ChildQueue {
     }
 
     /// Starts the child queue task.
-    ///
-    /// # Panics
-    /// This method would panic if it is called more than once.
-    fn start(&'static self) -> anyhow::Result<()> {
-        static CALLED: OnceLock<()> = OnceLock::new();
-        CALLED.set(()).unwrap();
-
+    fn start(&'static self) -> anyhow::Result<tokio::task::JoinHandle<()>> {
         let mut signal = tokio::signal::unix::signal(SignalKind::child())?;
-        tokio::spawn(async move {
+        Ok(tokio::spawn(async move {
             loop {
                 signal.recv().await;
                 loop {
+                    let _lock = self.lock.lock().await;
                     let wait = match wait_nonblocking(-1) {
                         Ok(Some(x)) => x,
                         Ok(None) => break,
@@ -226,6 +246,7 @@ impl ChildQueue {
                             break;
                         }
                     };
+                    drop(_lock);
 
                     if wait.code().is_some() || wait.signal().is_some() {
                         self.send(wait).await;
@@ -233,8 +254,7 @@ impl ChildQueue {
                     }
                 }
             }
-        });
-        Ok(())
+        }))
     }
 
     /// Creates a new [`mpsc::Receiver`] handle that will receive [`Wait`] sent after this call to `subscribe`.

@@ -37,13 +37,13 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = super::connect().await?;
 
     if cmdline.reboot {
-        conn.reboot().await??;
+        conn.enter_milestone("reboot").await?.ok();
     }
     if cmdline.poweroff {
-        conn.poweroff().await??;
+        conn.enter_milestone("poweroff").await?.ok();
     }
     if cmdline.halt {
-        conn.halt().await??;
+        conn.enter_milestone("halt").await?.ok();
     }
 
     Ok(())

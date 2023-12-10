@@ -18,11 +18,6 @@ pub async fn read_to_string_limited(
     Ok(buffer)
 }
 
-/// Commits filesystem caches to disk.
-pub async fn sync() {
-    crate::sys::fs::sync().await
-}
-
 /// Sets a file with socket permissions.
 pub async fn set_sock_permission<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
     crate::sys::fs::set_sock_permission(path).await

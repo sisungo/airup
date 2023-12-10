@@ -3,24 +3,25 @@
 use std::convert::Infallible;
 
 /// Interface of power management.
+#[async_trait::async_trait]
 pub trait PowerManager: Send + Sync {
     /// Immediately powers the device off.
     ///
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
-    fn poweroff(&self) -> std::io::Result<Infallible>;
+    async fn poweroff(&self) -> std::io::Result<Infallible>;
 
     /// Immediately reboots the device.
     ///
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
-    fn reboot(&self) -> std::io::Result<Infallible>;
+    async fn reboot(&self) -> std::io::Result<Infallible>;
 
     /// Immediately halts the device.
     ///
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
-    fn halt(&self) -> std::io::Result<Infallible>;
+    async fn halt(&self) -> std::io::Result<Infallible>;
 }
 
 /// A fallback implementation of `AirupFX` power management.
@@ -29,16 +30,17 @@ pub trait PowerManager: Send + Sync {
 /// to standard error stream and parks the thread if we are `pid == 1`. Otherwise, it directly exits with code `0`.
 #[derive(Default)]
 pub struct Fallback;
+#[async_trait::async_trait]
 impl PowerManager for Fallback {
-    fn poweroff(&self) -> std::io::Result<Infallible> {
+    async fn poweroff(&self) -> std::io::Result<Infallible> {
         Self::halt_process();
     }
 
-    fn reboot(&self) -> std::io::Result<Infallible> {
+    async fn reboot(&self) -> std::io::Result<Infallible> {
         Self::halt_process();
     }
 
-    fn halt(&self) -> std::io::Result<Infallible> {
+    async fn halt(&self) -> std::io::Result<Infallible> {
         Self::halt_process();
     }
 }

@@ -143,7 +143,10 @@ pub trait ConnectionExt {
     ) -> impl Future<Output = anyhow::Result<Result<Vec<LogRecord>, Error>>>;
 
     /// Enters the specific milestone.
-    fn enter_milestone(&mut self, name: &str) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
+    fn enter_milestone(
+        &mut self,
+        name: &str,
+    ) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 }
 impl ConnectionExt for super::Connection {
     async fn sideload_service(
