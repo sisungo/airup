@@ -3,13 +3,14 @@
 pub mod early_boot;
 mod reboot;
 
-use crate::app;
+use crate::app::{self, airupd};
 use ahash::AHashSet;
 use airup_sdk::{
     files::{
         milestone::{Item, Kind},
         Milestone,
     },
+    system::EnteredMilestone,
     Error,
 };
 use airupfx::prelude::*;
@@ -22,7 +23,7 @@ use std::sync::{
 #[derive(Debug, Default)]
 pub struct Manager {
     is_booting: AtomicBool,
-    booted_since: RwLock<Option<i64>>,
+    stack: RwLock<Vec<EnteredMilestone>>,
 }
 impl Manager {
     /// Creates a new [`Manager`] instance.
@@ -51,7 +52,6 @@ impl crate::app::Airupd {
 
             self.enter_milestone(name).await.ok();
 
-            *self.milestones.booted_since.write().unwrap() = Some(airupfx::time::timestamp_ms());
             self.milestones
                 .is_booting
                 .store(false, atomic::Ordering::Relaxed);
@@ -63,9 +63,9 @@ impl crate::app::Airupd {
         self.milestones.is_booting.load(atomic::Ordering::Relaxed)
     }
 
-    /// Returns a timestamp of boot completion.
-    pub fn booted_since(&self) -> Option<i64> {
-        *self.milestones.booted_since.read().unwrap()
+    /// Queries the milestone stack.
+    pub fn query_milestone_stack(&self) -> Vec<EnteredMilestone> {
+        self.milestones.stack.read().unwrap().clone()
     }
 }
 
@@ -91,6 +91,7 @@ fn enter_milestone(name: String, hist: &mut AHashSet<String>) -> BoxFuture<'_, R
         }
 
         tracing::info!(target: "console", "Entering milestone {}", def.display_name());
+        let begin_timestamp = airupfx::time::timestamp_ms();
 
         // Enters dependency milestones
         for dep in def.manifest.milestone.dependencies.iter() {
@@ -103,6 +104,15 @@ fn enter_milestone(name: String, hist: &mut AHashSet<String>) -> BoxFuture<'_, R
 
         // Starts services
         exec_milestone(&def).await;
+
+        // Record the milestone as entered
+        let finish_timestamp = airupfx::time::timestamp_ms();
+        let record = EnteredMilestone {
+            name: name.clone(),
+            begin_timestamp,
+            finish_timestamp,
+        };
+        airupd().milestones.stack.write().unwrap().push(record);
 
         Ok(())
     })
@@ -222,7 +232,7 @@ async fn display_name(name: &str) -> String {
         .query_service(name)
         .await
         .map(|x| x.definition.display_name().into())
-        .unwrap_or_else(|_| name.into())
+        .unwrap_or_else(|_| format!("`{name}`"))
 }
 
 pub async fn run_wait(ace: &Ace, cmd: &str) -> anyhow::Result<()> {

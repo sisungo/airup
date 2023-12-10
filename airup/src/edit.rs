@@ -20,7 +20,6 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         } else {
             Err(anyhow!("file suffix must be specified to edit"))
         }
-        
     }
 }
 

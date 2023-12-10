@@ -24,6 +24,7 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     methods.insert("system.list_services", list_services);
     methods.insert("system.use_logger", use_logger);
     methods.insert("system.tail_logs", tail_logs);
+    methods.insert("system.enter_milestone", enter_milestone);
     methods.insert("system.poweroff", poweroff);
     methods.insert("system.reboot", reboot);
     methods.insert("system.halt", halt);
@@ -150,6 +151,14 @@ fn tail_logs(_: Arc<SessionContext>, req: Request) -> MethodFuture {
             .await
             .map_err(airup_sdk::Error::custom)?;
         ok(queried)
+    })
+}
+
+fn enter_milestone(_: Arc<SessionContext>, req: Request) -> MethodFuture {
+    Box::pin(async move {
+        let name: String = req.extract_params()?;
+        airupd().enter_milestone(name).await?;
+        ok_null()
     })
 }
 

@@ -49,11 +49,20 @@ pub enum Status {
     Stopped,
 }
 
+/// Item of an log record
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogRecord {
     pub timestamp: i64,
     pub module: String,
     pub message: String,
+}
+
+/// Information of an entered milestone.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnteredMilestone {
+    pub name: String,
+    pub begin_timestamp: i64,
+    pub finish_timestamp: i64,
 }
 
 pub trait ConnectionExt {
@@ -132,6 +141,9 @@ pub trait ConnectionExt {
         subject: &str,
         n: usize,
     ) -> impl Future<Output = anyhow::Result<Result<Vec<LogRecord>, Error>>>;
+
+    /// Enters the specific milestone.
+    fn enter_milestone(&mut self, name: &str) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 }
 impl ConnectionExt for super::Connection {
     async fn sideload_service(
@@ -205,5 +217,9 @@ impl ConnectionExt for super::Connection {
         n: usize,
     ) -> anyhow::Result<Result<Vec<LogRecord>, Error>> {
         self.invoke("system.tail_logs", (subject, n)).await
+    }
+
+    async fn enter_milestone(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
+        self.invoke("system.enter_milestone", name).await
     }
 }

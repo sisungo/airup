@@ -51,10 +51,14 @@ impl Airupd {
 
     /// Queries information about the whole system.
     pub async fn query_system(&self) -> QuerySystem {
+        let booted_since = self
+            .query_milestone_stack()
+            .last()
+            .map(|x| x.finish_timestamp);
         QuerySystem {
             status: Status::Active,
             boot_timestamp: self.boot_timestamp,
-            booted_since: self.booted_since(),
+            booted_since,
             is_booting: self.is_booting(),
             hostname: airupfx::env::host_name(),
             services: self.supervisors.list().await,
