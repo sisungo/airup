@@ -104,6 +104,23 @@ impl TaskHelper {
     }
 }
 
+pub struct Empty;
+impl TaskHandle for Empty {
+    fn task_class(&self) -> &'static str {
+        "Empty"
+    }
+    
+    fn task_name(&self) -> &'static str {
+        "Empty"
+    }
+
+    fn send_interrupt(&self) {}
+
+    fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>> {
+        Box::pin(async { Ok(TaskFeedback::Nothing(())) })
+    }
+}
+
 /// Returns a pair of [`TaskHelper`] and [`TaskHelperHandle`].
 pub fn task_helper() -> (TaskHelperHandle, TaskHelper) {
     let (tx, rx) = watch::channel(false);

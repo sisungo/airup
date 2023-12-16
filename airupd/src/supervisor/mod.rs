@@ -277,10 +277,10 @@ impl Supervisor {
                 chan.send(self.query().await).ok();
             }
             Request::Start(chan) => {
-                chan.send(self.user_start_service()).ok();
+                chan.send(self.user_start_service().await).ok();
             }
             Request::Stop(chan) => {
-                chan.send(self.user_stop_service()).ok();
+                chan.send(self.user_stop_service().await).ok();
             }
             Request::Reload(chan) => {
                 chan.send(self.current_task.reload_service(self.context.clone()))
@@ -307,7 +307,7 @@ impl Supervisor {
                         "StartService" => chan.send(Ok(task.clone())).ok(),
                         _ => chan.send(Err(Error::TaskExists)).ok(),
                     },
-                    None => match self.user_start_service() {
+                    None => match self.user_start_service().await {
                         Ok(handle) => chan.send(Ok(handle)).ok(),
                         Err(err) => chan.send(Err(err)).ok(),
                     },
@@ -345,7 +345,18 @@ impl Supervisor {
     /// Called when the user attempted to start the service.
     ///
     /// This resets the retry counter, then returns the just-started "StartService" task if task creation succeeded.
-    fn user_start_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+    async fn user_start_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        let would_interrupt = self
+            .current_task
+            .0
+            .as_ref()
+            .map(|x| x.task_class() == "StartService" && x.task_name() == "CleanupService")
+            .unwrap_or_default();
+        if would_interrupt {
+            let task = self.current_task.0.take().unwrap();
+            task.send_interrupt();
+            task.wait().await.ok();
+        }
         self.context.retry.reset();
         self.current_task.start_service(self.context.clone())
     }
@@ -353,7 +364,19 @@ impl Supervisor {
     /// Called when the user attempted to stop the service.
     ///
     /// This disables retrying, then returns the just-started "StopService" task if task creation succeeded.
-    fn user_stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+    async fn user_stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        let would_interrupt = self
+            .current_task
+            .0
+            .as_ref()
+            .map(|x| x.task_class() == "StartService" && x.task_name() == "CleanupService")
+            .unwrap_or_default();
+        if would_interrupt {
+            let task = self.current_task.0.take().unwrap();
+            task.send_interrupt();
+            task.wait().await.ok();
+            return Ok(Arc::new(task::Empty));
+        }
         self.context.retry.disable();
         self.current_task.stop_service(self.context.clone())
     }

@@ -21,18 +21,6 @@ pub struct Cmdline {
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = super::connect().await?;
 
-    let queried = conn.query_service(&cmdline.service).await?;
-    let would_interrupt = queried
-        .map(|x| {
-            x.task_name.as_deref() == Some("CleanupService")
-                && x.task_class.as_deref() == Some("StartService")
-        })
-        .unwrap_or_default();
-
-    if would_interrupt {
-        conn.interrupt_service_task(&cmdline.service).await?.ok();
-    }
-
     if let Some(path) = &cmdline.sideload {
         let service = Service::read_merge(&[path])
             .await
