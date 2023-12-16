@@ -4,7 +4,7 @@ use super::*;
 use crate::supervisor::SupervisorContext;
 use airup_sdk::{files::Service, Error};
 use airupfx::{ace::CommandExitError, prelude::*, process::Wait};
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 #[derive(Debug)]
 pub struct CleanupServiceHandle {
@@ -71,6 +71,10 @@ impl CleanupService {
     async fn run(&mut self) -> Result<(), Error> {
         let ace = super::ace(&self.context).await?;
 
+        self.helper.would_interrupt(async {
+            tokio::time::sleep(Duration::from_millis(self.context.service.retry.delay)).await;
+        }).await?;
+
         cleanup_service(
             &ace,
             &self.context.service,
@@ -80,9 +84,13 @@ impl CleanupService {
         .ok();
 
         if self.retry {
-            super::StartServiceHandle::new(self.context.clone())
-                .wait()
-                .await?;
+            let handle = super::StartServiceHandle::new(self.context.clone());
+            tokio::select! {
+                _ = handle.wait() => {},
+                _ = self.helper.interrupt_flag.wait_for(|x| *x) => {
+                    handle.send_interrupt();
+                },
+            };
         } else if self.context.retry.enabled() && self.context.service.retry.successful_exit {
             self.context
                 .last_error

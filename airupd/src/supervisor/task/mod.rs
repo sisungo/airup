@@ -1,17 +1,16 @@
 //! Tasks of the Airup supervisor.
 
-mod cleanup_service;
+mod cleanup;
 pub mod feedback;
-mod reload_service;
-mod start_service;
-mod stop_service;
+mod reload;
+mod start;
+mod stop;
 
-pub use cleanup_service::{cleanup_service, CleanupServiceHandle};
+pub use cleanup::{cleanup_service, CleanupServiceHandle};
 pub use feedback::TaskFeedback;
-pub use reload_service::ReloadServiceHandle;
-pub use start_service::StartServiceHandle;
-pub use stop_service::StopServiceHandle;
-use tokio_util::sync::CancellationToken;
+pub use reload::ReloadServiceHandle;
+pub use start::StartServiceHandle;
+pub use stop::StopServiceHandle;
 
 use super::SupervisorContext;
 use airup_sdk::Error;
@@ -55,7 +54,7 @@ impl TaskHandle for EmptyTaskHandle {
 /// A helper type for implementing [`TaskHandle`].
 #[derive(Debug)]
 pub struct TaskHelperHandle {
-    cancellation_token: CancellationToken,
+    interrupt_flag: watch::Sender<bool>,
     done: watch::Receiver<Option<Result<TaskFeedback, Error>>>,
 }
 impl TaskHandle for TaskHelperHandle {
@@ -64,7 +63,7 @@ impl TaskHandle for TaskHelperHandle {
     }
 
     fn send_interrupt(&self) {
-        self.cancellation_token.cancel();
+        self.interrupt_flag.send(true).ok();
     }
 
     fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>> {
@@ -82,22 +81,23 @@ impl TaskHandle for TaskHelperHandle {
 /// A helper type for implementing [`TaskHandle`], which acts as backend type of [`TaskHelperHandle`].
 #[derive(Debug)]
 pub struct TaskHelper {
-    cancellation_token: CancellationToken,
+    interrupt_flag: watch::Receiver<bool>,
     done: watch::Sender<Option<Result<TaskFeedback, Error>>>,
 }
 impl TaskHelper {
     /// Executes a [`Future`] in an interruptable scope. If this task is interrupted, returns `Err(Error::TaskInterrupted)`,
     /// otherwise returns `Ok(_)`.
     pub async fn would_interrupt<T>(&self, future: impl Future<Output = T>) -> Result<T, Error> {
+        let mut rx = self.interrupt_flag.clone();
         tokio::select! {
             val = future => Ok(val),
-            _ = self.cancellation_token.cancelled() => Err(Error::TaskInterrupted),
+            _ = rx.wait_for(|x| *x) => Err(Error::TaskInterrupted),
         }
     }
 
     /// If this task is interrupted, returns `Err(Error::TaskInterrupted)`, otherwise returns `Ok(_)`.
     pub fn interruptable_point(&self) -> Result<(), Error> {
-        match self.cancellation_token.is_cancelled() {
+        match *self.interrupt_flag.borrow() {
             true => Err(Error::TaskInterrupted),
             false => Ok(()),
         }
@@ -111,15 +111,15 @@ impl TaskHelper {
 
 /// Returns a pair of [`TaskHelper`] and [`TaskHelperHandle`].
 pub fn task_helper() -> (TaskHelperHandle, TaskHelper) {
-    let cancellation_token = CancellationToken::new();
+    let (tx, rx) = watch::channel(false);
     let (done_tx, done_rx) = watch::channel(None);
 
     let helper = TaskHelper {
-        cancellation_token: cancellation_token.clone(),
+        interrupt_flag: rx,
         done: done_tx,
     };
     let handle = TaskHelperHandle {
-        cancellation_token,
+        interrupt_flag: tx,
         done: done_rx,
     };
 
