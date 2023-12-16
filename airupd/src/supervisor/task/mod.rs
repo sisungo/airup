@@ -20,8 +20,11 @@ use tokio::sync::watch;
 
 /// Representation of handle to a task.
 pub trait TaskHandle: Send + Sync + 'static {
-    /// Returns type name of the task.
-    fn task_type(&self) -> &'static str;
+    /// Returns class of the task.
+    fn task_class(&self) -> &'static str;
+
+    /// Returns name of the task.
+    fn task_name(&self) -> &'static str;
 
     /// Sends an interruption request to the task.
     ///
@@ -39,18 +42,6 @@ pub trait TaskHandle: Send + Sync + 'static {
     fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>>;
 }
 
-/// An [`TaskHandle`] implementation that immediately successfully completes.
-pub struct EmptyTaskHandle;
-impl TaskHandle for EmptyTaskHandle {
-    fn task_type(&self) -> &'static str {
-        "Empty"
-    }
-    fn send_interrupt(&self) {}
-    fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>> {
-        Box::pin(async { Ok(().into()) })
-    }
-}
-
 /// A helper type for implementing [`TaskHandle`].
 #[derive(Debug)]
 pub struct TaskHelperHandle {
@@ -58,8 +49,12 @@ pub struct TaskHelperHandle {
     done: watch::Receiver<Option<Result<TaskFeedback, Error>>>,
 }
 impl TaskHandle for TaskHelperHandle {
-    fn task_type(&self) -> &'static str {
-        panic!("TaskHelperHandle::task_type should NOT be called")
+    fn task_class(&self) -> &'static str {
+        panic!("TaskHelperHandle::task_class should be never called")
+    }
+
+    fn task_name(&self) -> &'static str {
+        panic!("TaskHelperHandle::task_name should be never called")
     }
 
     fn send_interrupt(&self) {

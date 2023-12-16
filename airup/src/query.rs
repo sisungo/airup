@@ -140,7 +140,7 @@ impl PrintedStatusKind {
         if query_service.last_error.is_some() {
             result = Self::Failed;
         }
-        if let Some(x) = query_service.task.as_deref() {
+        if let Some(x) = query_service.task_class.as_deref() {
             match x {
                 "StartService" => result = Self::Starting,
                 "StopService" => result = Self::Stopping,

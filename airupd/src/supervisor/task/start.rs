@@ -20,7 +20,11 @@ impl StartServiceHandle {
     }
 }
 impl TaskHandle for StartServiceHandle {
-    fn task_type(&self) -> &'static str {
+    fn task_class(&self) -> &'static str {
+        "StartService"
+    }
+
+    fn task_name(&self) -> &'static str {
         "StartService"
     }
 

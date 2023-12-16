@@ -4,17 +4,25 @@ use super::*;
 use crate::supervisor::SupervisorContext;
 use airup_sdk::{files::Service, Error};
 use airupfx::{ace::CommandExitError, prelude::*, process::Wait};
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{
+        atomic::{self, AtomicBool},
+        Arc,
+    },
+    time::Duration,
+};
 
 #[derive(Debug)]
 pub struct CleanupServiceHandle {
     helper: TaskHelperHandle,
+    is_retrying: Arc<AtomicBool>,
     retry: bool,
 }
 impl CleanupServiceHandle {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(context: Arc<SupervisorContext>, wait: Wait) -> Arc<dyn TaskHandle> {
         let (handle, helper) = task_helper();
+        let is_retrying: Arc<AtomicBool> = Arc::default();
 
         let retry_cond1 = context.service.retry.successful_exit || !wait.is_success();
         let retry_cond2 = context
@@ -25,6 +33,7 @@ impl CleanupServiceHandle {
         let cleanup_service = CleanupService {
             helper,
             context,
+            is_retrying: is_retrying.clone(),
             retry,
             wait,
         };
@@ -32,15 +41,24 @@ impl CleanupServiceHandle {
 
         Arc::new(Self {
             helper: handle,
+            is_retrying,
             retry,
         })
     }
 }
 impl TaskHandle for CleanupServiceHandle {
-    fn task_type(&self) -> &'static str {
+    fn task_class(&self) -> &'static str {
         match self.retry {
             true => "StartService",
             false => "StopService",
+        }
+    }
+
+    fn task_name(&self) -> &'static str {
+        if self.is_retrying.load(atomic::Ordering::SeqCst) {
+            "StartService"
+        } else {
+            "CleanupService"
         }
     }
 
@@ -57,6 +75,7 @@ impl TaskHandle for CleanupServiceHandle {
 struct CleanupService {
     helper: TaskHelper,
     context: Arc<SupervisorContext>,
+    is_retrying: Arc<AtomicBool>,
     retry: bool,
     wait: Wait,
 }
@@ -71,9 +90,11 @@ impl CleanupService {
     async fn run(&mut self) -> Result<(), Error> {
         let ace = super::ace(&self.context).await?;
 
-        self.helper.would_interrupt(async {
-            tokio::time::sleep(Duration::from_millis(self.context.service.retry.delay)).await;
-        }).await?;
+        self.helper
+            .would_interrupt(async {
+                tokio::time::sleep(Duration::from_millis(self.context.service.retry.delay)).await;
+            })
+            .await?;
 
         cleanup_service(
             &ace,
@@ -84,6 +105,7 @@ impl CleanupService {
         .ok();
 
         if self.retry {
+            self.is_retrying.store(true, atomic::Ordering::SeqCst);
             let handle = super::StartServiceHandle::new(self.context.clone());
             tokio::select! {
                 _ = handle.wait() => {},

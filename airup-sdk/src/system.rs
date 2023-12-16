@@ -9,7 +9,8 @@ pub struct QueryService {
     pub status: Status,
     pub status_since: Option<i64>,
     pub pid: Option<i64>,
-    pub task: Option<String>,
+    pub task_class: Option<String>,
+    pub task_name: Option<String>,
     pub last_error: Option<Error>,
     pub definition: Service,
 }
@@ -19,7 +20,8 @@ impl QueryService {
             status: Status::Stopped,
             status_since: None,
             pid: None,
-            task: None,
+            task_class: None,
+            task_name: None,
             last_error: None,
             definition,
         }
@@ -109,6 +111,12 @@ pub trait ConnectionExt {
         name: &str,
     ) -> impl Future<Output = anyhow::Result<Result<QueryService, Error>>>;
 
+    /// Interrupts current task running in specific service's supervisor.
+    fn interrupt_service_task(
+        &mut self,
+        name: &str,
+    ) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
+
     /// Queries information about the whole system.
     fn query_system(&mut self) -> impl Future<Output = anyhow::Result<Result<QuerySystem, Error>>>;
 
@@ -180,6 +188,10 @@ impl ConnectionExt for super::Connection {
 
     async fn query_service(&mut self, name: &str) -> anyhow::Result<Result<QueryService, Error>> {
         self.invoke("system.query_service", name).await
+    }
+
+    async fn interrupt_service_task(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
+        self.invoke("system.interrupt_service_task", name).await
     }
 
     async fn list_services(&mut self) -> anyhow::Result<Result<Vec<String>, Error>> {

@@ -139,7 +139,7 @@ impl Manager {
             .any(|x| x);
 
         let removable = queried.status == Status::Stopped
-            && queried.task.is_none()
+            && queried.task_class.is_none()
             && (permissive || (queried.last_error.is_none() && !is_provider));
 
         if removable {
@@ -152,7 +152,7 @@ impl Manager {
             Ok(())
         } else if queried.status != Status::Stopped {
             Err(Error::UnitStarted)
-        } else if queried.task.is_some() {
+        } else if queried.task_class.is_some() {
             Err(Error::TaskExists)
         } else {
             Err(Error::Internal {
@@ -303,7 +303,7 @@ impl Supervisor {
             }
             Request::MakeActive(chan) => {
                 match &self.current_task.0 {
-                    Some(task) => match task.task_type() {
+                    Some(task) => match task.task_class() {
                         "StartService" => chan.send(Ok(task.clone())).ok(),
                         _ => chan.send(Err(Error::TaskExists)).ok(),
                     },
@@ -370,15 +370,13 @@ impl Supervisor {
 
     /// Queries information about the supervisor.
     async fn query(&self) -> QueryService {
+        let task = self.current_task.0.as_ref();
         QueryService {
             status: self.context.status.get(),
             status_since: Some(self.context.status.timestamp()),
             pid: self.context.pid().await.map(|x| x as _),
-            task: self
-                .current_task
-                .0
-                .as_ref()
-                .map(|x| x.task_type().to_owned()),
+            task_class: task.map(|x| x.task_class().to_owned()),
+            task_name: task.map(|x| x.task_name().to_owned()),
             last_error: self.context.last_error.get(),
             definition: self.context.service.clone(),
         }

@@ -20,7 +20,11 @@ impl StopServiceHandle {
     }
 }
 impl TaskHandle for StopServiceHandle {
-    fn task_type(&self) -> &'static str {
+    fn task_class(&self) -> &'static str {
+        "StopService"
+    }
+
+    fn task_name(&self) -> &'static str {
         "StopService"
     }
 

@@ -20,7 +20,11 @@ impl ReloadServiceHandle {
     }
 }
 impl TaskHandle for ReloadServiceHandle {
-    fn task_type(&self) -> &'static str {
+    fn task_class(&self) -> &'static str {
+        "ReloadService"
+    }
+
+    fn task_name(&self) -> &'static str {
         "ReloadService"
     }
 
