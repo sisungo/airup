@@ -27,9 +27,6 @@ pub struct Service {
     pub env: Env,
 
     #[serde(default)]
-    pub helper: Vec<Helper>,
-
-    #[serde(default)]
     pub retry: Retry,
 }
 impl Service {
@@ -268,11 +265,4 @@ pub struct Retry {
     /// Delay time of retrying the service, in milliseconds
     #[serde(default)]
     pub delay: u64,
-}
-
-/// Represents to `[[helper]]` section in a service TOML file.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct Helper {
-    pub name: String,
 }

@@ -70,7 +70,10 @@ impl Airupd {
         ignore_all([
             SIGHUP, SIGPIPE, SIGTTIN, SIGTTOU, SIGQUIT, SIGTERM, SIGUSR1, SIGUSR2,
         ]);
-        signal(SIGINT, |_| async { self.lifetime.reboot() }).ok();
+        signal(SIGINT, |_| async {
+            self.enter_milestone("ctrlaltdel".into()).await.ok();
+        })
+        .ok();
     }
 }
 
