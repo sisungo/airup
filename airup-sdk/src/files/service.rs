@@ -28,6 +28,9 @@ pub struct Service {
 
     #[serde(default)]
     pub retry: Retry,
+
+    #[serde(default)]
+    pub watchdog: Watchdog,
 }
 impl Service {
     /// Reads multiple [`Service`]'s from given paths, then merge them into a single [`Service`] instance. The first element in
@@ -146,6 +149,12 @@ pub struct Metadata {
     /// Description of the service.
     pub description: Option<String>,
 
+    /// Homepage of the service.
+    pub homepage: Option<String>,
+
+    /// Documentation of the service.
+    pub docs: Option<String>,
+
     /// List of what the service can provide.
     #[serde(default)]
     pub provides: Vec<String>,
@@ -215,6 +224,9 @@ pub struct Exec {
     /// Command to be executed after stopping the service
     pub post_stop: Option<String>,
 
+    /// Command to check health of the service
+    pub health_check: Option<String>,
+
     /// Timeout of executing commands, in milliseconds
     all_timeout: Option<u64>,
 
@@ -223,6 +235,9 @@ pub struct Exec {
 
     /// Timeout of stopping the service, in milliseconds
     stop_timeout: Option<u64>,
+
+    /// Timeout of checking health of a service, in milliseconds
+    health_check_timeout: Option<u64>,
 
     /// Timeout of reloading the service, in milliseconds
     reload_timeout: Option<u64>,
@@ -248,6 +263,13 @@ impl Exec {
             .or(self.all_timeout)
             .map(Duration::from_millis)
     }
+
+    #[inline]
+    pub fn health_check_timeout(&self) -> Option<Duration> {
+        self.health_check_timeout
+            .or(self.all_timeout)
+            .map(Duration::from_millis)
+    }
 }
 
 /// Retry conditions of a service.
@@ -258,11 +280,14 @@ pub struct Retry {
     #[serde(default)]
     pub max_attempts: i32,
 
-    /// Also retry the service on successful exits (`$? == 0`)
-    #[serde(default)]
-    pub successful_exit: bool,
-
     /// Delay time of retrying the service, in milliseconds
     #[serde(default)]
     pub delay: u64,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct Watchdog {
+    /// Also mark the service failed on successful exits (`$? == 0`)
+    #[serde(default)]
+    pub successful_exit: bool,
 }

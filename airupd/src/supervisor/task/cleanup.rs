@@ -24,7 +24,7 @@ impl CleanupServiceHandle {
         let (handle, helper) = task_helper();
         let is_retrying: Arc<AtomicBool> = Arc::default();
 
-        let retry_cond1 = context.service.retry.successful_exit || !wait.is_success();
+        let retry_cond1 = context.service.watchdog.successful_exit || !wait.is_success();
         let retry_cond2 = context
             .retry
             .check_and_mark(context.service.retry.max_attempts);
@@ -113,7 +113,7 @@ impl CleanupService {
                     handle.send_interrupt();
                 },
             };
-        } else if self.context.retry.enabled() && self.context.service.retry.successful_exit {
+        } else if self.context.retry.enabled() && self.context.service.watchdog.successful_exit {
             self.context
                 .last_error
                 .set::<Error>(CommandExitError::from_wait_force(&self.wait).into());

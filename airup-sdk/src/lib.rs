@@ -7,6 +7,7 @@ pub mod error;
 pub mod ffi;
 pub mod files;
 pub mod fs;
+pub mod info;
 pub mod ipc;
 pub mod prelude;
 pub mod system;

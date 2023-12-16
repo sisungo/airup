@@ -61,6 +61,12 @@ fn print_query_service(query_service: &QueryService) {
     if let Some(x) = &query_service.definition.service.description {
         println!("{:>14} {}", "Description:", x);
     }
+    if let Some(x) = &query_service.definition.service.homepage {
+        println!("{:>14} {}", "Homepage:", x);
+    }
+    if let Some(x) = &query_service.definition.service.docs {
+        println!("{:>14} {}", "Docs:", x);
+    }
 
     println!("{:>14} {}", "Status:", status);
 

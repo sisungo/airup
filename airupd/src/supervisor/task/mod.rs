@@ -109,7 +109,7 @@ impl TaskHandle for Empty {
     fn task_class(&self) -> &'static str {
         "Empty"
     }
-    
+
     fn task_name(&self) -> &'static str {
         "Empty"
     }
