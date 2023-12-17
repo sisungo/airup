@@ -24,8 +24,8 @@ impl TaskHandle for StartServiceHandle {
         "StartService"
     }
 
-    fn task_name(&self) -> &'static str {
-        "StartService"
+    fn is_important(&self) -> bool {
+        true
     }
 
     fn send_interrupt(&self) {

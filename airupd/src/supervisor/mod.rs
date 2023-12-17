@@ -357,7 +357,7 @@ impl Supervisor {
             .current_task
             .0
             .as_ref()
-            .map(|x| x.task_class() == "StartService" && x.task_name() == "CleanupService")
+            .map(|x| !x.is_important())
             .unwrap_or_default();
         if would_interrupt {
             let task = self.current_task.0.take().unwrap();
@@ -376,7 +376,7 @@ impl Supervisor {
             .current_task
             .0
             .as_ref()
-            .map(|x| x.task_class() == "StartService" && x.task_name() == "CleanupService")
+            .map(|x| !x.is_important())
             .unwrap_or_default();
         if would_interrupt {
             let task = self.current_task.0.take().unwrap();
@@ -406,7 +406,6 @@ impl Supervisor {
             status_since: Some(self.context.status.timestamp()),
             pid: self.context.pid().await.map(|x| x as _),
             task_class: task.map(|x| x.task_class().to_owned()),
-            task_name: task.map(|x| x.task_name().to_owned()),
             last_error: self.context.last_error.get(),
             definition: self.context.service.clone(),
         }

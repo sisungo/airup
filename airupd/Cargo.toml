@@ -9,8 +9,8 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["simple_logger"]
-simple_logger = ["rev_lines"]
+default = ["fallback_logger"]
+fallback_logger = ["rev_lines"]
 
 [dependencies]
 ahash = "0.8"

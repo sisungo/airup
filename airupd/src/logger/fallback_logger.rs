@@ -1,4 +1,7 @@
 //! A simple logger.
+//!
+//! This has some limitations and has bad performance. Being designed as an "fallback choice", the implementation aims to be
+//! small.
 
 use super::Logger;
 use airup_sdk::system::LogRecord;
@@ -6,8 +9,8 @@ use rev_lines::RevLines;
 use tokio::io::AsyncWriteExt;
 
 #[derive(Debug, Default)]
-pub struct SimpleLogger {}
-impl SimpleLogger {
+pub struct FallbackLogger {}
+impl FallbackLogger {
     pub fn new() -> Self {
         Self::default()
     }
@@ -29,7 +32,7 @@ impl SimpleLogger {
     }
 }
 #[async_trait::async_trait]
-impl Logger for SimpleLogger {
+impl Logger for FallbackLogger {
     async fn write(&mut self, subject: &str, module: &str, msg: &[u8]) -> anyhow::Result<()> {
         let mut appender = self.open_subject_append(subject).await?;
         let timestamp = airupfx::time::timestamp_ms();

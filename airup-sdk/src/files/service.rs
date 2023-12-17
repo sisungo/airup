@@ -65,22 +65,24 @@ impl Service {
 
     /// Returns `Ok(())` if the service is correct, otherwise returns `Err(_)`.
     pub fn validate(&self) -> Result<(), ReadError> {
-        if self.env.user.is_some() && self.env.uid.is_some() {
-            return Err("field `user` must not be set while `uid` is set".into());
+        let env_user_conflict =
+            self.env.login.is_some() && (self.env.uid.is_some() || self.env.gid.is_some());
+        let oneshot_pid_file =
+            self.service.pid_file.is_some() && matches!(self.service.kind, Kind::Oneshot);
+        let forking_no_pid_file =
+            self.service.pid_file.is_none() && matches!(self.service.kind, Kind::Forking);
+
+        if env_user_conflict {
+            return Err("fields `env.user` conflicts with either `env.uid` or `env.gid`".into());
+        }
+        if oneshot_pid_file {
+            return Err("field `pid_file` must not be set with `kind=\"oneshot\"`".into());
+        }
+        if forking_no_pid_file {
+            return Err("field `pid_file` must be set with `kind=\"forking\"`".into());
         }
 
-        match &self.service.pid_file {
-            Some(_) => match &self.service.kind {
-                Kind::Oneshot => {
-                    Err("field `pid_file` must not be set with `kind=\"oneshot\"`".into())
-                }
-                _ => Ok(()),
-            },
-            None => match &self.service.kind {
-                Kind::Forking => Err("field `pid_file` must be set with `kind=\"forking\"`".into()),
-                _ => Ok(()),
-            },
-        }
+        Ok(())
     }
 
     /// Returns the name to display for this service.
@@ -92,8 +94,8 @@ impl Service {
 /// Executation environment of a service.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Env {
-    /// User to execute for the service.
-    pub user: Option<String>,
+    /// Login user to execute for the service.
+    pub login: Option<String>,
 
     /// UID to execute for the service.
     pub uid: Option<u32>,
@@ -292,9 +294,18 @@ pub struct Watchdog {
     /// Kind of the watchdog to use.
     pub kind: Option<WatchdogKind>,
 
+    /// Time interval of polling health check command.
+    #[serde(default = "Watchdog::default_health_check_interval")]
+    pub health_check_interval: u64,
+
     /// Also mark the service failed on successful exits (`$? == 0`)
     #[serde(default)]
     pub successful_exit: bool,
+}
+impl Watchdog {
+    fn default_health_check_interval() -> u64 {
+        5000
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

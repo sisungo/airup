@@ -1,27 +1,27 @@
 use super::*;
 use crate::supervisor::SupervisorContext;
-use airup_sdk::{prelude::*, Error};
+use airup_sdk::Error;
 use airupfx::prelude::*;
 use std::sync::Arc;
 
 #[derive(Debug)]
-pub struct ReloadServiceHandle {
+pub struct HealthCheckHandle {
     helper: TaskHelperHandle,
 }
-impl ReloadServiceHandle {
+impl HealthCheckHandle {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(context: Arc<SupervisorContext>) -> Arc<dyn TaskHandle> {
+    pub fn new(_context: Arc<SupervisorContext>) -> Arc<dyn TaskHandle> {
         let (handle, helper) = task_helper();
 
-        let reload_service = ReloadService { helper, context };
+        let reload_service = HealthCheck { helper, _context };
         reload_service.start();
 
         Arc::new(Self { helper: handle })
     }
 }
-impl TaskHandle for ReloadServiceHandle {
+impl TaskHandle for HealthCheckHandle {
     fn task_class(&self) -> &'static str {
-        "ReloadService"
+        "HealthCheck"
     }
 
     fn is_important(&self) -> bool {
@@ -38,11 +38,11 @@ impl TaskHandle for ReloadServiceHandle {
 }
 
 #[derive(Debug)]
-struct ReloadService {
+struct HealthCheck {
     helper: TaskHelper,
-    context: Arc<SupervisorContext>,
+    _context: Arc<SupervisorContext>,
 }
-impl ReloadService {
+impl HealthCheck {
     fn start(mut self) {
         tokio::spawn(async move {
             let val = self.run().await;
@@ -51,19 +51,6 @@ impl ReloadService {
     }
 
     async fn run(&mut self) -> Result<(), Error> {
-        if self.context.status.get() != Status::Active {
-            return Err(Error::UnitNotStarted);
-        }
-
-        let service = &self.context.service;
-
-        let ace = super::ace(&self.context).await?;
-
-        if let Some(reload_cmd) = &service.exec.reload {
-            ace.run_wait_timeout(reload_cmd, service.exec.reload_timeout())
-                .await??;
-        }
-
         Ok(())
     }
 }

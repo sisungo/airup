@@ -1,7 +1,7 @@
 //! Logger interface of the Airup supervisor.
 
-#[cfg(feature = "simple_logger")]
-pub mod simple_logger;
+#[cfg(feature = "fallback_logger")]
+pub mod fallback_logger;
 
 use airup_sdk::system::LogRecord;
 use anyhow::anyhow;
@@ -41,10 +41,10 @@ impl Manager {
     ) -> Result<Box<dyn Logger>, airup_sdk::Error> {
         let name = name.strip_suffix(".airx").unwrap_or(name);
 
-        #[cfg(feature = "simple_logger")]
-        if name == "simple_logger" {
+        #[cfg(feature = "fallback_logger")]
+        if name == "fallback_logger" {
             return Ok(self
-                .set_logger(Box::new(simple_logger::SimpleLogger::new()))
+                .set_logger(Box::new(fallback_logger::FallbackLogger::new()))
                 .await);
         }
 

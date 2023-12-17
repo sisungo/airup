@@ -12,7 +12,6 @@ pub struct QueryService {
     pub status_since: Option<i64>,
     pub pid: Option<i64>,
     pub task_class: Option<String>,
-    pub task_name: Option<String>,
     pub last_error: Option<Error>,
     pub definition: Service,
 }
@@ -23,7 +22,6 @@ impl QueryService {
             status_since: None,
             pid: None,
             task_class: None,
-            task_name: None,
             last_error: None,
             definition,
         }

@@ -5,12 +5,14 @@ pub mod feedback;
 mod reload;
 mod start;
 mod stop;
+mod health_check;
 
 pub use cleanup::{cleanup_service, CleanupServiceHandle};
 pub use feedback::TaskFeedback;
 pub use reload::ReloadServiceHandle;
 pub use start::StartServiceHandle;
 pub use stop::StopServiceHandle;
+pub use health_check::HealthCheckHandle;
 
 use super::SupervisorContext;
 use airup_sdk::Error;
@@ -23,8 +25,8 @@ pub trait TaskHandle: Send + Sync + 'static {
     /// Returns class of the task.
     fn task_class(&self) -> &'static str;
 
-    /// Returns name of the task.
-    fn task_name(&self) -> &'static str;
+    /// Returns `true` if the task is important.
+    fn is_important(&self) -> bool;
 
     /// Sends an interruption request to the task.
     ///
@@ -53,8 +55,8 @@ impl TaskHandle for TaskHelperHandle {
         panic!("TaskHelperHandle::task_class should be never called")
     }
 
-    fn task_name(&self) -> &'static str {
-        panic!("TaskHelperHandle::task_name should be never called")
+    fn is_important(&self) -> bool {
+        panic!("TaskHelperHandle::is_important should be never called")
     }
 
     fn send_interrupt(&self) {
@@ -110,8 +112,8 @@ impl TaskHandle for Empty {
         "Empty"
     }
 
-    fn task_name(&self) -> &'static str {
-        "Empty"
+    fn is_important(&self) -> bool {
+        false
     }
 
     fn send_interrupt(&self) {}
@@ -154,7 +156,7 @@ pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
         };
 
         result
-            .login(env.user.as_deref())?
+            .login(env.login.as_deref())?
             .uid(env.uid)
             .gid(env.gid)
             .stdout(to_ace(env.stdout.clone()))
