@@ -1,3 +1,5 @@
+//! Error handling
+
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use thiserror::Error;

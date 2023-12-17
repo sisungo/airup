@@ -1,3 +1,5 @@
+//! Filesystem utilities.
+
 use std::{
     borrow::Cow,
     collections::HashSet,

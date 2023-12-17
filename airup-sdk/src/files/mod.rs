@@ -1,3 +1,5 @@
+//! Definitions of Airup's file formats.
+
 pub mod milestone;
 pub mod service;
 

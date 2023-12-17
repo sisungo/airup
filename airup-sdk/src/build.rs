@@ -1,3 +1,5 @@
+//! Information about an Airup build.
+
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, sync::OnceLock};
 

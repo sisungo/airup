@@ -1,3 +1,5 @@
+//! `info.*` APIs.
+
 use crate::{build::BuildManifest, Connection, Error};
 use std::future::Future;
 

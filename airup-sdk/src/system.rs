@@ -1,3 +1,5 @@
+//! `system.*` APIs.
+
 use super::Error;
 use crate::files::Service;
 use serde::{Deserialize, Serialize};

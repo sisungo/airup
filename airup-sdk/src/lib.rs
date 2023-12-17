@@ -1,6 +1,5 @@
 //! # The Airup SDK
-//! The Airup SDK provides interface to deal with Airup elements, for example, interacting with the daemon, `airupd`. This
-//! cargo project contains code for the SDK in both `Rust` and `C` programming languages.
+//! The Airup SDK provides interface to deal with Airup elements, for example, interacting with the daemon, `airupd`.
 
 pub mod build;
 pub mod error;
