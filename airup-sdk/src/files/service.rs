@@ -68,6 +68,7 @@ impl Service {
         if self.env.user.is_some() && self.env.uid.is_some() {
             return Err("field `user` must not be set while `uid` is set".into());
         }
+
         match &self.service.pid_file {
             Some(_) => match &self.service.kind {
                 Kind::Oneshot => {
@@ -286,8 +287,18 @@ pub struct Retry {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct Watchdog {
+    /// Kind of the watchdog to use.
+    pub kind: Option<WatchdogKind>,
+
     /// Also mark the service failed on successful exits (`$? == 0`)
     #[serde(default)]
     pub successful_exit: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum WatchdogKind {
+    /// Make the supervisor poll to execute the health check command.
+    HealthCheck,
 }

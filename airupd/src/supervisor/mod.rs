@@ -30,6 +30,13 @@ macro_rules! supervisor_req {
         }
     };
 }
+macro_rules! start_task {
+    ($name:ident, $type:ty) => {
+        fn $name(&mut self, context: Arc<SupervisorContext>) -> Result<Arc<dyn TaskHandle>, Error> {
+            self._start_task(context, <$type>::new)
+        }
+    };
+}
 
 /// A manager of Airup supervisors.
 #[derive(Debug, Default)]
@@ -431,33 +438,16 @@ impl CurrentTask {
         Some(val)
     }
 
+    start_task!(start_service, StartServiceHandle);
+    start_task!(stop_service, StopServiceHandle);
+    start_task!(reload_service, ReloadServiceHandle);
+
     fn cleanup_service(
         &mut self,
         context: Arc<SupervisorContext>,
         wait: Wait,
     ) -> Result<Arc<dyn TaskHandle>, Error> {
         self._start_task(context, |ctx| CleanupServiceHandle::new(ctx, wait))
-    }
-
-    fn start_service(
-        &mut self,
-        context: Arc<SupervisorContext>,
-    ) -> Result<Arc<dyn TaskHandle>, Error> {
-        self._start_task(context, StartServiceHandle::new)
-    }
-
-    fn stop_service(
-        &mut self,
-        context: Arc<SupervisorContext>,
-    ) -> Result<Arc<dyn TaskHandle>, Error> {
-        self._start_task(context, StopServiceHandle::new)
-    }
-
-    fn reload_service(
-        &mut self,
-        context: Arc<SupervisorContext>,
-    ) -> Result<Arc<dyn TaskHandle>, Error> {
-        self._start_task(context, ReloadServiceHandle::new)
     }
 
     fn _start_task<F: FnOnce(Arc<SupervisorContext>) -> Arc<dyn TaskHandle>>(

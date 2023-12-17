@@ -11,7 +11,7 @@ use crate::{
 use ahash::AHashMap;
 use airup_sdk::error::IntoApiError;
 use std::{sync::Arc, time::Duration};
-use tokio::sync::mpsc;
+use tokio::task::JoinHandle;
 
 /// The Airup Command Engine.
 #[derive(Debug, Default)]
@@ -20,7 +20,7 @@ pub struct Ace {
     pub modules: Modules,
 }
 impl Ace {
-    /// Creates a new [Ace] instance with default settings.
+    /// Creates a new [`Ace`] instance with default settings.
     pub fn new() -> Self {
         Self::default()
     }
@@ -121,7 +121,7 @@ pub enum Child {
     Async(Box<Self>),
     AlwaysSuccess(Box<Self>),
     Process(crate::process::Child),
-    Builtin(tokio::sync::Mutex<mpsc::Receiver<i32>>),
+    Builtin(tokio::sync::Mutex<JoinHandle<i32>>),
 }
 impl Child {
     /// Returns process ID of the child.
@@ -147,7 +147,9 @@ impl Child {
                     wait
                 }
                 Self::Process(proc) => proc.wait().await?,
-                Self::Builtin(rx) => Wait::new(0, builtins::wait(&mut *rx.lock().await).await),
+                Self::Builtin(builtin) => {
+                    Wait::new(0, builtins::wait(&mut *builtin.lock().await).await)
+                }
             })
         })
     }
@@ -182,7 +184,7 @@ impl Child {
                 Self::Async(child) => child.send_signal(sig).await?,
                 Self::AlwaysSuccess(child) => child.send_signal(sig).await?,
                 Self::Process(proc) => proc.send_signal(sig).await?,
-                Self::Builtin(_) => (),
+                Self::Builtin(builtin) => builtin.lock().await.abort(),
             };
 
             Ok(())
@@ -197,7 +199,7 @@ impl Child {
                 Self::Async(child) => child.kill().await?,
                 Self::AlwaysSuccess(child) => child.kill().await?,
                 Self::Process(proc) => proc.kill().await?,
-                Self::Builtin(_) => (),
+                Self::Builtin(builtin) => builtin.lock().await.abort(),
             };
 
             Ok(())

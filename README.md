@@ -3,7 +3,8 @@
 
 ![License Badge](https://img.shields.io/badge/license-MIT-blue)
 
-Airup is a modern, portable and fast implementation of daemon supervisors and the `init` daemon.
+Airup is a modern, portable and fast implementation of service supervisors, and can be used as either a standalone service
+supervisor or the `init` daemon (`pid == 1`).
 
 ## Project Status
 Maintained Versions:

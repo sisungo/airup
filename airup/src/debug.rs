@@ -25,7 +25,7 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     }
 
     if let Some(logger) = cmdline.use_logger {
-        if logger == "" {
+        if logger.is_empty() {
             conn.use_logger(None).await??;
         } else {
             conn.use_logger(Some(&logger)).await??;

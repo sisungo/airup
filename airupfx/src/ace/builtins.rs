@@ -1,10 +1,10 @@
 //! Built-in commands of ACE.
 
 use crate::{process::ExitStatus, signal::SIGTERM};
-use std::{collections::HashMap, future::Future, hash::BuildHasher};
-use tokio::sync::mpsc;
+use std::{collections::HashMap, hash::BuildHasher, time::Duration};
+use tokio::task::JoinHandle;
 
-pub type BuiltinModule = fn(args: Vec<String>) -> mpsc::Receiver<i32>;
+pub type BuiltinModule = fn(args: Vec<String>) -> JoinHandle<i32>;
 
 pub fn init<H: BuildHasher>(builtins: &mut HashMap<&'static str, BuiltinModule, H>) {
     builtins.insert("noop", noop);
@@ -12,10 +12,11 @@ pub fn init<H: BuildHasher>(builtins: &mut HashMap<&'static str, BuiltinModule, 
     builtins.insert("console.info", console_info);
     builtins.insert("console.warn", console_warn);
     builtins.insert("console.error", console_error);
+    builtins.insert("builtin.sleep", sleep);
 }
 
-pub fn console_setup(args: Vec<String>) -> mpsc::Receiver<i32> {
-    builtin_impl(async move {
+pub fn console_setup(args: Vec<String>) -> JoinHandle<i32> {
+    tokio::spawn(async move {
         let path = match args.first() {
             Some(x) => x,
             None => return 1,
@@ -27,41 +28,46 @@ pub fn console_setup(args: Vec<String>) -> mpsc::Receiver<i32> {
     })
 }
 
-pub fn console_info(args: Vec<String>) -> mpsc::Receiver<i32> {
+pub fn console_info(args: Vec<String>) -> JoinHandle<i32> {
     tracing::info!(target: "console", "{}", merge_args(&args));
-    builtin_impl(async { 0 })
+    tokio::spawn(async { 0 })
 }
 
-pub fn console_warn(args: Vec<String>) -> mpsc::Receiver<i32> {
+pub fn console_warn(args: Vec<String>) -> JoinHandle<i32> {
     tracing::warn!(target: "console", "{}", merge_args(&args));
-    builtin_impl(async { 0 })
+    tokio::spawn(async { 0 })
 }
 
-pub fn console_error(args: Vec<String>) -> mpsc::Receiver<i32> {
+pub fn console_error(args: Vec<String>) -> JoinHandle<i32> {
     tracing::error!(target: "console", "{}", merge_args(&args));
-    builtin_impl(async { 0 })
+    tokio::spawn(async { 0 })
 }
 
-pub fn noop(_: Vec<String>) -> mpsc::Receiver<i32> {
-    builtin_impl(async { 0 })
+pub fn noop(_: Vec<String>) -> JoinHandle<i32> {
+    tokio::spawn(async { 0 })
 }
 
-pub async fn wait(rx: &mut mpsc::Receiver<i32>) -> ExitStatus {
-    (rx.recv().await).map_or(ExitStatus::Signaled(SIGTERM), |code| {
-        ExitStatus::Exited(code as _)
+pub fn sleep(args: Vec<String>) -> JoinHandle<i32> {
+    tokio::spawn(async move {
+        let duration = match args.first() {
+            Some(x) => x,
+            None => return 1,
+        };
+        let duration: u64 = match duration.parse() {
+            Ok(x) => x,
+            Err(_) => return 2,
+        };
+
+        tokio::time::sleep(Duration::from_millis(duration)).await;
+
+        0
     })
 }
 
-fn builtin_impl<F: Future<Output = i32> + Send + Sync + 'static>(future: F) -> mpsc::Receiver<i32> {
-    let (tx, rx) = mpsc::channel(1);
-    tokio::spawn(async move {
-        ret(tx, future.await).await;
-    });
-    rx
-}
-
-async fn ret(tx: mpsc::Sender<i32>, val: i32) {
-    while tx.send(val).await.is_ok() {}
+pub async fn wait(rx: &mut JoinHandle<i32>) -> ExitStatus {
+    (rx.await).map_or(ExitStatus::Signaled(SIGTERM), |code| {
+        ExitStatus::Exited(code as _)
+    })
 }
 
 fn merge_args(args: &[String]) -> String {
