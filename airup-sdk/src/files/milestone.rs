@@ -127,7 +127,7 @@ pub enum Kind {
 pub enum Item {
     Cache(String),
     Start(String),
-    RunCmd(String),
+    Run(String),
 }
 impl FromStr for Item {
     type Err = anyhow::Error;
@@ -143,7 +143,7 @@ impl FromStr for Item {
         match verb {
             "cache" => Ok(Self::Cache(entity.into())),
             "start" => Ok(Self::Start(entity.into())),
-            "run_cmd" => Ok(Self::RunCmd(entity.into())),
+            "run" => Ok(Self::Run(entity.into())),
             _ => Err(anyhow!(
                 "verb `{verb}` is not considered in milestone items"
             )),

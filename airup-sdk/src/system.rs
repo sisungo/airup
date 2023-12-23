@@ -35,6 +35,7 @@ pub struct QuerySystem {
     pub boot_timestamp: i64,
     pub booted_since: Option<i64>,
     pub is_booting: bool,
+    pub milestones: Vec<EnteredMilestone>,
     pub hostname: Option<String>,
     pub services: Vec<String>,
 }

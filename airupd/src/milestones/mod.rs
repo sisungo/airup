@@ -30,6 +30,10 @@ impl Manager {
     pub fn new() -> Self {
         Self::default()
     }
+
+    pub fn stack(&self) -> Vec<EnteredMilestone> {
+        self.stack.read().unwrap().clone()
+    }
 }
 
 impl crate::app::Airupd {
@@ -143,7 +147,7 @@ async fn exec_milestone_async(def: &Milestone) {
                     tracing::error!(target: "console", "Failed to start {}: {}", service, err)
                 }
             },
-            Item::RunCmd(cmd) => {
+            Item::Run(cmd) => {
                 if let Err(err) = ace.run(&cmd).await {
                     tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
                 }
@@ -169,7 +173,7 @@ async fn exec_milestone_serial(def: &Milestone) {
                     tracing::error!(target: "console", "Failed to start {}: {}", display_name(&service).await, err);
                 }
             },
-            Item::RunCmd(cmd) => {
+            Item::Run(cmd) => {
                 if let Err(err) = run_wait(&ace, &cmd).await {
                     tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
                 }
@@ -198,7 +202,7 @@ async fn exec_milestone_sync(def: &Milestone) {
                     tracing::error!(target: "console", "Failed to start {}: {}", service, err);
                 }
             },
-            Item::RunCmd(cmd) => match ace.run(&cmd).await {
+            Item::Run(cmd) => match ace.run(&cmd).await {
                 Ok(x) => {
                     commands.push((cmd, x));
                 }

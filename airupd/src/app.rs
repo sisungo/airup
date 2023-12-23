@@ -60,6 +60,7 @@ impl Airupd {
             boot_timestamp: self.boot_timestamp,
             booted_since,
             is_booting: self.is_booting(),
+            milestones: self.milestones.stack(),
             hostname: airupfx::env::host_name(),
             services: self.supervisors.list().await,
         }
