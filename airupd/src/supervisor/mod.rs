@@ -6,7 +6,7 @@ pub mod task;
 use crate::app::airupd;
 use ahash::AHashMap;
 use airup_sdk::{
-    files::Service,
+    files::{service::WatchdogKind, Service},
     system::{QueryService, Status},
     Error,
 };
@@ -17,9 +17,13 @@ use std::{
         atomic::{self, AtomicBool, AtomicI32, AtomicI64},
         Arc, Mutex, RwLock,
     },
+    time::Duration,
 };
 use task::*;
-use tokio::sync::{mpsc, oneshot};
+use tokio::{
+    sync::{mpsc, oneshot},
+    task::AbortHandle,
+};
 
 macro_rules! supervisor_req {
     ($name:ident, $ret:ty, $req:expr) => {
@@ -208,6 +212,7 @@ impl SupervisorHandle {
             receiver,
             current_task: CurrentTask::default(),
             context: SupervisorContext::new(service),
+            timers: Box::default(),
         };
         supervisor.start();
 
@@ -252,10 +257,12 @@ struct Supervisor {
     receiver: mpsc::Receiver<Request>,
     current_task: CurrentTask,
     context: Arc<SupervisorContext>,
+    timers: Box<Timers>,
 }
 impl Supervisor {
     pub fn start(mut self) {
         tokio::spawn(async move {
+            self.timers = Timers::from(&self.context.service).into();
             self.run().await;
         });
     }
@@ -270,6 +277,7 @@ impl Supervisor {
                     DoChild::Stderr(msg) => self.log("stderr", &msg).await,
                 },
                 Some(rslt) = self.current_task.wait() => self.handle_wait_task(rslt).await,
+                Some(_) = Timers::recv(&mut self.timers.health_check) => self.handle_health_check().await,
             }
         }
     }
@@ -349,6 +357,11 @@ impl Supervisor {
         }
     }
 
+    /// Called when the health check timer goes off.
+    async fn handle_health_check(&mut self) {
+        if self.context.status.get() == Status::Active {}
+    }
+
     /// Called when the user attempted to start the service.
     ///
     /// This resets the retry counter, then returns the just-started "StartService" task if task creation succeeded.
@@ -395,6 +408,10 @@ impl Supervisor {
     /// supervisor.
     fn update_def(&mut self, new: Service) -> Result<Service, Error> {
         let context = Arc::get_mut(&mut self.context).ok_or(Error::TaskExists)?;
+        if context.service != new {
+            self.timers = Timers::from(&new).into();
+        }
+
         Ok(std::mem::replace(&mut context.service, new))
     }
 
@@ -603,6 +620,66 @@ impl RetryContext {
     /// Returns `true` if retrying is disabled.
     pub fn disabled(&self) -> bool {
         self.disabled.load(atomic::Ordering::Acquire)
+    }
+}
+
+#[derive(Debug, Default)]
+struct Timers {
+    health_check: Option<Timer>,
+}
+impl From<&Service> for Timers {
+    fn from(service: &Service) -> Self {
+        let mut result = Self::default();
+
+        if matches!(service.watchdog.kind, Some(WatchdogKind::HealthCheck)) {
+            result.health_check = Some(Timer::new(Duration::from_millis(
+                service.watchdog.health_check_interval,
+            )));
+        }
+
+        result
+    }
+}
+impl Timers {
+    #[allow(clippy::unit_arg)]
+    async fn recv(timer: &mut Option<Timer>) -> Option<()> {
+        match timer {
+            Some(x) => Some(x.recv().await),
+            None => None,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Timer {
+    abort_handle: AbortHandle,
+    rx: mpsc::Receiver<()>,
+}
+impl Timer {
+    fn new(dur: Duration) -> Self {
+        let (tx, rx) = mpsc::channel(1);
+        let join_handle = tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(dur).await;
+                let Ok(_) = tx.send(()).await else {
+                    break;
+                };
+            }
+        });
+
+        Self {
+            abort_handle: join_handle.abort_handle(),
+            rx,
+        }
+    }
+
+    async fn recv(&mut self) {
+        self.rx.recv().await.unwrap()
+    }
+}
+impl Drop for Timer {
+    fn drop(&mut self) {
+        self.abort_handle.abort();
     }
 }
 

@@ -6,7 +6,7 @@ use airup_sdk::Error;
 use std::time::Duration;
 use tokio::task::JoinHandle;
 
-pub const PRESETS: &[&str] = &["reboot", "poweroff", "halt", "ctrlaltdel"];
+pub const PRESETS: &[&str] = &["reboot", "poweroff", "halt"];
 
 /// Enter a `reboot`-series milestone.
 ///
@@ -17,7 +17,6 @@ pub async fn enter(name: &str) -> Result<(), Error> {
         "reboot" => enter_reboot().await,
         "poweroff" => enter_poweroff().await,
         "halt" => enter_halt().await,
-        "ctrlaltdel" => enter_ctrlaltdel().await,
         _ => panic!("Unexpected milestone `{name}`"),
     }
 }
@@ -56,19 +55,6 @@ async fn enter_halt() -> Result<(), Error> {
     airupd().lifetime.halt();
 
     Ok(())
-}
-
-/// Enters the `ctrlaltdel` milestone.
-///
-/// The `ctrlaltdel` milestone issues system reboot by default. If `ctrlaltdel.airm` is defined in `$milestone_dir`, the
-/// default behavior is overrided.
-async fn enter_ctrlaltdel() -> Result<(), Error> {
-    let local = super::enter_milestone("ctrlaltdel".into(), &mut AHashSet::with_capacity(8)).await;
-
-    match local {
-        Ok(()) => Ok(()),
-        Err(_) => enter_reboot().await,
-    }
 }
 
 /// Stops all running services.

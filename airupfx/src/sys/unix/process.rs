@@ -54,8 +54,7 @@ fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
     let result = unsafe { libc::kill(pid as _, signum) };
     match result {
         0 => Ok(()),
-        -1 => Err(std::io::Error::last_os_error()),
-        _ => unreachable!(),
+        _ => Err(std::io::Error::last_os_error()),
     }
 }
 
@@ -66,6 +65,7 @@ fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
 pub(crate) async fn kill_all(timeout: Duration) {
     eprintln!("Sending SIGTERM to all processes");
     kill(-1, super::signal::SIGTERM).ok();
+
     eprintln!("Waiting for all processes to be terminated");
     let _lock = child_queue().lock.lock().await;
     tokio::time::timeout(
@@ -78,6 +78,7 @@ pub(crate) async fn kill_all(timeout: Duration) {
     .await
     .ok();
     drop(_lock);
+
     eprintln!("Sending SIGKILL to all processes");
     kill(-1, super::signal::SIGKILL).ok();
 }

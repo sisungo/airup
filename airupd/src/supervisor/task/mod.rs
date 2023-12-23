@@ -2,17 +2,17 @@
 
 mod cleanup;
 pub mod feedback;
+mod health_check;
 mod reload;
 mod start;
 mod stop;
-mod health_check;
 
 pub use cleanup::{cleanup_service, CleanupServiceHandle};
 pub use feedback::TaskFeedback;
+pub use health_check::HealthCheckHandle;
 pub use reload::ReloadServiceHandle;
 pub use start::StartServiceHandle;
 pub use stop::StopServiceHandle;
-pub use health_check::HealthCheckHandle;
 
 use super::SupervisorContext;
 use airup_sdk::Error;

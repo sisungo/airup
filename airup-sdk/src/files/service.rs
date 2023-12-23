@@ -10,7 +10,7 @@ use std::{
 };
 
 /// An Airup service.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Service {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub name: String,
@@ -92,7 +92,7 @@ impl Service {
 }
 
 /// Executation environment of a service.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Env {
     /// Login user to execute for the service.
     pub login: Option<String>,
@@ -128,7 +128,7 @@ pub struct Env {
 }
 
 /// Representation of Standard I/O redirection.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Stdio {
     /// Inherits `stdio` from the parent process.
@@ -143,7 +143,7 @@ pub enum Stdio {
 }
 
 /// Represents to `[service]` section in a service TOML file.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct Metadata {
     /// Display name of the service.
@@ -203,7 +203,7 @@ pub enum Kind {
 }
 
 /// Executation of a service, like start, stop, etc.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct Exec {
     /// Command to be executed before starting the service
@@ -276,7 +276,7 @@ impl Exec {
 }
 
 /// Retry conditions of a service.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct Retry {
     /// Maximum attempts to retry executing
@@ -288,7 +288,7 @@ pub struct Retry {
     pub delay: u64,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct Watchdog {
     /// Kind of the watchdog to use.
@@ -308,7 +308,8 @@ impl Watchdog {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "kebab-case")]
 pub enum WatchdogKind {
     /// Make the supervisor poll to execute the health check command.
     HealthCheck,
