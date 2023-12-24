@@ -15,11 +15,14 @@ use std::{
     cmp,
     convert::Infallible,
     os::unix::process::CommandExt,
-    sync::{Arc, Mutex, OnceLock, RwLock},
+    sync::{Arc, OnceLock, RwLock},
     time::Duration,
 };
 use sysinfo::UserExt;
-use tokio::{signal::unix::SignalKind, sync::mpsc};
+use tokio::{
+    signal::unix::SignalKind,
+    sync::watch,
+};
 
 pub type Pid = libc::pid_t;
 
@@ -103,8 +106,7 @@ impl ExitStatusExt for crate::process::ExitStatus {
 #[derive(Debug)]
 pub struct Child {
     pid: Pid,
-    wait_queue: tokio::sync::Mutex<Option<mpsc::Receiver<Wait>>>,
-    wait_cached: Mutex<Option<Wait>>,
+    wait_queue: watch::Receiver<Option<Wait>>,
     stdout: Option<Arc<PiperHandle>>,
     stderr: Option<Arc<PiperHandle>>,
 }
@@ -127,8 +129,7 @@ impl Child {
             .map(Arc::new);
         Self {
             pid: pid as _,
-            wait_queue: Some(child_queue().subscribe(pid as _)).into(),
-            wait_cached: None.into(),
+            wait_queue: child_queue().subscribe(pid as _),
             stdout,
             stderr,
         }
@@ -141,8 +142,7 @@ impl Child {
     unsafe fn from_pid_unchecked(pid: Pid) -> Self {
         Self {
             pid,
-            wait_queue: Some(child_queue().subscribe(pid)).into(),
-            wait_cached: None.into(),
+            wait_queue: child_queue().subscribe(pid),
             stdout: None,
             stderr: None,
         }
@@ -151,43 +151,21 @@ impl Child {
     pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
         (wait_nonblocking(pid)?).map_or_else(
             || Ok(unsafe { Self::from_pid_unchecked(pid) }),
-            |wait| {
-                Ok(Self {
-                    pid,
-                    wait_queue: None.into(),
-                    wait_cached: Some(wait).into(),
-                    stdout: None,
-                    stderr: None,
-                })
-            },
+            |_| Err(std::io::ErrorKind::NotFound.into()),
         )
     }
 
     pub async fn wait(&self) -> Result<Wait, WaitError> {
-        let mut wait_queue = self.wait_queue.lock().await;
-
-        if let Some(wait) = &*self.wait_cached.lock().unwrap() {
-            return Ok(wait.clone());
-        }
-
-        let wait = wait_queue
-            .as_mut()
-            .ok_or(WaitError::AlreadyWaited)?
-            .recv()
-            .await
-            .ok_or(WaitError::PreemptedQueue(self.pid))?;
-
-        *self.wait_cached.lock().unwrap() = Some(wait.clone());
-        *wait_queue = None;
-
-        Ok(wait)
+        let mut wait_queue = self.wait_queue.clone();
+        let wait = wait_queue.wait_for(|x| x.is_some()).await.unwrap();
+        Ok(wait.clone().unwrap())
     }
 
     pub async fn send_signal(&self, sig: i32) -> std::io::Result<()> {
-        let wait_cached = self.wait_cached.lock().unwrap().clone();
-        match wait_cached {
-            Some(_) => Err(std::io::ErrorKind::NotFound.into()),
-            None => kill(self.pid, sig),
+        if self.wait_queue.borrow().is_none() {
+            kill(self.pid, sig)
+        } else {
+            Err(std::io::ErrorKind::NotFound.into())
         }
     }
 
@@ -212,7 +190,7 @@ impl Drop for Child {
 /// A queue of waiting child processes.
 #[derive(Debug, Default)]
 struct ChildQueue {
-    queue: RwLock<AHashMap<Pid, mpsc::Sender<Wait>>>,
+    queue: RwLock<AHashMap<Pid, watch::Sender<Option<Wait>>>>,
     lock: tokio::sync::Mutex<()>,
 }
 impl ChildQueue {
@@ -259,9 +237,9 @@ impl ChildQueue {
     }
 
     /// Creates a new [`mpsc::Receiver`] handle that will receive [`Wait`] sent after this call to `subscribe`.
-    pub fn subscribe(&self, pid: Pid) -> mpsc::Receiver<Wait> {
+    pub fn subscribe(&self, pid: Pid) -> watch::Receiver<Option<Wait>> {
         let mut lock = self.queue.write().unwrap();
-        let (tx, rx) = mpsc::channel(1);
+        let (tx, rx) = watch::channel(None);
         lock.insert(pid, tx);
         rx
     }
@@ -275,7 +253,7 @@ impl ChildQueue {
     pub async fn send(&self, wait: Wait) -> Option<()> {
         let entry = self.queue.write().unwrap().remove(&(wait.pid() as _));
         match entry {
-            Some(x) => x.send(wait).await.ok().map(|_| ()),
+            Some(x) => x.send(Some(wait)).ok().map(|_| ()),
             None => None,
         }
     }
