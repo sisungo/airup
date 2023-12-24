@@ -1,4 +1,8 @@
-use airup_sdk::{system::ConnectionExt, files::{milestone, Milestone}, fs::DirChain};
+use airup_sdk::{
+    files::{milestone, Milestone},
+    fs::DirChain,
+    system::ConnectionExt,
+};
 use anyhow::anyhow;
 use clap::Parser;
 use console::style;
@@ -15,10 +19,13 @@ pub struct Cmdline {
 }
 
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let service = cmdline.service.strip_suffix(".airs").unwrap_or(&cmdline.service);
+    let service = cmdline
+        .service
+        .strip_suffix(".airs")
+        .unwrap_or(&cmdline.service);
 
     let mut conn = super::connect().await?;
-    
+
     let query_system = conn
         .query_system()
         .await?
@@ -67,14 +74,14 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
             match item {
                 milestone::Item::Start(x) if x.strip_suffix(".airs").unwrap_or(&x) == service => {
                     disabled = true;
-                },
+                }
                 milestone::Item::Cache(x) if x.strip_suffix(".airs").unwrap_or(&x) == service => {
                     disabled = true;
-                },
+                }
                 _ => {
                     new.push_str(&x);
                     new.push('\n');
-                },
+                }
             };
         }
     }

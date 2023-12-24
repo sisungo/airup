@@ -52,6 +52,10 @@ pub enum ApiError {
     #[error("command not found")]
     CommandNotFound,
 
+    /// The watchdog barked.
+    #[error("watchdog barked")]
+    Watchdog,
+
     /// The child process unexpectedly exited.
     #[error("process exited with code {exit_code}")]
     Exited { exit_code: i32 },

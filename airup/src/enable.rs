@@ -25,10 +25,13 @@ pub struct Cmdline {
 }
 
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let service = cmdline.service.strip_suffix(".airs").unwrap_or(&cmdline.service);
+    let service = cmdline
+        .service
+        .strip_suffix(".airs")
+        .unwrap_or(&cmdline.service);
 
     let mut conn = super::connect().await?;
-    
+
     let query_system = conn
         .query_system()
         .await?
@@ -58,9 +61,7 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
 
     for item in milestone.items().await {
         match item {
-            milestone::Item::Start(x)
-                if x.strip_suffix(".airs").unwrap_or(&x) == service =>
-            {
+            milestone::Item::Start(x) if x.strip_suffix(".airs").unwrap_or(&x) == service => {
                 eprintln!(
                     "{} service {} have already been enabled",
                     style("warning:").yellow().bold(),
@@ -84,7 +85,7 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
 
     if !cmdline.force {
         let query_service = conn
-            .query_service(&service)
+            .query_service(service)
             .await?
             .map_err(|x| anyhow!("failed to enable service `{}`: {}", service, x))?;
         if query_service.definition.paths.is_empty() {

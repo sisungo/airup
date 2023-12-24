@@ -276,7 +276,7 @@ impl Supervisor {
                     DoChild::Stdout(msg) => self.log("stdout", &msg).await,
                     DoChild::Stderr(msg) => self.log("stderr", &msg).await,
                 },
-                Some(rslt) = self.current_task.wait() => self.handle_wait_task(rslt).await,
+                Some(handle) = self.current_task.wait() => self.handle_wait_task(handle).await,
                 Some(_) = Timers::recv(&mut self.timers.health_check) => self.handle_health_check().await,
             }
         }
@@ -309,10 +309,7 @@ impl Supervisor {
                     .ok();
             }
             Request::InterruptTask(chan) => {
-                let handle = self.current_task.0.clone().ok_or(Error::TaskNotFound);
-                if let Ok(x) = handle.as_deref() {
-                    x.send_interrupt();
-                }
+                let handle = self.current_task.interrupt();
                 self.context.last_error.set_autosave(false);
                 chan.send(handle).ok();
             }
@@ -349,34 +346,31 @@ impl Supervisor {
     /// Called when current task finished.
     ///
     /// If error auto-saving is enabled, it sets last error to the task's result.
-    async fn handle_wait_task(&mut self, rslt: Result<TaskFeedback, Error>) {
-        if let Err(err) = rslt {
-            if self.context.last_error.take_autosave() {
-                self.context.last_error.set(err);
-            }
+    async fn handle_wait_task(&mut self, handle: Arc<dyn TaskHandle>) {
+        let Err(error) = handle.wait().await else {
+            return;
+        };
+        if handle.task_class() == "HealthCheck" {
+            self.context.last_error.set(Error::Watchdog);
+            self.current_task.stop_service(self.context.clone()).ok();
+        }
+        if self.context.last_error.take_autosave() {
+            self.context.last_error.set(error);
         }
     }
 
     /// Called when the health check timer goes off.
     async fn handle_health_check(&mut self) {
-        if self.context.status.get() == Status::Active {}
+        if self.context.status.get() == Status::Active {
+            self.current_task.health_check(&self.context).await.ok();
+        }
     }
 
     /// Called when the user attempted to start the service.
     ///
     /// This resets the retry counter, then returns the just-started "StartService" task if task creation succeeded.
     async fn user_start_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
-        let would_interrupt = self
-            .current_task
-            .0
-            .as_ref()
-            .map(|x| !x.is_important())
-            .unwrap_or_default();
-        if would_interrupt {
-            let task = self.current_task.0.take().unwrap();
-            task.send_interrupt();
-            task.wait().await.ok();
-        }
+        self.current_task.interrupt_non_important().await;
         self.context.retry.reset();
         self.current_task.start_service(self.context.clone())
     }
@@ -385,16 +379,7 @@ impl Supervisor {
     ///
     /// This disables retrying, then returns the just-started "StopService" task if task creation succeeded.
     async fn user_stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
-        let would_interrupt = self
-            .current_task
-            .0
-            .as_ref()
-            .map(|x| !x.is_important())
-            .unwrap_or_default();
-        if would_interrupt {
-            let task = self.current_task.0.take().unwrap();
-            task.send_interrupt();
-            task.wait().await.ok();
+        if self.current_task.interrupt_non_important().await {
             return Ok(Arc::new(task::Empty));
         }
         self.context.retry.disable();
@@ -448,10 +433,32 @@ impl CurrentTask {
         self.0.is_some()
     }
 
-    async fn wait(&mut self) -> Option<Result<TaskFeedback, Error>> {
-        let val = self.0.as_deref()?.wait().await;
-        self.0 = None;
-        Some(val)
+    async fn wait(&mut self) -> Option<Arc<dyn TaskHandle>> {
+        self.0.as_deref()?.wait().await.ok();
+        self.0.take()
+    }
+
+    async fn interrupt_non_important(&mut self) -> bool {
+        let would_interrupt = self
+            .0
+            .as_ref()
+            .map(|x| !x.is_important())
+            .unwrap_or_default();
+        if would_interrupt {
+            let task = self.0.take().unwrap();
+            task.send_interrupt();
+            task.wait().await.ok();
+        }
+
+        would_interrupt
+    }
+
+    fn interrupt(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        let handle = self.0.clone().ok_or(Error::TaskNotFound);
+        if let Ok(x) = handle.as_deref() {
+            x.send_interrupt();
+        }
+        handle
     }
 
     start_task!(start_service, StartServiceHandle);
@@ -464,6 +471,19 @@ impl CurrentTask {
         wait: Wait,
     ) -> Result<Arc<dyn TaskHandle>, Error> {
         self._start_task(context, |ctx| CleanupServiceHandle::new(ctx, wait))
+    }
+
+    async fn health_check(
+        &mut self,
+        context: &SupervisorContext,
+    ) -> Result<Arc<dyn TaskHandle>, Error> {
+        if self.0.is_some() {
+            return Err(Error::TaskExists);
+        }
+        context.last_error.set_autosave(false);
+        let task = HealthCheckHandle::new(context).await;
+        self.0 = Some(task);
+        Ok(self.0.as_ref().cloned().unwrap())
     }
 
     fn _start_task<F: FnOnce(Arc<SupervisorContext>) -> Arc<dyn TaskHandle>>(
