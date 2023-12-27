@@ -4,6 +4,7 @@ use std::time::Duration;
 use tokio::time::Instant;
 
 /// A countdown timer.
+#[derive(Debug)]
 pub struct Countdown {
     inst: Instant,
     dur: Option<Duration>,
@@ -21,6 +22,52 @@ impl Countdown {
     #[inline]
     pub fn left(&self) -> Option<Duration> {
         self.dur.map(|x| x.saturating_sub(self.inst.elapsed()))
+    }
+}
+
+/// An alarm timer.
+#[derive(Debug)]
+pub struct Alarm {
+    abort_handle: tokio::task::AbortHandle,
+    reset_tx: tokio::sync::mpsc::Sender<()>,
+    rx: tokio::sync::mpsc::Receiver<()>,
+}
+impl Alarm {
+    pub fn new(dur: Duration) -> Self {
+        let (tx, rx) = tokio::sync::mpsc::channel(1);
+        let (reset_tx, mut reset_rx) = tokio::sync::mpsc::channel(1);
+        let join_handle = tokio::spawn(async move {
+            let do_alarm = || async {
+                tokio::time::sleep(dur).await;
+                tx.send(()).await.ok();
+            };
+            loop {
+                tokio::select! {
+                    () = do_alarm() => {},
+                    Some(()) = reset_rx.recv() => {},
+                };
+            }
+        });
+
+        Self {
+            abort_handle: join_handle.abort_handle(),
+            reset_tx,
+            rx,
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.rx.try_recv().ok();
+        self.reset_tx.try_send(()).ok();
+    }
+
+    pub async fn wait(&mut self) {
+        self.rx.recv().await.unwrap()
+    }
+}
+impl Drop for Alarm {
+    fn drop(&mut self) {
+        self.abort_handle.abort();
     }
 }
 

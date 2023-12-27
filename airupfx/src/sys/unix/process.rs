@@ -19,10 +19,7 @@ use std::{
     time::Duration,
 };
 use sysinfo::UserExt;
-use tokio::{
-    signal::unix::SignalKind,
-    sync::watch,
-};
+use tokio::{signal::unix::SignalKind, sync::watch};
 
 pub type Pid = libc::pid_t;
 

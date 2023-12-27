@@ -10,7 +10,7 @@ use airup_sdk::{
     system::{QueryService, Status},
     Error,
 };
-use airupfx::{ace::Child, io::PiperHandle, process::Wait};
+use airupfx::{ace::Child, io::PiperHandle, process::Wait, time::Alarm};
 use std::{
     cmp,
     sync::{
@@ -20,10 +20,7 @@ use std::{
     time::Duration,
 };
 use task::*;
-use tokio::{
-    sync::{mpsc, oneshot},
-    task::AbortHandle,
-};
+use tokio::sync::{mpsc, oneshot};
 
 macro_rules! supervisor_req {
     ($name:ident, $ret:ty, $req:expr) => {
@@ -31,13 +28,6 @@ macro_rules! supervisor_req {
             let (tx, rx) = oneshot::channel();
             self.sender.send($req(tx)).await.unwrap();
             rx.await.unwrap()
-        }
-    };
-}
-macro_rules! start_task {
-    ($name:ident, $type:ty) => {
-        fn $name(&mut self, context: Arc<SupervisorContext>) -> Result<Arc<dyn TaskHandle>, Error> {
-            self._start_task(context, <$type>::new)
         }
     };
 }
@@ -277,7 +267,7 @@ impl Supervisor {
                     DoChild::Stderr(msg) => self.log("stderr", &msg).await,
                 },
                 Some(handle) = self.current_task.wait() => self.handle_wait_task(handle).await,
-                Some(_) = Timers::recv(&mut self.timers.health_check) => self.handle_health_check().await,
+                Some(_) = Timers::wait(&mut self.timers.health_check) => self.handle_health_check().await,
             }
         }
     }
@@ -298,11 +288,10 @@ impl Supervisor {
                 chan.send(self.user_stop_service().await).ok();
             }
             Request::Reload(chan) => {
-                chan.send(self.current_task.reload_service(self.context.clone()))
-                    .ok();
+                chan.send(self.reload_service().await).ok();
             }
             Request::UpdateDef(new, chan) => {
-                chan.send(self.update_def(new)).ok();
+                chan.send(self.update_def(new).await).ok();
             }
             Request::GetTaskHandle(chan) => {
                 chan.send(self.current_task.0.clone().ok_or(Error::TaskNotFound))
@@ -337,9 +326,7 @@ impl Supervisor {
         self.context.status.set(Status::Stopped);
         self.context.set_child(None).await;
         if self.context.retry.enabled() {
-            self.current_task
-                .cleanup_service(self.context.clone(), wait)
-                .ok();
+            self.cleanup_service(wait).await.ok();
         }
     }
 
@@ -352,7 +339,7 @@ impl Supervisor {
         };
         if handle.task_class() == "HealthCheck" {
             self.context.last_error.set(Error::Watchdog);
-            self.current_task.stop_service(self.context.clone()).ok();
+            self.stop_service().await.ok();
         }
         if self.context.last_error.take_autosave() {
             self.context.last_error.set(error);
@@ -362,42 +349,8 @@ impl Supervisor {
     /// Called when the health check timer goes off.
     async fn handle_health_check(&mut self) {
         if self.context.status.get() == Status::Active {
-            self.current_task.health_check(&self.context).await.ok();
+            self.health_check().await.ok();
         }
-    }
-
-    /// Called when the user attempted to start the service.
-    ///
-    /// This resets the retry counter, then returns the just-started "StartService" task if task creation succeeded.
-    async fn user_start_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
-        self.current_task.interrupt_non_important().await;
-        self.context.retry.reset();
-        self.current_task.start_service(self.context.clone())
-    }
-
-    /// Called when the user attempted to stop the service.
-    ///
-    /// This disables retrying, then returns the just-started "StopService" task if task creation succeeded.
-    async fn user_stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
-        if self.current_task.interrupt_non_important().await {
-            return Ok(Arc::new(task::Empty));
-        }
-        self.context.retry.disable();
-        self.current_task.stop_service(self.context.clone())
-    }
-
-    /// Updates service definition of the supervisor. On success, returns the elder service definition.
-    ///
-    /// # Errors
-    /// This method would fail if the internal context has more than one reference, usually when a task is running for this
-    /// supervisor.
-    fn update_def(&mut self, new: Service) -> Result<Service, Error> {
-        let context = Arc::get_mut(&mut self.context).ok_or(Error::TaskExists)?;
-        if context.service != new {
-            self.timers = Timers::from(&new).into();
-        }
-
-        Ok(std::mem::replace(&mut context.service, new))
     }
 
     /// Queries information about the supervisor.
@@ -413,6 +366,83 @@ impl Supervisor {
         }
     }
 
+    /// Updates service definition of the supervisor. On success, returns the elder service definition.
+    ///
+    /// # Errors
+    /// This method would fail if the internal context has more than one reference, usually when a task is running for this
+    /// supervisor.
+    async fn update_def(&mut self, new: Service) -> Result<Service, Error> {
+        self.current_task.interrupt_non_important().await;
+        let context = Arc::get_mut(&mut self.context).ok_or(Error::TaskExists)?;
+        if context.service != new {
+            self.timers = Timers::from(&new).into();
+        }
+
+        Ok(std::mem::replace(&mut context.service, new))
+    }
+
+    /// Called when the user attempted to start the service.
+    ///
+    /// This resets the retry counter, then returns the just-started "StartService" task if task creation succeeded.
+    async fn user_start_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        self.current_task.interrupt_non_important().await;
+        self.context.retry.reset();
+        self.start_service().await
+    }
+
+    /// Called when the user attempted to stop the service.
+    ///
+    /// This disables retrying, then returns the just-started "StopService" task if task creation succeeded.
+    async fn user_stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        if self.current_task.interrupt_non_important().await {
+            return Ok(Arc::new(task::Empty));
+        }
+        self.context.retry.disable();
+        self.stop_service().await
+    }
+
+    async fn start_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        self.timers.on_start().await;
+        self.current_task
+            ._start_task(&self.context, async {
+                StartServiceHandle::new(self.context.clone())
+            })
+            .await
+    }
+
+    async fn stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        self.current_task
+            ._start_task(&self.context, async {
+                StopServiceHandle::new(self.context.clone())
+            })
+            .await
+    }
+
+    async fn reload_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        self.current_task
+            ._start_task(&self.context, async {
+                ReloadServiceHandle::new(self.context.clone())
+            })
+            .await
+    }
+
+    async fn cleanup_service(&mut self, wait: Wait) -> Result<Arc<dyn TaskHandle>, Error> {
+        self.current_task
+            ._start_task(&self.context, async {
+                CleanupServiceHandle::new(self.context.clone(), wait)
+            })
+            .await
+    }
+
+    async fn health_check(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        self.current_task
+            ._start_task(&self.context, async {
+                HealthCheckHandle::new(&self.context).await
+            })
+            .await
+    }
+
+    /// Writes to the global logger.
     pub async fn log(&self, module: &str, msg: &[u8]) {
         airupd()
             .logger
@@ -461,41 +491,16 @@ impl CurrentTask {
         handle
     }
 
-    start_task!(start_service, StartServiceHandle);
-    start_task!(stop_service, StopServiceHandle);
-    start_task!(reload_service, ReloadServiceHandle);
-
-    fn cleanup_service(
-        &mut self,
-        context: Arc<SupervisorContext>,
-        wait: Wait,
-    ) -> Result<Arc<dyn TaskHandle>, Error> {
-        self._start_task(context, |ctx| CleanupServiceHandle::new(ctx, wait))
-    }
-
-    async fn health_check(
+    async fn _start_task(
         &mut self,
         context: &SupervisorContext,
+        task_new: impl std::future::Future<Output = Arc<dyn TaskHandle>>,
     ) -> Result<Arc<dyn TaskHandle>, Error> {
         if self.0.is_some() {
             return Err(Error::TaskExists);
         }
         context.last_error.set_autosave(false);
-        let task = HealthCheckHandle::new(context).await;
-        self.0 = Some(task);
-        Ok(self.0.as_ref().cloned().unwrap())
-    }
-
-    fn _start_task<F: FnOnce(Arc<SupervisorContext>) -> Arc<dyn TaskHandle>>(
-        &mut self,
-        context: Arc<SupervisorContext>,
-        task_new: F,
-    ) -> Result<Arc<dyn TaskHandle>, Error> {
-        if self.0.is_some() {
-            return Err(Error::TaskExists);
-        }
-        context.last_error.set_autosave(false);
-        let task = task_new(context.clone());
+        let task = task_new.await;
         self.0 = Some(task);
         Ok(self.0.as_ref().cloned().unwrap())
     }
@@ -645,14 +650,14 @@ impl RetryContext {
 
 #[derive(Debug, Default)]
 struct Timers {
-    health_check: Option<Timer>,
+    health_check: Option<Alarm>,
 }
 impl From<&Service> for Timers {
     fn from(service: &Service) -> Self {
         let mut result = Self::default();
 
         if matches!(service.watchdog.kind, Some(WatchdogKind::HealthCheck)) {
-            result.health_check = Some(Timer::new(Duration::from_millis(
+            result.health_check = Some(Alarm::new(Duration::from_millis(
                 service.watchdog.health_check_interval,
             )));
         }
@@ -662,44 +667,17 @@ impl From<&Service> for Timers {
 }
 impl Timers {
     #[allow(clippy::unit_arg)]
-    async fn recv(timer: &mut Option<Timer>) -> Option<()> {
+    async fn wait(timer: &mut Option<Alarm>) -> Option<()> {
         match timer {
-            Some(x) => Some(x.recv().await),
+            Some(x) => Some(x.wait().await),
             None => None,
         }
     }
-}
 
-#[derive(Debug)]
-struct Timer {
-    abort_handle: AbortHandle,
-    rx: mpsc::Receiver<()>,
-}
-impl Timer {
-    fn new(dur: Duration) -> Self {
-        let (tx, rx) = mpsc::channel(1);
-        let join_handle = tokio::spawn(async move {
-            loop {
-                tokio::time::sleep(dur).await;
-                let Ok(_) = tx.send(()).await else {
-                    break;
-                };
-            }
-        });
-
-        Self {
-            abort_handle: join_handle.abort_handle(),
-            rx,
+    async fn on_start(&mut self) {
+        if let Some(alarm) = &mut self.health_check {
+            alarm.reset();
         }
-    }
-
-    async fn recv(&mut self) {
-        self.rx.recv().await.unwrap()
-    }
-}
-impl Drop for Timer {
-    fn drop(&mut self) {
-        self.abort_handle.abort();
     }
 }
 
