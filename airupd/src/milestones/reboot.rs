@@ -76,20 +76,31 @@ async fn stop_all_services(timeout: Duration) {
 /// Spawns a task to interactively stop a service.
 fn stop_service_task(service: String) -> JoinHandle<()> {
     tokio::spawn(async move {
+        let mut error = None;
         match airupd().stop_service(&service).await {
-            Ok(_) => {
-                tracing::info!("Stopping {}", super::display_name(&service).await);
+            Ok(x) => {
+                if let Err(err) = x.wait().await {
+                    if !matches!(err, Error::UnitNotStarted) {
+                        error = Some(err);
+                    }
+                } else {
+                    tracing::info!(target: "console", "Stopping {}", super::display_name(&service).await);
+                }
             }
             Err(err) => {
                 if matches!(err, Error::UnitNotFound | Error::UnitNotStarted) {
                     return;
                 }
-                tracing::error!(
-                    "Failed to stop {}: {}",
-                    super::display_name(&service).await,
-                    err
-                );
+                error = Some(err);
             }
         };
+        if let Some(err) = error {
+            tracing::error!(
+                target: "console",
+                "Failed to stop {}: {}",
+                super::display_name(&service).await,
+                err
+            );
+        }
     })
 }

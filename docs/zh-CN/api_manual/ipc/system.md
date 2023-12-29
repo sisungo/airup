@@ -37,6 +37,12 @@
 - 返回值：`null`
 - 描述：停止指定的服务。
 
+## `system.kill_service` 方法
+- 名称：`system.kill_service`
+- 参数：`字符串（要操作的服务名称）`
+- 返回值：`null`
+- 描述：强制停止指定的服务。
+
 ## `system.reload_service` 方法
 - 名称：`system.reload_service`
 - 参数：`字符串（要操作的服务名称）`

@@ -37,6 +37,12 @@ Module `system` provides methods for managing the system.
 - Return Value: `null`
 - Description: Stops the specified service.
 
+## Method: `system.kill_service`
+- Name: `system.kill_service`
+- Parameters: `string (name of service to operate)`
+- Return Value: `null`
+- Description: Forces the specified service to stop.
+
 ## Method: `system.reload_service`
 - Name: `system.reload_service`
 - Parameters: `string (name of service to operate)`

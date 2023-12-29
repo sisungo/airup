@@ -243,6 +243,7 @@ impl SupervisorHandle {
     }
 }
 
+/// A supervisor entity.
 struct Supervisor {
     receiver: mpsc::Receiver<Request>,
     current_task: CurrentTask,
@@ -250,14 +251,16 @@ struct Supervisor {
     timers: Box<Timers>,
 }
 impl Supervisor {
-    pub fn start(mut self) {
+    /// Starts the supervisor task.
+    fn start(mut self) {
         tokio::spawn(async move {
             self.timers = Timers::from(&self.context.service).into();
             self.run().await;
         });
     }
 
-    pub async fn run(&mut self) -> Option<()> {
+    /// Main logic of the supervisor task.
+    async fn run(&mut self) -> Option<()> {
         loop {
             tokio::select! {
                 req = self.receiver.recv() => self.handle_req(req?).await,
@@ -401,6 +404,7 @@ impl Supervisor {
         self.stop_service().await
     }
 
+    /// Starts the service.
     async fn start_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.timers.on_start().await;
         self.current_task
@@ -410,6 +414,7 @@ impl Supervisor {
             .await
     }
 
+    /// Stops the service.
     async fn stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
             ._start_task(&self.context, async {
@@ -418,6 +423,7 @@ impl Supervisor {
             .await
     }
 
+    /// Reloads the service.
     async fn reload_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
             ._start_task(&self.context, async {
@@ -426,6 +432,7 @@ impl Supervisor {
             .await
     }
 
+    /// Cleans the service up.
     async fn cleanup_service(&mut self, wait: Wait) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
             ._start_task(&self.context, async {
@@ -434,6 +441,7 @@ impl Supervisor {
             .await
     }
 
+    /// Executes health check for the service.
     async fn health_check(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
             ._start_task(&self.context, async {
@@ -456,18 +464,23 @@ impl Supervisor {
     }
 }
 
+/// A container of current running task in the supervisor.
 #[derive(Default)]
 struct CurrentTask(Option<Arc<dyn TaskHandle>>);
 impl CurrentTask {
+    /// Returns `true` if a task is running in the container.
     fn has_task(&self) -> bool {
         self.0.is_some()
     }
 
+    /// Waits until the task running in the container to be finished. When the operation completed, a `Some(_)` is returned
+    /// and the container is set empty. If the container is already empty, `None` is returned.
     async fn wait(&mut self) -> Option<Arc<dyn TaskHandle>> {
         self.0.as_deref()?.wait().await.ok();
         self.0.take()
     }
 
+    /// Interrupts and waits for the running task if it is tagged "non-important". Returns `true` if a task is interrupted.
     async fn interrupt_non_important(&mut self) -> bool {
         let would_interrupt = self
             .0
@@ -483,6 +496,7 @@ impl CurrentTask {
         would_interrupt
     }
 
+    /// Sends interrupt to the running task.
     fn interrupt(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         let handle = self.0.clone().ok_or(Error::TaskNotFound);
         if let Ok(x) = handle.as_deref() {
@@ -491,6 +505,11 @@ impl CurrentTask {
         handle
     }
 
+    /// Starts a task in the container.
+    ///
+    /// # Errors
+    /// The following errors would be returned by calling this function:
+    ///  - [`Error::TaskExists`]: A task is already running in this container.
     async fn _start_task(
         &mut self,
         context: &SupervisorContext,

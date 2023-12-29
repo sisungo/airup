@@ -55,6 +55,7 @@ impl Airupd {
             .query_milestone_stack()
             .last()
             .map(|x| x.finish_timestamp);
+
         QuerySystem {
             status: Status::Active,
             boot_timestamp: self.boot_timestamp,

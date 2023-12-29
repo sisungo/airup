@@ -15,6 +15,7 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     methods.insert("system.query_service", query_service);
     methods.insert("system.query_system", query_system);
     methods.insert("system.stop_service", stop_service);
+    methods.insert("system.kill_service", kill_service);
     methods.insert("system.reload_service", reload_service);
     methods.insert("system.sideload_service", sideload_service);
     methods.insert("system.unsideload_service", unsideload_service);
@@ -67,6 +68,14 @@ fn start_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
 }
 
 fn stop_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
+    Box::pin(async move {
+        let service: String = req.extract_params()?;
+        airupd().stop_service(&service).await?.wait().await?;
+        ok_null()
+    })
+}
+
+fn kill_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let service: String = req.extract_params()?;
         airupd().stop_service(&service).await?.wait().await?;

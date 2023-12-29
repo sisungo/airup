@@ -11,7 +11,7 @@ use std::{path::Path, sync::Arc};
 /// An instance of the Airup IPC context.
 #[derive(Debug)]
 pub struct Context {
-    pub api: api::Manager,
+    api: api::Manager,
 }
 impl Context {
     /// Creates a new `Context` instance.
