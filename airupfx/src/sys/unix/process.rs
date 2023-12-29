@@ -158,7 +158,7 @@ impl Child {
         Ok(wait.clone().unwrap())
     }
 
-    pub async fn send_signal(&self, sig: i32) -> std::io::Result<()> {
+    pub fn send_signal(&self, sig: i32) -> std::io::Result<()> {
         if self.wait_queue.borrow().is_none() {
             kill(self.pid, sig)
         } else {
@@ -166,8 +166,8 @@ impl Child {
         }
     }
 
-    pub async fn kill(&self) -> std::io::Result<()> {
-        self.send_signal(super::signal::SIGKILL).await
+    pub fn kill(&self) -> std::io::Result<()> {
+        self.send_signal(super::signal::SIGKILL)
     }
 
     pub fn stdout(&self) -> Option<Arc<PiperHandle>> {

@@ -78,7 +78,7 @@ fn stop_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
 fn kill_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let service: String = req.extract_params()?;
-        airupd().stop_service(&service).await?.wait().await?;
+        airupd().kill_service(&service).await?;
         ok_null()
     })
 }

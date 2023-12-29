@@ -11,17 +11,29 @@ pub struct Cmdline {
     /// Uncache the service
     #[arg(long)]
     uncache: bool,
+
+    /// Force the service to stop
+    #[arg(short, long)]
+    force: bool,
 }
 
 pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = super::connect().await?;
 
+    let stop_service = async {
+        if cmdline.force {
+            conn.kill_service(&cmdline.service).await
+        } else {
+            conn.stop_service(&cmdline.service).await
+        }
+    };
+
     if !cmdline.uncache {
-        conn.stop_service(&cmdline.service)
+        stop_service
             .await?
             .map_err(|e| anyhow!("failed to stop service `{}`: {}", cmdline.service, e))?;
     } else {
-        conn.stop_service(&cmdline.service).await?.ok();
+        stop_service.await?.ok();
     }
 
     if cmdline.uncache {

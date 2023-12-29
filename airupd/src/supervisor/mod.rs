@@ -212,6 +212,7 @@ impl SupervisorHandle {
     supervisor_req!(query, QueryService, Request::Query);
     supervisor_req!(start, Result<Arc<dyn TaskHandle>, Error>, Request::Start);
     supervisor_req!(stop, Result<Arc<dyn TaskHandle>, Error>, Request::Stop);
+    supervisor_req!(kill, Result<(), Error>, Request::Kill);
     supervisor_req!(reload, Result<Arc<dyn TaskHandle>, Error>, Request::Reload);
     supervisor_req!(
         get_task,
@@ -288,7 +289,11 @@ impl Supervisor {
                 chan.send(self.user_start_service().await).ok();
             }
             Request::Stop(chan) => {
-                chan.send(self.user_stop_service().await).ok();
+                chan.send(self.user_stop_service(false).await).ok();
+            }
+            Request::Kill(chan) => {
+                chan.send(self.user_stop_service(true).await.map(|_| ()))
+                    .ok();
             }
             Request::Reload(chan) => {
                 chan.send(self.reload_service().await).ok();
@@ -396,12 +401,15 @@ impl Supervisor {
     /// Called when the user attempted to stop the service.
     ///
     /// This disables retrying, then returns the just-started "StopService" task if task creation succeeded.
-    async fn user_stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+    async fn user_stop_service(&mut self, force: bool) -> Result<Arc<dyn TaskHandle>, Error> {
         if self.current_task.interrupt_non_important().await {
             return Ok(Arc::new(task::Empty));
         }
         self.context.retry.disable();
-        self.stop_service().await
+        match force {
+            true => self.kill_service().await,
+            false => self.stop_service().await,
+        }
     }
 
     /// Starts the service.
@@ -421,6 +429,19 @@ impl Supervisor {
                 StopServiceHandle::new(self.context.clone())
             })
             .await
+    }
+
+    /// Forces the service to stop.
+    async fn kill_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
+        let child = self.context.child.read().await;
+        if let Some(ch) = &*child {
+            ch.kill().await?;
+            Ok(Arc::new(Empty))
+        } else {
+            Err(Error::unsupported(
+                "cannot kill a service without a process",
+            ))
+        }
     }
 
     /// Reloads the service.
@@ -767,6 +788,20 @@ impl crate::app::Airupd {
         }
     }
 
+    /// Forces the specific service to stop.
+    ///
+    /// # Errors
+    /// This method would fail if the service does not have a process.
+    pub async fn kill_service(&self, name: &str) -> Result<(), Error> {
+        match self.supervisors.get(name).await {
+            Some(supervisor) => Ok(supervisor.kill().await?),
+            None => {
+                self.storage.get_service_patched(name).await?;
+                Err(Error::UnitNotStarted)
+            }
+        }
+    }
+
     /// Reloads the specific service, returns a handle of the spawned `ReloadService` task on success.
     ///
     /// # Errors
@@ -822,6 +857,7 @@ enum Request {
     Query(oneshot::Sender<QueryService>),
     Start(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     Stop(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
+    Kill(oneshot::Sender<Result<(), Error>>),
     Reload(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     UpdateDef(Service, oneshot::Sender<Result<Service, Error>>),
     GetTaskHandle(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),

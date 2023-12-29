@@ -88,6 +88,12 @@ pub trait ConnectionExt {
         name: &str,
     ) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
 
+    /// Forces the specified service to stop.
+    fn kill_service(
+        &mut self,
+        name: &str,
+    ) -> impl Future<Output = anyhow::Result<Result<(), Error>>>;
+
     /// Reloads the specified service.
     fn reload_service(
         &mut self,
@@ -175,6 +181,10 @@ impl ConnectionExt for super::Connection {
 
     async fn stop_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
         self.invoke("system.stop_service", name).await
+    }
+
+    async fn kill_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
+        self.invoke("system.kill_service", name).await
     }
 
     async fn cache_service(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {

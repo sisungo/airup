@@ -183,7 +183,7 @@ impl Child {
             match self {
                 Self::Async(child) => child.send_signal(sig).await?,
                 Self::AlwaysSuccess(child) => child.send_signal(sig).await?,
-                Self::Process(proc) => proc.send_signal(sig).await?,
+                Self::Process(proc) => proc.send_signal(sig)?,
                 Self::Builtin(builtin) => builtin.lock().await.abort(),
             };
 
@@ -198,7 +198,7 @@ impl Child {
             match self {
                 Self::Async(child) => child.kill().await?,
                 Self::AlwaysSuccess(child) => child.kill().await?,
-                Self::Process(proc) => proc.kill().await?,
+                Self::Process(proc) => proc.kill()?,
                 Self::Builtin(builtin) => builtin.lock().await.abort(),
             };
 

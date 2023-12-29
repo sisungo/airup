@@ -143,16 +143,16 @@ impl Child {
     ///
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
-    pub async fn send_signal(&self, sig: i32) -> std::io::Result<()> {
-        self.0.send_signal(sig).await
+    pub fn send_signal(&self, sig: i32) -> std::io::Result<()> {
+        self.0.send_signal(sig)
     }
 
     /// Kills the child process.
     ///
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
-    pub async fn kill(&self) -> std::io::Result<()> {
-        self.0.kill().await
+    pub fn kill(&self) -> std::io::Result<()> {
+        self.0.kill()
     }
 
     /// Returns a reference to the `stdout` piper handle of the child process.
