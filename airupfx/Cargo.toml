@@ -1,7 +1,7 @@
 [package]
 name = "airupfx"
 authors = ["sisungo <sisungo@icloud.com>"]
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
 license = "MIT"
 publish = false
@@ -20,7 +20,7 @@ libc = "0.2"
 mini-moka = "0.10"
 once_cell = "1"
 shlex = "1.2"
-sysinfo = { version = "0.29", features = ["serde"] }
+sysinfo = { version = "0.30", features = ["serde"] }
 thiserror = "1"
 tokio = { workspace = true }
 tracing = "0.1"

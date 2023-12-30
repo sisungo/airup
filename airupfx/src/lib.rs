@@ -1,5 +1,8 @@
 //! # AirupFX
-//! Base support library of Airup.
+//! Base OS support library of Airup. This is internal to the `airup` project and is NOT subjected to be published as a part of
+//! the Airup SDK.
+//!
+//! Since Airup v0.5.0, AirupFX version is no longer synced with other components.
 
 pub mod ace;
 pub mod env;

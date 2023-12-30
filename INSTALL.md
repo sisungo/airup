@@ -8,10 +8,12 @@ To build Airup, you need to install the few dependencies first:
 Some build dependencies are optional, as they are only required when the feature is used:
  - [cbindgen](https://github.com/mozilla/cbindgen): A tool to generated C headers from Rust code.
 
+Airup requires `Rust 1.75.0` or newer to compile.
+
 ## Configuration
-Some Airup functions are configured at build time. The build manifest which is located at `build_manifest.rs` stores primitive
-configuration items that cannot be set at runtime. Its example is at `docs/resources/build_manifest.rs`. Definitions to its
-items:
+Some Airup functions are configured at build time. The build manifest which is located at `build_manifest.json` stores primitive
+paths that cannot be set at runtime or default values of `system.conf` items. An example file is located
+at `docs/resources/build_manifest.json`. There is a list that describes all available configuration items:
  - `os_name`: Name of the OS build.
  - `config_dir`: Path of Airup's configuration directory, which stores service/system config files, etc.
  - `service_dir`: Path of Airup's service directory, which stores service files.

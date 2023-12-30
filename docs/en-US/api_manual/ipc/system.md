@@ -25,6 +25,12 @@ Module `system` provides methods for managing the system.
 - Return Value: `QuerySystem` object
 - Description: Returns queried macro information about the whole system.
 
+## Method: `system.list_services`
+- Name: `system.list_services`
+- Parameters: None
+- Return Value: `string` array
+- Description: Returns a list over names of all installed services on the system.
+
 ## Method: `system.start_service`
 - Name: `system.start_service`
 - Parameters: `string (name of service to operate)`
@@ -36,6 +42,30 @@ Module `system` provides methods for managing the system.
 - Parameters: `string (name of service to operate)`
 - Return Value: `null`
 - Description: Stops the specified service.
+
+## Method: `system.cache_service`
+- Name: `system.cache_service`
+- Parameters: `string (name of service to operate)`
+- Return Value: `null`
+- Description: Caches the specified service.
+
+## Method: `system.uncache_service`
+- Name: `system.uncache_service`
+- Parameters: `string (name of service to operate)`
+- Return Value: `null`
+- Description: Uncaches the specified service.
+
+## Method: `system.sideload_service`
+- Name: `system.sideload_service`
+- Parameters: `string (name of service)`, `Service` object
+- Return Value: `null`
+- Description: Sideloads the given service in given name.
+
+## Method: `system.unsideload_service`
+- Name: `system.unsideload_service`
+- Parameters: `string (name of service to operate)`
+- Return Value: `null`
+- Description: Removes the specified service from sideload store.
 
 ## Method: `system.kill_service`
 - Name: `system.kill_service`

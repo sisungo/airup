@@ -18,7 +18,6 @@ use std::{
     sync::{Arc, OnceLock, RwLock},
     time::Duration,
 };
-use sysinfo::UserExt;
 use tokio::{signal::unix::SignalKind, sync::watch};
 
 pub type Pid = libc::pid_t;

@@ -1,3 +1,16 @@
+Changes in v0.6.0:
+ * [Feature] Implement delayed retrying
+ * [Feature] `airup debug --use-logger` and `airup debug --print-build-manifest` CLI utilities
+ * [Feature] `airup enable` and `airup disable` CLI utilities
+ * [Feature] `airup stop --force` CLI utility and `system.kill_service` API
+ * [Feature] Allow specifying reboot/poweroff/halt timeout
+ * [Feature] Support `health-check`-kinded watchdogs
+ * [Internals] Task importance measurement
+ * [Fix] Potential race condition in Unix process subsystem
+ * [Fix] Unexpected logging in `reboot` milestone
+ * [Developer] Move `SystemConf` structure from `airupd` to `airup-sdk`
+ * ACE performance optimization
+
 Changes in v0.5.0:
  * [Feature] Gracefully reboot
  * [Feature] Support of recording of service logs

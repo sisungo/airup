@@ -2,13 +2,10 @@
 
 use once_cell::sync::Lazy;
 use std::sync::RwLock;
-use sysinfo::{SystemExt, Uid, User, UserExt};
+use sysinfo::{Uid, User};
 
-static USERS: Lazy<RwLock<sysinfo::System>> = Lazy::new(|| {
-    let mut instance = sysinfo::System::new();
-    instance.refresh_users_list();
-    instance.into()
-});
+static USERS: Lazy<RwLock<sysinfo::Users>> =
+    Lazy::new(|| sysinfo::Users::new_with_refreshed_list().into());
 static CACHE: Lazy<mini_moka::sync::Cache<Request, Option<usize>, ahash::RandomState>> =
     Lazy::new(|| {
         mini_moka::sync::Cache::builder()
@@ -19,7 +16,7 @@ static CACHE: Lazy<mini_moka::sync::Cache<Request, Option<usize>, ahash::RandomS
 
 /// Refreshes users database.
 pub fn refresh() {
-    USERS.write().unwrap().refresh_users_list();
+    USERS.write().unwrap().refresh_list();
     CACHE.invalidate_all();
 }
 
@@ -29,7 +26,6 @@ pub fn with_user_by_id<F: FnOnce(&User) -> T, T>(uid: &Uid, f: F) -> Option<T> {
     let req = Request::FindUserById(uid.clone());
     let numeric = CACHE.get(&req).unwrap_or_else(|| {
         let value = users
-            .users()
             .iter()
             .enumerate()
             .find(|(_, u)| u.id() == uid)
@@ -37,7 +33,7 @@ pub fn with_user_by_id<F: FnOnce(&User) -> T, T>(uid: &Uid, f: F) -> Option<T> {
         CACHE.insert(req, value);
         value
     });
-    numeric.map(|i| f(users.users().get(i).unwrap()))
+    numeric.map(|i| f(users.get(i).unwrap()))
 }
 
 /// Finds a user entry by username.
@@ -46,7 +42,6 @@ pub fn with_user_by_name<F: FnOnce(&User) -> T, T>(name: &str, f: F) -> Option<T
     let req = Request::FindUserByName(name.into());
     let numeric = CACHE.get(&req).unwrap_or_else(|| {
         let value = users
-            .users()
             .iter()
             .enumerate()
             .find(|(_, u)| u.name() == name)
@@ -54,7 +49,7 @@ pub fn with_user_by_name<F: FnOnce(&User) -> T, T>(name: &str, f: F) -> Option<T
         CACHE.insert(req, value);
         value
     });
-    numeric.map(|i| f(users.users().get(i).unwrap()))
+    numeric.map(|i| f(users.get(i).unwrap()))
 }
 
 /// Returns the user entry of current user.

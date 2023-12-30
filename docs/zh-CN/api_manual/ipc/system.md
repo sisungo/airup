@@ -25,6 +25,12 @@
 - 返回值：`QuerySystem` 对象
 - 描述：返回查询到的关于整个系统的宏观信息。
 
+## `system.list_services` 方法
+- 名称：`system.list_services`
+- 参数：无
+- 返回值：`string` 数组
+- 描述：返回系统中已安装的所有服务的名称的列表。
+
 ## `system.start_service` 方法
 - 名称：`system.start_service`
 - 参数：`字符串（要操作的服务名称）`
@@ -36,6 +42,30 @@
 - 参数：`字符串（要操作的服务名称）`
 - 返回值：`null`
 - 描述：停止指定的服务。
+
+## `system.cache_service` 方法
+- 名称：`system.cache_service`
+- 参数：`字符串（要操作的服务名称）`
+- 返回值：`null`
+- 描述：缓存指定的服务。
+
+## `system.uncache_service` 方法
+- 名称：`system.uncache_service`
+- 参数：`字符串（要操作的服务名称）`
+- 返回值：`null`
+- 描述：取消缓存指定的服务。
+
+## `system.sideload_service` 方法
+- 名称：`system.sideload_service`
+- 参数：`字符串（服务名称）`, `Service` 对象
+- 返回值：`null`
+- 描述：以指定名称侧载给出的服务。
+
+## `system.unsideload_service` 方法
+- 名称：`system.unsideload_service`
+- 参数：`字符串（要操作的服务名称）`
+- 返回值：`null`
+- 描述：从侧载存储删除指定服务。
 
 ## `system.kill_service` 方法
 - 名称：`system.kill_service`

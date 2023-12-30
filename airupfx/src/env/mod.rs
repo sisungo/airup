@@ -4,14 +4,7 @@ pub mod users;
 
 pub use users::{current_uid, with_current_user, with_user_by_id, with_user_by_name};
 
-use once_cell::sync::Lazy;
-use std::{
-    ffi::{OsStr, OsString},
-    sync::RwLock,
-};
-use sysinfo::SystemExt;
-
-static SYSINFO: Lazy<RwLock<sysinfo::System>> = Lazy::new(|| RwLock::new(sysinfo::System::new()));
+use std::ffi::{OsStr, OsString};
 
 /// Sets environment variables in the iterator for the currently running process, removing environment variables with value
 /// `None`.
@@ -54,5 +47,5 @@ pub async fn refresh() {
 /// Returns host name of the machine currently running the process.
 #[inline]
 pub fn host_name() -> Option<String> {
-    SYSINFO.read().unwrap().host_name()
+    sysinfo::System::host_name()
 }
