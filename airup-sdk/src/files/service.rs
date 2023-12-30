@@ -2,9 +2,9 @@
 //! This module contains [`Service`], the main file format of an Airup service and its combinations.
 
 use super::ReadError;
+use ahash::HashMap;
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::BTreeMap,
     path::{Path, PathBuf},
     time::Duration,
 };
@@ -124,7 +124,7 @@ pub struct Env {
     ///
     /// By default, the service runs with the same environment variables as `airupd`.
     #[serde(default)]
-    pub vars: BTreeMap<String, Option<String>>,
+    pub vars: HashMap<String, Option<String>>,
 }
 
 /// Representation of Standard I/O redirection.
@@ -231,25 +231,26 @@ pub struct Exec {
     pub health_check: Option<String>,
 
     /// Timeout of executing commands, in milliseconds
-    all_timeout: Option<u64>,
+    all_timeout: Option<u32>,
 
     /// Timeout of starting the service until it's active, in milliseconds
-    start_timeout: Option<u64>,
+    start_timeout: Option<u32>,
 
     /// Timeout of stopping the service, in milliseconds
-    stop_timeout: Option<u64>,
+    stop_timeout: Option<u32>,
 
     /// Timeout of checking health of a service, in milliseconds
-    health_check_timeout: Option<u64>,
+    health_check_timeout: Option<u32>,
 
     /// Timeout of reloading the service, in milliseconds
-    reload_timeout: Option<u64>,
+    reload_timeout: Option<u32>,
 }
 impl Exec {
     #[inline]
     pub fn start_timeout(&self) -> Option<Duration> {
         self.start_timeout
             .or(self.all_timeout)
+            .map(|x| x as u64)
             .map(Duration::from_millis)
     }
 
@@ -257,6 +258,7 @@ impl Exec {
     pub fn stop_timeout(&self) -> Option<Duration> {
         self.stop_timeout
             .or(self.all_timeout)
+            .map(|x| x as u64)
             .map(Duration::from_millis)
     }
 
@@ -264,6 +266,7 @@ impl Exec {
     pub fn reload_timeout(&self) -> Option<Duration> {
         self.reload_timeout
             .or(self.all_timeout)
+            .map(|x| x as u64)
             .map(Duration::from_millis)
     }
 
@@ -271,6 +274,7 @@ impl Exec {
     pub fn health_check_timeout(&self) -> Option<Duration> {
         self.health_check_timeout
             .or(self.all_timeout)
+            .map(|x| x as u64)
             .map(Duration::from_millis)
     }
 }
@@ -296,14 +300,14 @@ pub struct Watchdog {
 
     /// Time interval of polling health check command.
     #[serde(default = "Watchdog::default_health_check_interval")]
-    pub health_check_interval: u64,
+    pub health_check_interval: u32,
 
     /// Also mark the service failed on successful exits (`$? == 0`)
     #[serde(default)]
     pub successful_exit: bool,
 }
 impl Watchdog {
-    fn default_health_check_interval() -> u64 {
+    fn default_health_check_interval() -> u32 {
         5000
     }
 }

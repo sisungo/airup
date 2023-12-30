@@ -70,7 +70,10 @@ impl TaskHandle for TaskHelperHandle {
                 .wait_for(|x| x.is_some())
                 .await
                 .map_err(|_| Error::TaskInterrupted)?;
-            x.as_ref().unwrap().clone() // `x` is guaranteed `Some(_)` here
+
+            x.as_ref()
+                .expect("`watch::Receiver::wait_for` should only return expected value")
+                .clone()
         })
     }
 }

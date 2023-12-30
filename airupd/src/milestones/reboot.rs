@@ -27,7 +27,8 @@ async fn enter_reboot() -> Result<(), Error> {
         .await
         .ok();
 
-    stop_all_services(Duration::from_millis(5000)).await;
+    let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
+    stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
     airupd().lifetime.reboot();
 
     Ok(())
@@ -39,7 +40,8 @@ async fn enter_poweroff() -> Result<(), Error> {
         .await
         .ok();
 
-    stop_all_services(Duration::from_millis(5000)).await;
+    let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
+    stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
     airupd().lifetime.poweroff();
 
     Ok(())
@@ -51,7 +53,8 @@ async fn enter_halt() -> Result<(), Error> {
         .await
         .ok();
 
-    stop_all_services(Duration::from_millis(5000)).await;
+    let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
+    stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
     airupd().lifetime.halt();
 
     Ok(())

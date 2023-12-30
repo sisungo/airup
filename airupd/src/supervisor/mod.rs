@@ -698,7 +698,7 @@ impl From<&Service> for Timers {
 
         if matches!(service.watchdog.kind, Some(WatchdogKind::HealthCheck)) {
             result.health_check = Some(Alarm::new(Duration::from_millis(
-                service.watchdog.health_check_interval,
+                service.watchdog.health_check_interval as _,
             )));
         }
 
