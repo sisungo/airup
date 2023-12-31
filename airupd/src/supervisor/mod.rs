@@ -178,7 +178,7 @@ impl Manager {
                         continue;
                     }
                 };
-                if v.update_def(new).await.is_err() {
+                if v.update_def(Box::new(new)).await.is_err() {
                     errors.push(k.into());
                 }
             }
@@ -237,7 +237,7 @@ impl SupervisorHandle {
         }
     }
 
-    pub async fn update_def(&self, new: Service) -> Result<Service, Error> {
+    pub async fn update_def(&self, new: Box<Service>) -> Result<Service, Error> {
         let (tx, rx) = oneshot::channel();
         self.sender.send(Request::UpdateDef(new, tx)).await.unwrap();
         rx.await.unwrap()
@@ -299,7 +299,7 @@ impl Supervisor {
                 chan.send(self.reload_service().await).ok();
             }
             Request::UpdateDef(new, chan) => {
-                chan.send(self.update_def(new).await).ok();
+                chan.send(self.update_def(*new).await).ok();
             }
             Request::GetTaskHandle(chan) => {
                 chan.send(self.current_task.0.clone().ok_or(Error::TaskNotFound))
@@ -859,7 +859,7 @@ enum Request {
     Stop(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     Kill(oneshot::Sender<Result<(), Error>>),
     Reload(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
-    UpdateDef(Service, oneshot::Sender<Result<Service, Error>>),
+    UpdateDef(Box<Service>, oneshot::Sender<Result<Service, Error>>),
     GetTaskHandle(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     InterruptTask(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     MakeActive(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),

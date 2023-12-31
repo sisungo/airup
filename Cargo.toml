@@ -1,5 +1,5 @@
 [workspace]
-members = ["airup-sdk", "airupfx", "airupd", "airup"]
+members = ["airup-sdk", "airupfx", "airupd", "airup", "airup-sdk-ffi"]
 resolver = "2"
 
 [profile.release]

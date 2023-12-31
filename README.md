@@ -11,7 +11,8 @@ Maintained Versions:
  - Current Mainline Version: `0.6.0`
  - Current Release Version: `0.6.0`
 
-⚠️ **WARNING**: The project is currently in **unstable** stage and should **NOT** be used in production environments. It may contain errors, bugs or quality issues. Welcome to open an issue to report bugs.
+⚠️ **WARNING**: The project is not widely tested yet and should **NOT** be used in production environments. It may contain
+errors, bugs or quality issues. Welcome to open an issue to report bugs.
 
 ## Documentation
 [Multilingua documentation](docs/README.md) can be found in [docs/](docs/) directory.
