@@ -1,8 +1,15 @@
 //! IPC primitives.
 
 use crate::{error::AirupSDK_Error, ffi::*};
-use libc::{c_char, c_int};
-use std::{ffi::CStr, io::{Read, Write}, slice};
+use libc::{c_char, c_int, c_void};
+use serde::{Deserialize, Serialize};
+use std::{
+    ffi::CStr,
+    io::{Read, Write},
+    path::Path,
+    slice,
+    sync::OnceLock,
+};
 
 pub struct Connection(std::os::unix::net::UnixStream);
 impl Connection {
@@ -41,7 +48,7 @@ pub unsafe extern "C" fn AirupSDK_OpenConnection(path: *const c_char) -> Option<
 /// # Safety
 /// This function is only safe is `data` is a valid array pointer and its length is `len`.
 #[no_mangle]
-pub unsafe extern "C" fn AirupSDK_SendMessage(
+pub unsafe extern "C" fn AirupSDK_SendBytes(
     conn: &mut Connection,
     data: *const u8,
     len: usize,
@@ -55,7 +62,7 @@ pub unsafe extern "C" fn AirupSDK_SendMessage(
 }
 
 #[no_mangle]
-pub extern "C" fn AirupSDK_RecvMessage(
+pub extern "C" fn AirupSDK_RecvBytes(
     conn: &mut Connection,
     data: &mut *mut u8,
     len: &mut usize,
@@ -66,7 +73,7 @@ pub extern "C" fn AirupSDK_RecvMessage(
             *data = ptr;
             *len = _len;
             0
-        },
+        }
         Err(e) => {
             crate::error::set(AirupSDK_Error::with_io(e));
             -1
@@ -77,4 +84,83 @@ pub extern "C" fn AirupSDK_RecvMessage(
 #[no_mangle]
 pub extern "C" fn AirupSDK_CloseConnection(conn: Box<Connection>) {
     drop(conn);
+}
+
+#[no_mangle]
+pub extern "C" fn AirupSDK_PreferredIpcPath() -> *const c_char {
+    static mut CACHED_DEFAULT: OnceLock<*const c_char> = OnceLock::new();
+
+    unsafe {
+        let airup_sock = libc::getenv("AIRUP_SOCK\0".as_ptr() as _);
+        if !airup_sock.is_null() {
+            return airup_sock as _;
+        } else {
+            *CACHED_DEFAULT.get_or_init(|| {
+                let path = Path::new(crate::build::runtime_dir()).join("airupd.sock");
+                allocate_cstr(&*path.to_string_lossy()) as _
+            })
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Request {
+    pub method: String,
+
+    #[serde(alias = "param")]
+    pub params: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", tag = "status", content = "payload")]
+pub enum Response {
+    Ok(serde_json::Value),
+    Err(serde_json::Value),
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn AirupSDK_AllocateRequest(method: *const c_char) -> Box<Request> {
+    Box::new(Request {
+        method: CStr::from_ptr(method).to_string_lossy().into(),
+        params: None,
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn AirupSDK_DeallocateRequest(req: Box<Request>) {
+    drop(req);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn AirupSDK_PutRequestParameter(
+    req: &mut Request,
+    ty: c_int,
+    val: *const c_void,
+) {
+    let value = match ty {
+        1 => serde_json::Value::String(CStr::from_ptr(val as _).to_string_lossy().into()),
+        _ => panic!("unknown ipc type"),
+    };
+    if req.params.is_none() {
+        req.params = Some(value);
+    } else if req.params.as_ref().unwrap().is_array() {
+        req.params
+            .as_mut()
+            .unwrap()
+            .as_array_mut()
+            .unwrap()
+            .push(value);
+    } else {
+        let origin = req.params.take().unwrap();
+        let new = vec![origin, value];
+        req.params = Some(new.into());
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn AirupSDK_SerializeRequest(req: &Request) -> *const c_char {
+    allocate_cstr(
+        serde_json::to_string(req)
+            .expect("a request object should never fail to be serialized into JSON"),
+    )
 }
