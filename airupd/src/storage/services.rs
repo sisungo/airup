@@ -76,7 +76,7 @@ impl Services {
             paths.push(path);
         }
 
-        Service::read_merge(&paths).await
+        Service::read_merge(paths).await
     }
 
     pub async fn list(&self) -> Vec<String> {

@@ -22,7 +22,7 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = super::connect().await?;
 
     if let Some(path) = &cmdline.sideload {
-        let service = Service::read_merge(&[path])
+        let service = Service::read_merge(vec![path.clone()])
             .await
             .map_err(|e| anyhow!("failed to read service at `{}`: {}", path.display(), e))?;
         conn.sideload_service(&cmdline.service, &service).await??;

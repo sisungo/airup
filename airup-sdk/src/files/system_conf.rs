@@ -14,7 +14,11 @@ pub struct SystemConf {
 }
 impl SystemConf {
     /// Parses TOML format [`SystemConf`] from given `path`.
-    pub async fn read_from(path: &Path) -> anyhow::Result<Self> {
+    pub async fn read_from<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
+        Self::_read_from(path.as_ref()).await
+    }
+
+    async fn _read_from(path: &Path) -> anyhow::Result<Self> {
         let s = tokio::fs::read_to_string(path).await?;
         Ok(toml::from_str(&s)?)
     }

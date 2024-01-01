@@ -169,18 +169,19 @@ impl Manager {
 
         for (k, v) in &*supervisors {
             let queried = v.query().await;
-            if !queried.definition.paths.is_empty() {
-                let new = Service::read_merge(&queried.definition.paths).await;
-                let new = match new {
-                    Ok(x) => x,
-                    Err(_) => {
-                        errors.push(k.into());
-                        continue;
-                    }
-                };
-                if v.update_def(Box::new(new)).await.is_err() {
+            let new = airupd()
+                .storage
+                .get_service_patched(&queried.definition.name)
+                .await;
+            let new = match new {
+                Ok(x) => x,
+                Err(_) => {
                     errors.push(k.into());
+                    continue;
                 }
+            };
+            if v.update_def(Box::new(new)).await.is_err() {
+                errors.push(k.into());
             }
         }
 

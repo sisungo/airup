@@ -4,10 +4,7 @@
 use super::ReadError;
 use ahash::HashMap;
 use serde::{Deserialize, Serialize};
-use std::{
-    path::{Path, PathBuf},
-    time::Duration,
-};
+use std::{path::PathBuf, time::Duration};
 
 /// An Airup service.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -38,17 +35,14 @@ impl Service {
     ///
     /// # Panics
     /// Panics if parameter `paths` is empty.
-    pub async fn read_merge(paths: &[impl AsRef<Path>]) -> Result<Self, ReadError> {
-        if paths.is_empty() {
+    pub async fn read_merge(paths: Vec<PathBuf>) -> Result<Self, ReadError> {
+        let Some(main_path) = paths.first() else {
             panic!("parameter `paths` must not be empty");
-        }
-
-        let main_path = paths.first().unwrap().as_ref();
+        };
         let main = tokio::fs::read_to_string(main_path).await?;
         let mut main: serde_json::Value = toml::from_str(&main)?;
 
         for path in &paths[1..] {
-            let path = path.as_ref();
             let content = tokio::fs::read_to_string(path).await?;
             let patch: serde_json::Value = toml::from_str(&content)?;
             json_patch::merge(&mut main, &patch);
@@ -58,7 +52,7 @@ impl Service {
 
         object.validate()?;
         object.name = main_path.file_stem().unwrap().to_string_lossy().into();
-        object.paths = paths.iter().map(|x| x.as_ref().to_path_buf()).collect();
+        object.paths = paths.into_iter().map(|x| x).collect();
 
         Ok(object)
     }
