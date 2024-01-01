@@ -45,6 +45,9 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     if cmdline.halt {
         conn.enter_milestone("halt").await?.ok();
     }
+    if cmdline.userspace {
+        conn.enter_milestone("userspace-reboot").await?.ok();
+    }
 
     Ok(())
 }

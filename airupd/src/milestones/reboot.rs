@@ -6,7 +6,7 @@ use airup_sdk::Error;
 use std::time::Duration;
 use tokio::task::JoinHandle;
 
-pub const PRESETS: &[&str] = &["reboot", "poweroff", "halt"];
+pub const PRESETS: &[&str] = &["reboot", "poweroff", "halt", "userspace-reboot"];
 
 /// Enter a `reboot`-series milestone.
 ///
@@ -17,6 +17,7 @@ pub async fn enter(name: &str) -> Result<(), Error> {
         "reboot" => enter_reboot().await,
         "poweroff" => enter_poweroff().await,
         "halt" => enter_halt().await,
+        "userspace-reboot" => enter_userspace_reboot().await,
         _ => panic!("Unexpected milestone `{name}`"),
     }
 }
@@ -74,6 +75,19 @@ async fn stop_all_services(timeout: Duration) {
     })
     .await
     .ok();
+}
+
+/// Enters the `userspace-reboot` milestone.
+async fn enter_userspace_reboot() -> Result<(), Error> {
+    super::enter_milestone("userspace-reboot".into(), &mut AHashSet::with_capacity(8))
+        .await
+        .ok();
+
+    let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
+    stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
+    airupd().bootstrap_milestone(crate::env::cmdline().milestone.to_string());
+
+    Ok(())
 }
 
 /// Spawns a task to interactively stop a service.

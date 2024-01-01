@@ -84,16 +84,9 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     }
 
     if !cmdline.force {
-        let query_service = conn
-            .query_service(service)
+        conn.query_service(service)
             .await?
             .map_err(|x| anyhow!("failed to enable service `{}`: {}", service, x))?;
-        if query_service.definition.paths.is_empty() {
-            return Err(anyhow!(
-                "failed to enable service `{}`: no such file or directory",
-                cmdline.service
-            ));
-        }
     }
 
     let file = milestone

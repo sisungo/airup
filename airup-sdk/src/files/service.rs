@@ -12,9 +12,6 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub name: String,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub paths: Vec<PathBuf>,
-
     #[serde(default)]
     pub service: Metadata,
 
@@ -52,7 +49,6 @@ impl Service {
 
         object.validate()?;
         object.name = main_path.file_stem().unwrap().to_string_lossy().into();
-        object.paths = paths.into_iter().map(|x| x).collect();
 
         Ok(object)
     }
