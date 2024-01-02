@@ -16,16 +16,19 @@ pub struct Cmdline {
 
     /// Specify Airup milestone
     pub milestone: Cow<'static, str>,
+
+    /// Start Airupd in user mode (experimental)
+    pub user: bool,
 }
 impl Cmdline {
     /// Parses a new [`Cmdline`] instance from the command-line arguments. This function will automatically detect the
     /// environment to detect the style of the parser.
     pub fn parse() -> Self {
-        Self::parse_linux_init()
+        Self::parse_as_linux_init()
     }
 
     /// A command-line argument parser that assumes arguments are Linux-init styled.
-    fn parse_linux_init() -> Self {
+    fn parse_as_linux_init() -> Self {
         let mut object = Self::default();
 
         for arg in std::env::args() {
@@ -59,6 +62,7 @@ impl Default for Cmdline {
             no_color: false,
             verbose: false,
             milestone: "default".into(),
+            user: false,
         }
     }
 }
