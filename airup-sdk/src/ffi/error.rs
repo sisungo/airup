@@ -19,7 +19,7 @@ impl Error {
     }
 
     /// Delete the [`Error`] object.
-    /// 
+    ///
     /// # Safety
     /// As [`Error`] implements [`Copy`], it's undefined behavior if this is called more than once on objects clone/copied from
     /// the same origin.

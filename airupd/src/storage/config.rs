@@ -1,7 +1,7 @@
 //! Represents to Airup's system config.
 
 use ahash::HashMap;
-use airup_sdk::{files::SystemConf, fs::DirChain};
+use airup_sdk::{files::SystemConf, prelude::*};
 use std::path::PathBuf;
 
 #[derive(Debug)]

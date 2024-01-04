@@ -1,6 +1,5 @@
 use ahash::HashMap;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
 
 /// Representation of Airup's system config.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -11,17 +10,6 @@ pub struct SystemConf {
 
     #[serde(default)]
     pub env: Env,
-}
-impl SystemConf {
-    /// Parses TOML format [`SystemConf`] from given `path`.
-    pub async fn read_from<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
-        Self::_read_from(path.as_ref()).await
-    }
-
-    async fn _read_from(path: &Path) -> anyhow::Result<Self> {
-        let s = tokio::fs::read_to_string(path).await?;
-        Ok(toml::from_str(&s)?)
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

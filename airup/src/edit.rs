@@ -8,7 +8,7 @@ pub struct Cmdline {
     file: String,
 }
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     if let Some(_) = cmdline.file.strip_suffix(".airs") {
         todo!()
     } else if let Some(_) = cmdline.file.strip_suffix(".airc") {

@@ -1,24 +1,17 @@
 //! # Milestones
 
-use super::ReadError;
-use crate::fs::DirChain;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
-use std::{path::Path, str::FromStr};
+use std::{path::PathBuf, str::FromStr};
 
 /// Represents to an Airup milestone.
 #[derive(Debug, Clone)]
 pub struct Milestone {
     pub name: String,
     pub manifest: Manifest,
-    pub base_chain: DirChain<'static>,
+    pub base_dir: PathBuf,
 }
 impl Milestone {
-    /// Reads a [`Milestone`] from given directory.
-    pub async fn read_from<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
-        Self::_read_from(path.as_ref()).await
-    }
-
     /// Returns the name to display for this service.
     pub fn display_name(&self) -> &str {
         self.manifest
@@ -26,54 +19,6 @@ impl Milestone {
             .display_name
             .as_deref()
             .unwrap_or(&self.name)
-    }
-
-    async fn _read_from(path: &Path) -> Result<Self, ReadError> {
-        let get_name = |p: &Path| -> Result<String, ReadError> {
-            Ok(p.file_stem()
-                .ok_or_else(|| ReadError::from("invalid milestone path"))?
-                .to_string_lossy()
-                .into())
-        };
-        let base_chain = DirChain::new(path.to_owned());
-        let manifest = Manifest::read_from(path.join(Manifest::FILE_NAME)).await?;
-        let mut name = get_name(path)?;
-        if name == "default" {
-            name = get_name(&tokio::fs::canonicalize(path).await?)?;
-        }
-
-        Ok(Self {
-            name,
-            manifest,
-            base_chain,
-        })
-    }
-
-    pub async fn items(&self) -> Vec<Item> {
-        let mut services = Vec::new();
-
-        let Ok(read_chain) = self.base_chain.read_chain().await else {
-            return services;
-        };
-
-        for i in read_chain {
-            if !i.to_string_lossy().ends_with(".list.airf") {
-                continue;
-            }
-            let Some(path) = self.base_chain.find(&i).await else {
-                continue;
-            };
-            let Ok(list_str) = tokio::fs::read_to_string(&path).await else {
-                continue;
-            };
-            for line in list_str.lines() {
-                if let Ok(item) = line.parse() {
-                    services.push(item);
-                }
-            }
-        }
-
-        services
     }
 }
 
@@ -83,10 +28,6 @@ pub struct Manifest {
 }
 impl Manifest {
     pub const FILE_NAME: &'static str = "milestone.airf";
-
-    async fn read_from<P: AsRef<Path>>(path: P) -> Result<Self, ReadError> {
-        Ok(toml::from_str(&tokio::fs::read_to_string(path).await?)?)
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

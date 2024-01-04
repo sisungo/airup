@@ -30,13 +30,13 @@ impl Default for Context {
 /// Represents to an IPC server.
 #[derive(Debug)]
 pub struct Server {
-    server: airup_sdk::ipc::Server,
+    server: airup_sdk::nonblocking::ipc::Server,
 }
 impl Server {
     /// Creates a new [`Server`] instance.
     pub async fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         let path = path.as_ref();
-        let server = airup_sdk::ipc::Server::new(path)?;
+        let server = airup_sdk::nonblocking::ipc::Server::new(path)?;
         airupfx::fs::set_sock_permission(path).await?;
 
         Ok(Self { server })
@@ -75,12 +75,12 @@ impl Server {
 /// Represents to an Airupd IPC session.
 #[derive(Debug)]
 pub struct Session {
-    conn: airup_sdk::ipc::Connection,
+    conn: airup_sdk::nonblocking::ipc::Connection,
     context: Arc<SessionContext>,
 }
 impl Session {
     /// Creates a new `Session` with the given [airup_sdk::ipc::Connection].
-    pub fn new(conn: airup_sdk::ipc::Connection) -> Self {
+    pub fn new(conn: airup_sdk::nonblocking::ipc::Connection) -> Self {
         Self {
             conn,
             context: Arc::default(),

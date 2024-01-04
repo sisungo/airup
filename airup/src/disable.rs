@@ -1,12 +1,11 @@
 use airup_sdk::{
+    blocking::{files::*, fs::DirChain, system::ConnectionExt as _},
     files::{milestone, Milestone},
-    fs::DirChain,
-    system::ConnectionExt,
 };
 use anyhow::anyhow;
 use clap::Parser;
 use console::style;
-use tokio::io::{AsyncBufReadExt, BufReader};
+use std::io::{BufRead, BufReader};
 
 /// Disable an unit
 #[derive(Debug, Clone, Parser)]
@@ -18,17 +17,16 @@ pub struct Cmdline {
     milestone: Option<String>,
 }
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let service = cmdline
         .service
         .strip_suffix(".airs")
         .unwrap_or(&cmdline.service);
 
-    let mut conn = super::connect().await?;
+    let mut conn = super::connect()?;
 
     let query_system = conn
-        .query_system()
-        .await?
+        .query_system()?
         .map_err(|x| anyhow!("failed to query system information: {x}"))?;
     let current_milestone = query_system
         .milestones
@@ -47,29 +45,25 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         .unwrap_or_else(|| current_milestone.into());
     let milestone = milestones
         .find(&format!("{milestone}.airm"))
-        .await
         .ok_or_else(|| anyhow!("failed to get milestone `{milestone}`: milestone not found"))?;
-    let milestone = Milestone::read_from(milestone)
-        .await
-        .map_err(|x| anyhow!("failed to read milestone: {x}"))?;
+    let milestone =
+        Milestone::read_from(milestone).map_err(|x| anyhow!("failed to read milestone: {x}"))?;
+    let chain = DirChain::new(&milestone.base_dir);
 
-    let path = milestone
-        .base_chain
+    let path = chain
         .find_or_create("97-auto-generated.list.airf")
-        .await
         .map_err(|x| anyhow!("failed to open list file: {x}"))?;
-    let file = tokio::fs::File::options()
+    let file = std::fs::File::options()
         .create(true)
         .write(true)
         .read(true)
         .open(&path)
-        .await
         .map_err(|x| anyhow!("failed to open list file: {x}"))?;
 
-    let mut new = String::with_capacity(file.metadata().await?.len() as usize);
+    let mut new = String::with_capacity(file.metadata()?.len() as usize);
     let mut lines = BufReader::new(file).lines();
     let mut disabled = false;
-    while let Ok(Some(x)) = lines.next_line().await {
+    while let Some(Ok(x)) = lines.next() {
         if let Ok(item) = x.parse::<milestone::Item>() {
             match item {
                 milestone::Item::Start(x) if x.strip_suffix(".airs").unwrap_or(&x) == service => {
@@ -86,7 +80,7 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         }
     }
 
-    tokio::fs::write(&path, new.as_bytes()).await?;
+    std::fs::write(&path, new.as_bytes())?;
 
     if !disabled {
         eprintln!(

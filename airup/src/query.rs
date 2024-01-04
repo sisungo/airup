@@ -1,4 +1,7 @@
-use airup_sdk::prelude::*;
+use airup_sdk::{
+    blocking::{system::ConnectionExt as _, Connection},
+    system::{QueryService, QuerySystem, Status},
+};
 use anyhow::anyhow;
 use chrono::prelude::*;
 use clap::Parser;
@@ -16,8 +19,8 @@ pub struct Cmdline {
     unit: Option<String>,
 }
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = super::connect().await?;
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = super::connect()?;
     match cmdline.unit {
         Some(x) if x.starts_with("pid=") => {
             todo!()
@@ -27,12 +30,11 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         }
         Some(x) => {
             let queried = conn
-                .query_service(&x)
-                .await?
+                .query_service(&x)?
                 .map_err(|e| anyhow!("failed to query service `{}`: {}", x, e))?;
             print_query_service(&queried);
 
-            if let Ok(Ok(logs)) = conn.tail_logs(&format!("airup_service_{}", x), 4).await {
+            if let Ok(Ok(logs)) = conn.tail_logs(&format!("airup_service_{}", x), 4) {
                 println!("\n{}", style("Logs:").bold().underlined());
                 for log in logs {
                     println!("{}", log.message);
@@ -40,8 +42,8 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
             }
         }
         None => {
-            let query_system = conn.query_system().await??;
-            print_query_system(&mut conn, &query_system, &cmdline).await?;
+            let query_system = conn.query_system()??;
+            print_query_system(&mut conn, &query_system, &cmdline)?;
         }
     }
     Ok(())
@@ -81,25 +83,24 @@ fn print_query_service(query_service: &QueryService) {
 }
 
 /// Prints a [`QuerySystem`] to console, in human-friendly format.
-async fn print_query_system(
+fn print_query_system(
     conn: &mut Connection,
     query_system: &QuerySystem,
     cmdline: &Cmdline,
 ) -> anyhow::Result<()> {
     let mut services = Vec::with_capacity(query_system.services.len());
     for i in query_system.services.iter() {
-        let query_service = conn.query_service(i).await?.ok();
+        let query_service = conn.query_service(i)?.ok();
         services.push((
             i.clone(),
             query_service.map(|x| PrintedStatus::of_service(&x)),
         ));
     }
     if cmdline.all {
-        for name in conn.list_services().await?? {
+        for name in conn.list_services()?? {
             services.push((
                 name.clone(),
-                conn.query_service(&name)
-                    .await?
+                conn.query_service(&name)?
                     .ok()
                     .map(|x| PrintedStatus::of_service(&x)),
             ));

@@ -1,4 +1,4 @@
-use airup_sdk::prelude::*;
+use airup_sdk::blocking::system::ConnectionExt as _;
 use anyhow::anyhow;
 use clap::Parser;
 
@@ -17,28 +17,26 @@ pub struct Cmdline {
     force: bool,
 }
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = super::connect().await?;
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = super::connect()?;
 
-    let stop_service = async {
+    let mut stop_service = || {
         if cmdline.force {
-            conn.kill_service(&cmdline.service).await
+            conn.kill_service(&cmdline.service)
         } else {
-            conn.stop_service(&cmdline.service).await
+            conn.stop_service(&cmdline.service)
         }
     };
 
     if !cmdline.uncache {
-        stop_service
-            .await?
+        stop_service()?
             .map_err(|e| anyhow!("failed to stop service `{}`: {}", cmdline.service, e))?;
     } else {
-        stop_service.await?.ok();
+        stop_service()?.ok();
     }
 
     if cmdline.uncache {
-        conn.uncache_service(&cmdline.service)
-            .await?
+        conn.uncache_service(&cmdline.service)?
             .map_err(|e| anyhow!("failed to uncache service `{}`: {}", cmdline.service, e))?;
     }
     Ok(())

@@ -1,32 +1,12 @@
 //! Filesystem utilities.
 
+use crate::util::IterExt;
 use std::{
     borrow::Cow,
     collections::HashSet,
     ffi::OsString,
     path::{Path, PathBuf},
 };
-
-/// An extension of [`Iterator`].
-trait IterExt<T> {
-    /// Removes *all* duplicated elements from the iterator.
-    fn dedup_all(&mut self) -> Vec<T>;
-}
-impl<T, I> IterExt<T> for I
-where
-    I: Iterator<Item = T>,
-    T: PartialEq,
-{
-    fn dedup_all(&mut self) -> Vec<T> {
-        let mut result = Vec::new();
-        self.for_each(|x| {
-            if !result.contains(&x) {
-                result.push(x);
-            }
-        });
-        result
-    }
-}
 
 /// Represents to a "directory chain", which has a filesystem layout similar to:
 /// ```text

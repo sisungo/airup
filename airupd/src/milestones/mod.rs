@@ -10,6 +10,7 @@ use airup_sdk::{
         milestone::{Item, Kind},
         Milestone,
     },
+    prelude::*,
     system::EnteredMilestone,
     Error,
 };

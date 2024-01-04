@@ -1,4 +1,4 @@
-use airup_sdk::prelude::*;
+use airup_sdk::blocking::system::ConnectionExt as _;
 use clap::Parser;
 
 /// Reboot, power-off or halt the system
@@ -33,20 +33,20 @@ pub struct Cmdline {
 }
 
 /// Entrypoint of the `airup reboot` subprogram.
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = super::connect().await?;
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = super::connect()?;
 
     if cmdline.reboot {
-        conn.enter_milestone("reboot").await?.ok();
+        conn.enter_milestone("reboot")?.ok();
     }
     if cmdline.poweroff {
-        conn.enter_milestone("poweroff").await?.ok();
+        conn.enter_milestone("poweroff")?.ok();
     }
     if cmdline.halt {
-        conn.enter_milestone("halt").await?.ok();
+        conn.enter_milestone("halt")?.ok();
     }
     if cmdline.userspace {
-        conn.enter_milestone("userspace-reboot").await?.ok();
+        conn.enter_milestone("userspace-reboot")?.ok();
     }
 
     Ok(())

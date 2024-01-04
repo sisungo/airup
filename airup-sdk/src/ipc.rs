@@ -13,83 +13,10 @@
 //! should be less than 6MiB and cannot be zero, or a serious protocol error will be occured. Then follows content of the
 //! datagram.
 
-use crate::error::ApiError;
-use anyhow::anyhow;
+use crate::Error;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{
-    ops::{Deref, DerefMut},
-    path::Path,
-};
-use tokio::{
-    io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
-    net::{UnixListener, UnixStream},
-};
 
-#[derive(Debug)]
-pub struct Connection(MessageProto<UnixStream>);
-impl Connection {
-    /// Connects to the specified socket.
-    pub async fn connect<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
-        Ok(Self(MessageProto::new(
-            UnixStream::connect(path).await?,
-            usize::MAX,
-        )))
-    }
-
-    /// Receives a datagram and deserializes it from JSON to `T`.
-    pub async fn recv<T: DeserializeOwned>(&mut self) -> anyhow::Result<T> {
-        Ok(serde_json::from_slice(&self.0.recv().await?)?)
-    }
-
-    /// Receives a request from the underlying protocol.
-    pub async fn recv_req(&mut self) -> anyhow::Result<Request> {
-        let req: Request = serde_json::from_slice(&self.0.recv().await?).unwrap_or_else(|err| {
-            Request::new(
-                "debug.echo_raw",
-                Response::Err(ApiError::bad_request("InvalidJson", err.to_string())),
-            )
-            .unwrap()
-        });
-        Ok(req)
-    }
-
-    /// Receives a response from the underlying protocol.
-    pub async fn recv_resp(&mut self) -> anyhow::Result<Response> {
-        self.recv().await
-    }
-
-    /// Sends a datagram with JSON-serialized given object.
-    pub async fn send<T: Serialize>(&mut self, obj: &T) -> anyhow::Result<()> {
-        self.0.send(serde_json::to_string(obj)?.as_bytes()).await
-    }
-}
-impl Deref for Connection {
-    type Target = MessageProto<UnixStream>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-impl DerefMut for Connection {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-/// A wrap of `UnixListener` that accepts [`Connection`].
-#[derive(Debug)]
-pub struct Server(UnixListener);
-impl Server {
-    /// Creates a new instance, binding to the given path.
-    pub fn new<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
-        Ok(Self(UnixListener::bind(path)?))
-    }
-
-    /// Accepts an connection.
-    pub async fn accept(&self) -> std::io::Result<Connection> {
-        Ok(Connection(self.0.accept().await?.0.into()))
-    }
-}
+pub const DEFAULT_SIZE_LIMIT: usize = 6 * 1024 * 1024;
 
 /// Representation of an Airup IPC request.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -100,7 +27,7 @@ pub struct Request {
     pub params: Option<serde_json::Value>,
 }
 impl Request {
-    /// Creates a new [Request] with given method name and parameters.
+    /// Creates a new [`Request`] with given method name and parameters.
     pub fn new<M: Into<String>, C: Serialize, P: Into<Option<C>>>(
         method: M,
         params: P,
@@ -112,9 +39,9 @@ impl Request {
     }
 
     /// Extracts parameters from the request.
-    pub fn extract_params<T: DeserializeOwned>(self) -> Result<T, ApiError> {
+    pub fn extract_params<T: DeserializeOwned>(self) -> Result<T, Error> {
         let value: serde_json::Value = self.params.into();
-        serde_json::from_value(value).map_err(ApiError::invalid_params)
+        serde_json::from_value(value).map_err(Error::invalid_params)
     }
 }
 
@@ -123,7 +50,7 @@ impl Request {
 #[serde(rename_all = "kebab-case", tag = "status", content = "payload")]
 pub enum Response {
     Ok(serde_json::Value),
-    Err(ApiError),
+    Err(Error),
 }
 impl Response {
     /// Creates a new `Response` from given `Result`.
@@ -131,7 +58,7 @@ impl Response {
     /// # Panics
     /// Panics when `serde_json::to_value` fails. This always assumes that the passed value is always interpreted as a value
     /// JSON object.
-    pub fn new<T: Serialize>(result: Result<T, ApiError>) -> Self {
+    pub fn new<T: Serialize>(result: Result<T, Error>) -> Self {
         match result {
             Ok(val) => Self::Ok(serde_json::to_value(&val).unwrap()),
             Err(err) => Self::Err(err),
@@ -139,66 +66,11 @@ impl Response {
     }
 
     /// Converts from `Response` to a `Result`.
-    pub fn into_result<T: DeserializeOwned>(self) -> Result<T, ApiError> {
+    pub fn into_result<T: DeserializeOwned>(self) -> Result<T, Error> {
         match self {
             Self::Ok(val) => Ok(serde_json::from_value(val)
-                .map_err(|err| ApiError::bad_response("TypeError", format!("{:?}", err)))?),
+                .map_err(|err| Error::bad_response("TypeError", format!("{:?}", err)))?),
             Self::Err(err) => Err(err),
         }
-    }
-}
-
-/// A middle layer that splits a stream into messages.
-#[derive(Debug)]
-pub struct MessageProto<T> {
-    inner: T,
-    size_limit: usize,
-}
-impl<T> MessageProto<T> {
-    /// Sets received datagram size limitation.
-    pub fn set_size_limit(&mut self, new: usize) -> usize {
-        std::mem::replace(&mut self.size_limit, new)
-    }
-
-    /// Creates a new [`MessageProto`] with provided stream.
-    pub fn new(inner: T, size_limit: usize) -> Self {
-        Self { inner, size_limit }
-    }
-}
-impl<T: AsyncRead + Unpin> MessageProto<T> {
-    /// Receives a datagram from the stream.
-    pub async fn recv(&mut self) -> anyhow::Result<Vec<u8>> {
-        let len = self.inner.read_u64_le().await? as usize;
-        if len > self.size_limit {
-            return Err(anyhow!("datagram is too big ({} bytes)", len));
-        }
-        let mut blob = vec![0u8; len];
-        self.inner.read_exact(&mut blob).await?;
-
-        Ok(blob)
-    }
-}
-impl<T: AsyncWrite + Unpin> MessageProto<T> {
-    /// Sends a datagram to the stream.
-    pub async fn send(&mut self, blob: &[u8]) -> anyhow::Result<()> {
-        self.inner.write_u64_le(blob.len() as _).await?;
-        self.inner.write_all(blob).await?;
-
-        Ok(())
-    }
-}
-impl<T> AsRef<T> for MessageProto<T> {
-    fn as_ref(&self) -> &T {
-        &self.inner
-    }
-}
-impl<T> AsMut<T> for MessageProto<T> {
-    fn as_mut(&mut self) -> &mut T {
-        &mut self.inner
-    }
-}
-impl<T: AsyncRead + AsyncWrite + Unpin> From<T> for MessageProto<T> {
-    fn from(inner: T) -> Self {
-        Self::new(inner, 6 * 1024 * 1024)
     }
 }

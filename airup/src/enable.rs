@@ -1,12 +1,11 @@
 use airup_sdk::{
+    blocking::{files::*, fs::DirChain, system::ConnectionExt as _},
     files::{milestone, Milestone},
-    fs::DirChain,
-    system::ConnectionExt,
 };
 use anyhow::anyhow;
 use clap::Parser;
 use console::style;
-use tokio::io::AsyncWriteExt;
+use std::io::Write;
 
 /// Enable an unit
 #[derive(Debug, Clone, Parser)]
@@ -24,17 +23,16 @@ pub struct Cmdline {
     milestone: Option<String>,
 }
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let service = cmdline
         .service
         .strip_suffix(".airs")
         .unwrap_or(&cmdline.service);
 
-    let mut conn = super::connect().await?;
+    let mut conn = super::connect()?;
 
     let query_system = conn
-        .query_system()
-        .await?
+        .query_system()?
         .map_err(|x| anyhow!("failed to query system information: {x}"))?;
     let current_milestone = query_system
         .milestones
@@ -53,13 +51,12 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         .unwrap_or_else(|| current_milestone.into());
     let milestone = milestones
         .find(&format!("{milestone}.airm"))
-        .await
         .ok_or_else(|| anyhow!("failed to get milestone `{milestone}`: milestone not found"))?;
-    let milestone = Milestone::read_from(milestone)
-        .await
-        .map_err(|x| anyhow!("failed to read milestone: {x}"))?;
+    let milestone =
+        Milestone::read_from(milestone).map_err(|x| anyhow!("failed to read milestone: {x}"))?;
+    let chain = DirChain::new(&milestone.base_dir);
 
-    for item in milestone.items().await {
+    for item in milestone.items() {
         match item {
             milestone::Item::Start(x) if x.strip_suffix(".airs").unwrap_or(&x) == service => {
                 eprintln!(
@@ -84,31 +81,25 @@ pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     }
 
     if !cmdline.force {
-        conn.query_service(service)
-            .await?
+        conn.query_service(service)?
             .map_err(|x| anyhow!("failed to enable service `{}`: {}", service, x))?;
     }
 
-    let file = milestone
-        .base_chain
+    let file = chain
         .find_or_create("97-auto-generated.list.airf")
-        .await
         .map_err(|x| anyhow!("failed to open list file: {x}"))?;
-    let mut file = tokio::fs::File::options()
+    let mut file = std::fs::File::options()
         .write(true)
         .create(true)
         .append(true)
         .open(file)
-        .await
         .map_err(|x| anyhow!("failed to open list file: {x}"))?;
 
     if cmdline.cache {
         file.write_all(format!("\ncache {}\n", service).as_bytes())
-            .await
             .map_err(|x| anyhow!("failed to write to list file: {x}"))?;
     } else {
         file.write_all(format!("\nstart {}\n", service).as_bytes())
-            .await
             .map_err(|x| anyhow!("failed to write to list file: {x}"))?;
     }
 

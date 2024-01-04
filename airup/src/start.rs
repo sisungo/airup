@@ -1,4 +1,7 @@
-use airup_sdk::{files::Service, prelude::*};
+use airup_sdk::{
+    blocking::{files::*, system::ConnectionExt as _},
+    files::Service,
+};
 use anyhow::anyhow;
 use clap::Parser;
 use std::path::PathBuf;
@@ -18,23 +21,20 @@ pub struct Cmdline {
     sideload: Option<PathBuf>,
 }
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = super::connect().await?;
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = super::connect()?;
 
     if let Some(path) = &cmdline.sideload {
         let service = Service::read_merge(vec![path.clone()])
-            .await
             .map_err(|e| anyhow!("failed to read service at `{}`: {}", path.display(), e))?;
-        conn.sideload_service(&cmdline.service, &service).await??;
+        conn.sideload_service(&cmdline.service, &service)??;
     }
 
     if !cmdline.cache {
-        conn.start_service(&cmdline.service)
-            .await?
+        conn.start_service(&cmdline.service)?
             .map_err(|e| anyhow!("failed to start service `{}`: {}", cmdline.service, e))?;
     } else if cmdline.sideload.is_none() {
-        conn.cache_service(&cmdline.service)
-            .await?
+        conn.cache_service(&cmdline.service)?
             .map_err(|e| anyhow!("failed to cache service `{}`: {}", cmdline.service, e))?;
     }
     Ok(())

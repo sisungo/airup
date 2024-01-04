@@ -1,4 +1,4 @@
-use airup_sdk::{info::ConnectionExt as _, system::ConnectionExt as _};
+use airup_sdk::blocking::{info::ConnectionExt as _, system::ConnectionExt as _};
 use clap::Parser;
 
 /// Debug Airup
@@ -15,27 +15,27 @@ pub struct Cmdline {
     print_build_manifest: bool,
 }
 
-pub async fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    let mut conn = super::connect().await?;
+pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
+    let mut conn = super::connect()?;
 
     if let Some(cmd) = cmdline.raw {
-        conn.send_raw(cmd.as_bytes()).await?;
-        println!("{}", String::from_utf8_lossy(&conn.recv_raw().await?));
+        conn.send_raw(cmd.as_bytes())?;
+        println!("{}", String::from_utf8_lossy(&conn.recv_raw()?));
         return Ok(());
     }
 
     if let Some(logger) = cmdline.use_logger {
         if logger.is_empty() {
-            conn.use_logger(None).await??;
+            conn.use_logger(None)??;
         } else {
-            conn.use_logger(Some(&logger)).await??;
+            conn.use_logger(Some(&logger))??;
         }
     }
 
     if cmdline.print_build_manifest {
         println!(
             "{}",
-            serde_json::to_string_pretty(&conn.build_manifest().await??).unwrap()
+            serde_json::to_string_pretty(&conn.build_manifest()??).unwrap()
         );
         return Ok(());
     }

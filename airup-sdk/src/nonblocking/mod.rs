@@ -19,24 +19,24 @@ pub struct Connection {
 }
 impl Connection {
     /// Connects to the specific path.
-    pub fn connect<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
+    pub async fn connect<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
         Ok(Self {
-            underlying: ipc::Connection::connect(path)?,
+            underlying: ipc::Connection::connect(path).await?,
         })
     }
 
     /// Sends a raw message.
-    pub fn send_raw(&mut self, msg: &[u8]) -> anyhow::Result<()> {
-        (*self.underlying).send(msg)
+    pub async fn send_raw(&mut self, msg: &[u8]) -> anyhow::Result<()> {
+        (*self.underlying).send(msg).await
     }
 
     /// Receives a raw message.
-    pub fn recv_raw(&mut self) -> anyhow::Result<Vec<u8>> {
-        (*self.underlying).recv()
+    pub async fn recv_raw(&mut self) -> anyhow::Result<Vec<u8>> {
+        (*self.underlying).recv().await
     }
 
     /// Invokes an RPC method.
-    pub fn invoke<P: Serialize, T: DeserializeOwned>(
+    pub async fn invoke<P: Serialize, T: DeserializeOwned>(
         &mut self,
         method: &str,
         params: P,
@@ -44,10 +44,12 @@ impl Connection {
         let req = Request::new(method, params).unwrap();
         self.underlying
             .send(&req)
+            .await
             .map_err(|e| anyhow!("cannot send request to airup daemon: {e}"))?;
         Ok(self
             .underlying
             .recv_resp()
+            .await
             .map_err(|e| anyhow!("cannot receive response from airup daemon: {e}"))?
             .into_result())
     }
