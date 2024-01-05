@@ -9,26 +9,35 @@ use airup_sdk::ipc::Request;
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
-    methods.insert("system.refresh", refresh);
-    methods.insert("system.gc", gc);
-    methods.insert("system.start_service", start_service);
-    methods.insert("system.query_service", query_service);
-    methods.insert("system.query_system", query_system);
-    methods.insert("system.stop_service", stop_service);
-    methods.insert("system.kill_service", kill_service);
-    methods.insert("system.reload_service", reload_service);
-    methods.insert("system.sideload_service", sideload_service);
-    methods.insert("system.unsideload_service", unsideload_service);
-    methods.insert("system.cache_service", cache_service);
-    methods.insert("system.uncache_service", uncache_service);
-    methods.insert("system.interrupt_service_task", interrupt_service_task);
-    methods.insert("system.list_services", list_services);
-    methods.insert("system.use_logger", use_logger);
-    methods.insert("system.tail_logs", tail_logs);
-    methods.insert("system.enter_milestone", enter_milestone);
-    methods.insert("system.poweroff", poweroff);
-    methods.insert("system.reboot", reboot);
-    methods.insert("system.halt", halt);
+    crate::ipc_methods!(
+        system,
+        [
+            refresh,
+            gc,
+            start_service,
+            query_service,
+            query_system,
+            stop_service,
+            kill_service,
+            reload_service,
+            sideload_service,
+            unsideload_service,
+            cache_service,
+            uncache_service,
+            interrupt_service_task,
+            list_services,
+            use_logger,
+            tail_logs,
+            enter_milestone,
+            poweroff,
+            reboot,
+            halt,
+        ]
+    )
+    .iter()
+    .for_each(|(k, v)| {
+        methods.insert(k, *v);
+    });
 }
 
 fn refresh(_: Arc<SessionContext>, _: Request) -> MethodFuture {

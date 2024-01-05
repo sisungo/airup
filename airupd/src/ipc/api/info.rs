@@ -6,6 +6,11 @@ use airup_sdk::ipc::Request;
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
+    crate::ipc_methods!(info, [version, build_manifest,])
+        .iter()
+        .for_each(|(k, v)| {
+            methods.insert(k, *v);
+        });
     methods.insert("info.version", version);
     methods.insert("info.build_manifest", build_manifest);
 }

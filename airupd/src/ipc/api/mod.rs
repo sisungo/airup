@@ -56,3 +56,12 @@ pub type Method = fn(Arc<SessionContext>, Request) -> MethodFuture;
 
 /// Represents to future type of an IPC method.
 pub type MethodFuture = BoxFuture<'static, Result<serde_json::Value, Error>>;
+
+#[macro_export]
+macro_rules! ipc_methods {
+    ($prefix:ident, [$($n:ident),*,]) => {
+        [
+            $((concat!(stringify!($prefix), ".", stringify!($n)), $n as Method)),*
+        ]
+    };
+}

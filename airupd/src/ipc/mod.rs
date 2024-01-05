@@ -35,7 +35,7 @@ impl Server {
     pub async fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         let path = path.as_ref();
         let server = airup_sdk::nonblocking::ipc::Server::new(path)?;
-        airupfx::fs::set_sock_permission(path).await?;
+        airupfx::fs::set_permission(path, airupfx::fs::Permission::Socket).await?;
 
         Ok(Self { server })
     }

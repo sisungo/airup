@@ -19,7 +19,7 @@ impl FallbackLogger {
         crate::app::airupd()
             .storage
             .logs
-            .open_append(&format!("{subject}.simple_logger.json"))
+            .open_append(&format!("{subject}.fallback_logger.json"))
             .await
     }
 
@@ -27,7 +27,7 @@ impl FallbackLogger {
         crate::app::airupd()
             .storage
             .logs
-            .open_read(&format!("{subject}.simple_logger.json"))
+            .open_read(&format!("{subject}.fallback_logger.json"))
             .await
     }
 }

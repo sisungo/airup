@@ -1,7 +1,7 @@
 //! Represents to Airup's runtime directory.
 
 use crate::ipc;
-use anyhow::anyhow;
+use airupfx::fs::Lock;
 use std::path::PathBuf;
 
 /// Main navigator of Airup's runtime directory.
@@ -19,7 +19,7 @@ impl Runtime {
     }
 
     /// Locks airup data.
-    pub async fn lock(&self) -> anyhow::Result<Lock> {
+    pub async fn lock(&self) -> std::io::Result<Lock> {
         Lock::new(self.base_dir.join("airupd.lock")).await
     }
 
@@ -28,26 +28,5 @@ impl Runtime {
         let socket_path = self.base_dir.join("airupd.sock");
         std::env::set_var("AIRUP_SOCK", &socket_path);
         ipc::Server::new_force(&socket_path).await
-    }
-}
-
-/// Represents to a lock file.
-#[derive(Debug)]
-pub struct Lock(PathBuf);
-impl Lock {
-    /// Creates an owned `Lock` instance for specified path.
-    pub async fn new(path: PathBuf) -> anyhow::Result<Self> {
-        if *airupfx::process::ID != 1 && tokio::fs::try_exists(&path).await.unwrap_or(true) {
-            return Err(anyhow!("already locked"));
-        }
-
-        tokio::fs::write(&path, airupfx::process::ID.to_string().as_bytes()).await?;
-
-        Ok(Self(path))
-    }
-}
-impl Drop for Lock {
-    fn drop(&mut self) {
-        std::fs::remove_file(&self.0).ok();
     }
 }

@@ -12,10 +12,11 @@ use airup_sdk::{
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
-    methods.insert("debug.echo_raw", echo_raw);
-    methods.insert("debug.dump", dump);
-    methods.insert("debug.exit", exit);
-    methods.insert("debug.reload_image", reload_image);
+    crate::ipc_methods!(debug, [echo_raw, dump, exit, reload_image,])
+        .iter()
+        .for_each(|(k, v)| {
+            methods.insert(k, *v);
+        });
 }
 
 fn echo_raw(_: Arc<SessionContext>, x: Request) -> MethodFuture {
