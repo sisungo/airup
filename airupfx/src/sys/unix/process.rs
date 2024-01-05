@@ -5,6 +5,8 @@
 //! `waitpid()` completed, if the PID was previously subscribed, the result will be sent to the subscriber and then the
 //! subscription is cancelled.
 
+#![allow(unstable_name_collisions)]
+
 use super::std_port::CommandExt as _;
 use crate::{
     io::PiperHandle,
@@ -14,7 +16,7 @@ use ahash::AHashMap;
 use std::{
     cmp,
     convert::Infallible,
-    os::unix::process::CommandExt,
+    os::unix::process::CommandExt as _,
     sync::{Arc, OnceLock, RwLock},
     time::Duration,
 };
@@ -280,6 +282,9 @@ pub(crate) async fn command_to_std(
     if let Some(x) = command.env.gid {
         result.gid(x);
     }
+    if let Some(x) = &command.env.groups {
+        result.groups(x);
+    }
     if let Some(x) = &command.env.working_dir {
         result.current_dir(x);
     }
@@ -308,9 +313,19 @@ pub(crate) fn command_login(
     env: &mut crate::process::CommandEnv,
     name: &str,
 ) -> anyhow::Result<()> {
-    let (uid, gid) = crate::env::with_user_by_name(name, |entry| (**entry.id(), *entry.group_id()))
-        .ok_or_else(|| anyhow::anyhow!("user \"{name}\" not found"))?;
-    env.uid(uid).gid(gid);
+    let (uid, gid, groups_id) = crate::env::with_user_by_name(name, |entry| {
+        (
+            **entry.id(),
+            *entry.group_id(),
+            entry
+                .groups()
+                .into_iter()
+                .map(|x| **x.id())
+                .collect::<Vec<_>>(),
+        )
+    })
+    .ok_or_else(|| anyhow::anyhow!("user \"{name}\" not found"))?;
+    env.uid(uid).gid(gid).groups(groups_id);
 
     Ok(())
 }

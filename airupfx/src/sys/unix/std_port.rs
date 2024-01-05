@@ -6,9 +6,12 @@ use std::os::unix::process::CommandExt as _;
 
 /// Port of unstable feature `#![feature(process_setsid)]` and `#![feature(setgroups)]` to stable Rust.
 ///
-/// This will be deleted when the feature is stablized.
+/// This will be deleted when the features gets stablized, or moved if they are determined to remove.
 pub trait CommandExt {
+    /// View [Tracking Issue for `process_setsid`](https://github.com/rust-lang/rust/issues/105376).
     fn setsid(&mut self) -> &mut Self;
+
+    /// View [`std::os::unix::process::CommandExt::groups`].
     fn groups(&mut self, groups: &[libc::gid_t]) -> &mut Self;
 }
 impl CommandExt for std::process::Command {

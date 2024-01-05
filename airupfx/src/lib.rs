@@ -13,7 +13,6 @@ pub mod power;
 pub mod prelude;
 pub mod process;
 pub mod signal;
-pub mod std_port;
 pub mod sys;
 pub mod time;
 pub mod util;

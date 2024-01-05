@@ -50,7 +50,7 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         .milestone
         .unwrap_or_else(|| current_milestone.into());
     let milestone = milestones
-        .find(&format!("{milestone}.airm"))
+        .find(format!("{milestone}.airm"))
         .ok_or_else(|| anyhow!("failed to get milestone `{milestone}`: milestone not found"))?;
     let milestone =
         Milestone::read_from(milestone).map_err(|x| anyhow!("failed to read milestone: {x}"))?;
@@ -89,7 +89,6 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         .find_or_create("97-auto-generated.list.airf")
         .map_err(|x| anyhow!("failed to open list file: {x}"))?;
     let mut file = std::fs::File::options()
-        .write(true)
         .create(true)
         .append(true)
         .open(file)

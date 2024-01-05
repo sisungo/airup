@@ -1,7 +1,5 @@
 //! # Airup IPC - Server Implementation
 
-#![allow(unstable_name_collisions)]
-
 pub mod api;
 
 use crate::app::airupd;
