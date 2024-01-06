@@ -56,6 +56,15 @@ impl StartService {
             return Err(Error::UnitStarted);
         }
 
+        // The task immediately fails if the service is `forking`-kinded, and supervising it is not supported on the system
+        if self.context.service.service.kind == Kind::Forking
+            && !airupfx::process::is_forking_supervisable()
+        {
+            return Err(Error::unsupported(
+                "supervising `forking`-kinded services are unsupported on the system",
+            ));
+        }
+
         // Auto saving of last error is enabled for this task
         self.context.last_error.set(None);
         self.context.last_error.set_autosave(true);
@@ -120,7 +129,8 @@ impl StartService {
         if let Some(x) = &self.context.service.exec.post_start {
             for line in x.lines() {
                 ace.run_wait_timeout(line.trim(), countdown.left())
-                    .await??;
+                    .await
+                    .ok();
             }
         }
 

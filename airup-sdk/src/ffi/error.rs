@@ -25,7 +25,7 @@ impl Error {
     /// the same origin.
     pub unsafe fn delete(self) {
         if !self.message.is_null() {
-            super::dealloc_c_str(self.message);
+            super::dealloc_c_string(self.message);
         }
 
         if !self.payload.is_null() {
@@ -42,7 +42,7 @@ impl Default for Error {
     fn default() -> Self {
         Self {
             code: 0,
-            message: super::alloc_c_str("Undefined error ( 0 )".into()),
+            message: super::alloc_c_string("Undefined error ( 0 )".into()),
             payload: std::ptr::null(),
         }
     }

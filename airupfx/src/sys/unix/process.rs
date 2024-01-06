@@ -26,25 +26,14 @@ pub type Pid = libc::pid_t;
 
 static CHILD_QUEUE: OnceLock<ChildQueue> = OnceLock::new();
 
-/// Waits for process termination in nonblocking mode.
-///
-/// # Errors
-/// An `Err(_)` is returned if the underlying OS function failed.
-fn wait_nonblocking(pid: Pid) -> std::io::Result<Option<Wait>> {
-    let mut status = 0;
-    let pid = unsafe { libc::waitpid(pid as _, &mut status, libc::WNOHANG) } as Pid;
-
-    match pid.cmp(&0) {
-        cmp::Ordering::Equal => Ok(None),
-        cmp::Ordering::Less => Err(std::io::Error::last_os_error()),
-        cmp::Ordering::Greater => Ok(Some(Wait::new(pid as _, ExitStatus::from_unix(status)))),
-    }
-}
-
 pub fn reload_image() -> std::io::Result<Infallible> {
     Err(std::process::Command::new(std::env::current_exe()?)
         .args(std::env::args_os().skip(1))
         .exec())
+}
+
+pub fn is_forking_supervisable() -> bool {
+    *crate::process::ID == 1
 }
 
 /// Sends the given signal to the specified process.
@@ -102,14 +91,14 @@ impl ExitStatusExt for crate::process::ExitStatus {
 
 /// Representation of a running or exited child process.
 #[derive(Debug)]
-pub struct Child {
+pub(crate) struct Child {
     pid: Pid,
     wait_queue: watch::Receiver<Option<Wait>>,
     stdout: Option<Arc<PiperHandle>>,
     stderr: Option<Arc<PiperHandle>>,
 }
 impl Child {
-    pub const fn id(&self) -> Pid {
+    pub(crate) const fn id(&self) -> Pid {
         self.pid
     }
 
@@ -146,20 +135,20 @@ impl Child {
         }
     }
 
-    pub fn from_pid(pid: Pid) -> std::io::Result<Self> {
+    pub(crate) fn from_pid(pid: Pid) -> std::io::Result<Self> {
         (wait_nonblocking(pid)?).map_or_else(
             || Ok(unsafe { Self::from_pid_unchecked(pid) }),
             |_| Err(std::io::ErrorKind::NotFound.into()),
         )
     }
 
-    pub async fn wait(&self) -> Result<Wait, WaitError> {
+    pub(crate) async fn wait(&self) -> Result<Wait, WaitError> {
         let mut wait_queue = self.wait_queue.clone();
         let wait = wait_queue.wait_for(|x| x.is_some()).await.unwrap();
         Ok(wait.clone().unwrap())
     }
 
-    pub fn send_signal(&self, sig: i32) -> std::io::Result<()> {
+    pub(crate) fn send_signal(&self, sig: i32) -> std::io::Result<()> {
         if self.wait_queue.borrow().is_none() {
             kill(self.pid, sig)
         } else {
@@ -167,15 +156,15 @@ impl Child {
         }
     }
 
-    pub fn kill(&self) -> std::io::Result<()> {
+    pub(crate) fn kill(&self) -> std::io::Result<()> {
         self.send_signal(super::signal::SIGKILL)
     }
 
-    pub fn stdout(&self) -> Option<Arc<PiperHandle>> {
+    pub(crate) fn stdout(&self) -> Option<Arc<PiperHandle>> {
         self.stdout.clone()
     }
 
-    pub fn stderr(&self) -> Option<Arc<PiperHandle>> {
+    pub(crate) fn stderr(&self) -> Option<Arc<PiperHandle>> {
         self.stderr.clone()
     }
 }
@@ -202,7 +191,7 @@ impl ChildQueue {
     ///
     /// # Panics
     /// This method would panic if the instance is already set.
-    pub fn init() {
+    fn init() {
         CHILD_QUEUE.set(Self::new()).unwrap();
         child_queue().start().ok();
     }
@@ -235,7 +224,7 @@ impl ChildQueue {
     }
 
     /// Creates a new [`mpsc::Receiver`] handle that will receive [`Wait`] sent after this call to `subscribe`.
-    pub fn subscribe(&self, pid: Pid) -> watch::Receiver<Option<Wait>> {
+    fn subscribe(&self, pid: Pid) -> watch::Receiver<Option<Wait>> {
         let mut lock = self.queue.write().unwrap();
         let (tx, rx) = watch::channel(None);
         lock.insert(pid, tx);
@@ -243,12 +232,12 @@ impl ChildQueue {
     }
 
     /// Removes a subscription ahead of time.
-    pub fn unsubscribe(&self, pid: Pid) -> Option<()> {
+    fn unsubscribe(&self, pid: Pid) -> Option<()> {
         self.queue.write().unwrap().remove(&pid).map(|_| ())
     }
 
     /// Sends the given [`Wait`] to the queue.
-    pub async fn send(&self, wait: Wait) -> Option<()> {
+    async fn send(&self, wait: Wait) -> Option<()> {
         let entry = self.queue.write().unwrap().remove(&(wait.pid() as _));
         match entry {
             Some(x) => x.send(Some(wait)).ok().map(|_| ()),
@@ -263,6 +252,21 @@ impl ChildQueue {
 /// Panics if the instance has not been initialized yet.
 fn child_queue() -> &'static ChildQueue {
     CHILD_QUEUE.get().unwrap()
+}
+
+/// Waits for process termination in nonblocking mode.
+///
+/// # Errors
+/// An `Err(_)` is returned if the underlying OS function failed.
+fn wait_nonblocking(pid: Pid) -> std::io::Result<Option<Wait>> {
+    let mut status = 0;
+    let pid = unsafe { libc::waitpid(pid as _, &mut status, libc::WNOHANG) } as Pid;
+
+    match pid.cmp(&0) {
+        cmp::Ordering::Equal => Ok(None),
+        cmp::Ordering::Less => Err(std::io::Error::last_os_error()),
+        cmp::Ordering::Greater => Ok(Some(Wait::new(pid as _, ExitStatus::from_unix(status)))),
+    }
 }
 
 /// Converts from [`crate::process::Command`] to [`std::process::Command`].
@@ -330,7 +334,7 @@ pub(crate) fn command_login(
     Ok(())
 }
 
-pub async fn spawn(cmd: &crate::process::Command) -> anyhow::Result<Child> {
+pub(crate) async fn spawn(cmd: &crate::process::Command) -> anyhow::Result<Child> {
     Ok(Child::from_std(command_to_std(cmd).await?.spawn()?))
 }
 

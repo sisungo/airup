@@ -14,6 +14,11 @@ use std::{
 /// The OS-assigned process identifier associated with this process.
 pub static ID: Lazy<u32> = Lazy::new(std::process::id);
 
+/// Returns `true` if supervising `forking` services are supported on the system.
+pub fn is_forking_supervisable() -> bool {
+    sys::process::is_forking_supervisable()
+}
+
 /// Reloads the process image with the version on the filesystem.
 ///
 /// # Errors
@@ -199,6 +204,7 @@ impl Stdio {
     }
 }
 
+/// Cross-platform representation of a child process' environment.
 #[derive(Debug, Clone, Default)]
 pub struct CommandEnv {
     pub(crate) uid: Option<u32>,
@@ -320,6 +326,7 @@ impl CommandEnv {
     }
 }
 
+/// Cross-platform representation of creation of a child process.
 #[derive(Debug)]
 pub struct Command {
     pub(crate) env: CommandEnv,

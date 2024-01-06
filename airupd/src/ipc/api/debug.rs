@@ -12,11 +12,14 @@ use airup_sdk::{
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
-    crate::ipc_methods!(debug, [echo_raw, dump, exit, reload_image,])
-        .iter()
-        .for_each(|(k, v)| {
-            methods.insert(k, *v);
-        });
+    crate::ipc_methods!(
+        debug,
+        [echo_raw, dump, exit, reload_image, is_forking_supervisable,]
+    )
+    .iter()
+    .for_each(|(k, v)| {
+        methods.insert(k, *v);
+    });
 }
 
 fn echo_raw(_: Arc<SessionContext>, x: Request) -> MethodFuture {
@@ -45,4 +48,8 @@ fn reload_image(_: Arc<SessionContext>, _: Request) -> MethodFuture {
         airupd().lifetime.reload_image();
         ok_null()
     })
+}
+
+fn is_forking_supervisable(_: Arc<SessionContext>, _: Request) -> MethodFuture {
+    Box::pin(async move { ok(airupfx::process::is_forking_supervisable()) })
 }

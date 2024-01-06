@@ -9,3 +9,7 @@ pub fn become_subreaper() -> std::io::Result<()> {
         Ok(())
     }
 }
+
+pub fn is_forking_supervisable() -> bool {
+    true
+}
