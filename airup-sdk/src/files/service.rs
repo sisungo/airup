@@ -9,6 +9,11 @@ use std::{path::PathBuf, time::Duration};
 /// An Airup service.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Service {
+    /// Name of the service.
+    /// 
+    /// **NOTE**: This is an internal implementation detail and may subject to change in the future. This
+    /// should **never** appear in any `.airs` files.
+    #[doc(hidden)]
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub name: String,
 
@@ -27,7 +32,7 @@ pub struct Service {
     pub watchdog: Watchdog,
 }
 impl Service {
-    /// Returns `Ok(())` if the service is correct, otherwise returns `Err(_)`.
+    /// Returns `Ok(())` if the service is correct, otherwise returns `Err(ReadError::Validation(_))`.
     pub fn validate(&self) -> Result<(), ReadError> {
         let env_user_conflict =
             self.env.login.is_some() && (self.env.uid.is_some() || self.env.gid.is_some());
@@ -195,19 +200,19 @@ pub struct Exec {
     pub health_check: Option<String>,
 
     /// Timeout of executing commands, in milliseconds
-    all_timeout: Option<u32>,
+    pub all_timeout: Option<u32>,
 
     /// Timeout of starting the service until it's active, in milliseconds
-    start_timeout: Option<u32>,
+    pub start_timeout: Option<u32>,
 
     /// Timeout of stopping the service, in milliseconds
-    stop_timeout: Option<u32>,
+    pub stop_timeout: Option<u32>,
 
     /// Timeout of checking health of a service, in milliseconds
-    health_check_timeout: Option<u32>,
+    pub health_check_timeout: Option<u32>,
 
     /// Timeout of reloading the service, in milliseconds
-    reload_timeout: Option<u32>,
+    pub reload_timeout: Option<u32>,
 }
 impl Exec {
     #[inline]
@@ -256,6 +261,7 @@ pub struct Retry {
     pub delay: u64,
 }
 
+/// Watchdog configuration.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct Watchdog {
@@ -276,6 +282,7 @@ impl Watchdog {
     }
 }
 
+/// Kind of service watchdog.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum WatchdogKind {

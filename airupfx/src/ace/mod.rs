@@ -60,9 +60,9 @@ impl Ace {
         }
     }
 
-    fn run_tokenized<'a, I: Iterator<Item = String> + Send + Sync + 'a>(
+    fn run_tokenized<'a>(
         &'a self,
-        tokens: I,
+        tokens: impl Iterator<Item = String> + Send + 'a,
     ) -> BoxFuture<'_, Result<Child, Error>> {
         Box::pin(async {
             let cmd: parser::Command = tokens.into();

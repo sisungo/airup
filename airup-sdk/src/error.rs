@@ -113,14 +113,14 @@ pub enum ApiError {
     Custom { message: String },
 }
 impl ApiError {
-    pub fn bad_request<K: Into<String>, M: Into<String>>(kind: K, message: M) -> Self {
+    pub fn bad_request(kind: impl Into<String>, message: impl Into<String>) -> Self {
         Self::BadRequest {
             kind: kind.into(),
             message: message.into(),
         }
     }
 
-    pub fn bad_response<K: Into<String>, M: Into<String>>(kind: K, message: M) -> Self {
+    pub fn bad_response(kind: impl Into<String>, message: impl Into<String>) -> Self {
         Self::BadResponse {
             kind: kind.into(),
             message: message.into(),
@@ -131,45 +131,46 @@ impl ApiError {
         Self::invalid_params("missing parameters")
     }
 
-    pub fn invalid_params<E: ToString>(err: E) -> Self {
+    pub fn invalid_params(err: impl ToString) -> Self {
         Self::InvalidParams {
             message: err.to_string(),
         }
     }
 
-    pub fn dep_not_satisfied<T: Into<String>>(name: T) -> Self {
+    pub fn dep_not_satisfied(name: impl Into<String>) -> Self {
         Self::DepNotSatisfied { name: name.into() }
     }
 
-    pub fn unsupported<T: Into<Cow<'static, str>>>(message: T) -> Self {
+    pub fn unsupported(message: impl Into<Cow<'static, str>>) -> Self {
         Self::Unsupported {
             message: message.into(),
         }
     }
 
-    pub fn internal<T: Into<Cow<'static, str>>>(message: T) -> Self {
+    pub fn internal(message: impl Into<Cow<'static, str>>) -> Self {
         Self::Internal {
             message: message.into(),
         }
     }
 
-    pub fn pid_file<T: ToString>(err: T) -> Self {
+    pub fn pid_file(err: impl ToString) -> Self {
         Self::PidFile {
             message: err.to_string(),
         }
     }
 
-    pub fn custom<T: ToString>(err: T) -> Self {
+    pub fn custom(err: impl ToString) -> Self {
         Self::Custom {
             message: err.to_string(),
         }
     }
 }
 
+/// A trait that hints the error type may be converted into [`ApiError`]. 
 pub trait IntoApiError {
+    /// Convert from the error type into [`ApiError`].
     fn into_api_error(self) -> ApiError;
 }
-
 impl<T: IntoApiError> From<T> for ApiError {
     fn from(value: T) -> Self {
         value.into_api_error()

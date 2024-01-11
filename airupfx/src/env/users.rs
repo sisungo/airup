@@ -10,14 +10,15 @@ static CACHE: Lazy<mini_moka::sync::Cache<Request, Option<usize>, ahash::RandomS
     Lazy::new(|| {
         mini_moka::sync::Cache::builder()
             .initial_capacity(4)
-            .max_capacity(64)
+            .max_capacity(16)
             .build_with_hasher(ahash::RandomState::default())
     });
 
 /// Refreshes users database.
 pub fn refresh() {
-    USERS.write().unwrap().refresh_list();
+    let mut users = USERS.write().unwrap();
     CACHE.invalidate_all();
+    users.refresh_list();
 }
 
 /// Finds a user entry by UID.

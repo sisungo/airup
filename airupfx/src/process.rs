@@ -257,24 +257,19 @@ impl CommandEnv {
     }
 
     #[inline]
-    pub fn var<K: Into<OsString>, V: Into<Option<C>>, C: Into<OsString>>(
+    pub fn var<C: Into<OsString>>(
         &mut self,
-        k: K,
-        v: V,
+        k: impl Into<OsString>,
+        v: impl Into<Option<C>>,
     ) -> &mut Self {
         self.vars.push((k.into(), v.into().map(Into::into)));
         self
     }
 
     #[inline]
-    pub fn vars<
-        I: Iterator<Item = (K, V)>,
-        K: Into<OsString>,
-        V: Into<Option<T>>,
-        T: Into<OsString>,
-    >(
+    pub fn vars<K: Into<OsString>, V: Into<Option<T>>, T: Into<OsString>>(
         &mut self,
-        iter: I,
+        iter: impl Iterator<Item = (K, V)>,
     ) -> &mut Self {
         iter.for_each(|(k, v)| {
             self.var(k, v);

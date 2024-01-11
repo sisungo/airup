@@ -50,8 +50,6 @@ fn kill(pid: Pid, signum: i32) -> std::io::Result<()> {
 
 /// Sends a signal to all running processes, then wait for them to be terminated. If the timeout expired, the processes are
 /// force-killed.
-///
-/// On systems without signal support, forces all running processes to be killed.
 pub(crate) async fn kill_all(timeout: Duration) {
     eprintln!("Sending SIGTERM to all processes");
     kill(-1, super::signal::SIGTERM).ok();

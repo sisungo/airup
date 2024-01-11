@@ -165,7 +165,7 @@ pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
             .stdout(to_ace(env.stdout.clone()))
             .stderr(to_ace(env.stderr.clone()))
             .clear_vars(env.clear_vars)
-            .vars::<_, String, _, String>(env.vars.clone().into_iter())
+            .vars::<String, _, String>(env.vars.clone().into_iter())
             .working_dir::<PathBuf, _>(env.working_dir.clone())
             .setsid(true);
 
