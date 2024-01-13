@@ -1,4 +1,4 @@
-//! The Airup SDK prelude
+//! The Airup SDK preludes.
 
 pub use crate::error::IntoApiError;
 pub use crate::system::{QueryService, QuerySystem, Status};

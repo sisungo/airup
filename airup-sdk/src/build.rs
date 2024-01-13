@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, sync::OnceLock};
 
-pub static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
+static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
 
 /// Represents to the structure of the build manifest, which is usually read from `build_manifest.json` at compile-time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,10 +48,7 @@ fn default_os_name() -> String {
 pub fn manifest() -> &'static BuildManifest {
     #[cfg(feature = "_internal")]
     {
-        MANIFEST.get_or_init(|| {
-            serde_json::from_str(include_str!("../../build_manifest.json"))
-                .expect("bad airup build")
-        })
+        MANIFEST.get_or_init(embedded_manifest)
     }
 
     #[cfg(not(feature = "_internal"))]
@@ -66,4 +63,15 @@ pub fn manifest() -> &'static BuildManifest {
 /// Panics if the manifest is already set, which may be done by any call of [`manifest`] or [`set_manifest`].
 pub fn set_manifest(manifest: BuildManifest) {
     MANIFEST.set(manifest).unwrap();
+}
+
+/// Returns the embedded [`BuildManifest`] instance.
+/// 
+/// # Panics
+/// Panics if the compile-time `build_manifest.json` was invalid.
+#[doc(hidden)]
+#[cfg(feature = "_internal")]
+pub fn embedded_manifest() -> BuildManifest {
+    serde_json::from_str(include_str!("../../build_manifest.json"))
+        .expect("bad airup build")
 }

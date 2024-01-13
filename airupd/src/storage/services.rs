@@ -1,3 +1,5 @@
+//! Represents to Airup's services directory.
+
 use airup_sdk::{
     files::{ReadError, Service},
     prelude::*,

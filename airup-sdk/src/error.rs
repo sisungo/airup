@@ -1,4 +1,4 @@
-//! Error handling
+//! Airup SDK error types.
 
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;

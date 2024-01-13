@@ -1,3 +1,5 @@
+//! Represents to Airup's milestone directory.
+
 use airup_sdk::{
     files::{Milestone, ReadError},
     prelude::*,

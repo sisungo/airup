@@ -1,4 +1,4 @@
-//! # Airup Storage
+//! Storage subsystem of the Airup daemon.
 
 mod config;
 mod logs;
