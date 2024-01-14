@@ -67,6 +67,9 @@ pub trait ConnectionExt {
 
     /// Enters the specific milestone.
     fn enter_milestone(&mut self, name: &str) -> anyhow::Result<Result<(), Error>>;
+
+    /// Triggers the specific event.
+    fn trigger_event(&mut self, event: &str) -> anyhow::Result<Result<(), Error>>;
 }
 impl ConnectionExt for super::Connection {
     fn sideload_service(
@@ -151,5 +154,9 @@ impl ConnectionExt for super::Connection {
 
     fn enter_milestone(&mut self, name: &str) -> anyhow::Result<Result<(), Error>> {
         self.invoke("system.enter_milestone", name)
+    }
+
+    fn trigger_event(&mut self, event: &str) -> anyhow::Result<Result<(), Error>> {
+        self.invoke("system.trigger_event", event)
     }
 }

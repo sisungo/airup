@@ -95,34 +95,14 @@ impl StartService {
                 }
             }
             Kind::Forking => {
-                ace.run_wait_timeout(&self.context.service.exec.start, countdown.left())
-                    .await??;
-
-                let pid: i64 = tokio::fs::read_to_string(
-                    &self.context.service.service.pid_file.as_ref().unwrap(),
-                )
-                .await
-                .map_err(Error::pid_file)?
-                .trim()
-                .parse()
-                .map_err(Error::pid_file)?;
-
-                let child = airupfx::ace::Child::Process(
-                    airupfx::process::Child::from_pid(pid).map_err(|err| Error::Io {
-                        message: err.to_string(),
-                    })?,
-                );
-                self.context.set_child(child).await;
+                self.start_forking(&ace, &countdown).await?;
             }
             Kind::Oneshot => {
                 ace.run_wait_timeout(&self.context.service.exec.start, countdown.left())
                     .await??;
             }
             Kind::Notify => {
-                // TODO: Implement `notify`
-                self.context
-                    .set_child(ace.run(&self.context.service.exec.start).await?)
-                    .await;
+                self.start_notify(&ace, &countdown).await?;
             }
         }
 
@@ -137,6 +117,53 @@ impl StartService {
         self.context.status.set(Status::Active);
 
         Ok(())
+    }
+
+    async fn start_forking(&mut self, ace: &Ace, countdown: &Countdown) -> Result<(), Error> {
+        ace.run_wait_timeout(&self.context.service.exec.start, countdown.left())
+            .await??;
+
+        let pid: i64 =
+            tokio::fs::read_to_string(&self.context.service.service.pid_file.as_ref().unwrap())
+                .await
+                .map_err(Error::pid_file)?
+                .trim()
+                .parse()
+                .map_err(Error::pid_file)?;
+
+        let child = airupfx::ace::Child::Process(airupfx::process::Child::from_pid(pid).map_err(
+            |err| Error::Io {
+                message: err.to_string(),
+            },
+        )?);
+
+        self.context.set_child(child).await;
+
+        Ok(())
+    }
+
+    async fn start_notify(&mut self, ace: &Ace, countdown: &Countdown) -> Result<(), Error> {
+        let mut events = airupd().events.subscribe();
+        let interest = format!("notify_active:{}", self.context.service.name);
+        let child = ace.run(&self.context.service.exec.start).await?;
+        self.context.set_child(child).await;
+        loop {
+            let receive = match countdown.left() {
+                Some(dur) => tokio::time::timeout(dur, events.recv()).await,
+                None => Ok(events.recv().await),
+            };
+            let Ok(receive) = receive else {
+                if let Some(child) = self.context.set_child(None).await {
+                    child.kill().await.ok();
+                }
+                return Err(Error::TimedOut);
+            };
+            if let Ok(x) = receive {
+                if x == interest {
+                    break Ok(());
+                }
+            }
+        }
     }
 
     async fn solve_deps(&self) -> Result<(), Error> {

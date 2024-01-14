@@ -574,8 +574,8 @@ impl SupervisorContext {
     }
 
     /// Sets new child for the supervisor.
-    pub async fn set_child<T: Into<Option<Child>>>(&self, new: T) {
-        *self.child.write().await = new.into();
+    pub async fn set_child<T: Into<Option<Child>>>(&self, new: T) -> Option<Child> {
+        std::mem::replace(&mut *self.child.write().await, new.into())
     }
 }
 

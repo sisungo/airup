@@ -29,6 +29,7 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
             use_logger,
             tail_logs,
             enter_milestone,
+            trigger_event,
             poweroff,
             reboot,
             halt,
@@ -176,6 +177,14 @@ fn enter_milestone(_: Arc<SessionContext>, req: Request) -> MethodFuture {
     Box::pin(async move {
         let name: String = req.extract_params()?;
         airupd().enter_milestone(name).await?;
+        ok_null()
+    })
+}
+
+fn trigger_event(_: Arc<SessionContext>, req: Request) -> MethodFuture {
+    Box::pin(async move {
+        let event: String = req.extract_params()?;
+        airupd().events.trigger(event).await;
         ok_null()
     })
 }

@@ -1,6 +1,6 @@
 //! The Airupd application
 
-use crate::{ipc, lifetime, logger, milestones, storage::Storage, supervisor};
+use crate::*;
 use airup_sdk::system::{QuerySystem, Status};
 use airupfx::signal::*;
 use std::sync::OnceLock;
@@ -13,7 +13,7 @@ static AIRUPD: OnceLock<Airupd> = OnceLock::new();
 #[derive(Debug)]
 pub struct Airupd {
     /// The storage manager.
-    pub storage: Storage,
+    pub storage: storage::Storage,
 
     /// The IPC context.
     pub ipc: ipc::Context,
@@ -32,18 +32,22 @@ pub struct Airupd {
 
     /// Timestamp generated on creation of the struct.
     pub boot_timestamp: i64,
+
+    /// Event bus.
+    pub events: events::Bus,
 }
 impl Airupd {
     /// Initializes the Airupd app for use of [`airupd`].
     pub async fn init() {
         let object = Self {
-            storage: Storage::new().await,
+            storage: storage::Storage::new().await,
             ipc: ipc::Context::new(),
             lifetime: lifetime::System::new(),
             milestones: milestones::Manager::new(),
             supervisors: supervisor::Manager::new(),
             logger: logger::Manager::new(),
             boot_timestamp: airupfx::time::timestamp_ms(),
+            events: events::Bus::new(),
         };
 
         AIRUPD.set(object).unwrap();

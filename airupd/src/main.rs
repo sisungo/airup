@@ -2,6 +2,7 @@
 
 pub mod app;
 pub mod env;
+pub mod events;
 pub mod ipc;
 pub mod lifetime;
 pub mod logger;

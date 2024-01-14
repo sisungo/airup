@@ -17,6 +17,7 @@ selinux = ["airupfx/selinux"]
 [dependencies]
 ahash = "0.8"
 anyhow = "1"
+async-broadcast = "0.6"
 async-trait = "0.1"
 airupfx = { path = "../airupfx" }
 airup-sdk = { path = "../airup-sdk", features = ["_internal"] }
