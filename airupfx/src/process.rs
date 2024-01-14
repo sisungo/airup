@@ -2,7 +2,6 @@
 
 use crate::io::PiperHandle;
 use crate::sys;
-use once_cell::sync::Lazy;
 use std::{
     convert::Infallible,
     ffi::OsString,
@@ -10,9 +9,6 @@ use std::{
     path::PathBuf,
     sync::Arc,
 };
-
-/// The OS-assigned process identifier associated with this process.
-pub static ID: Lazy<u32> = Lazy::new(std::process::id);
 
 /// Returns `true` if supervising `forking` services are supported on the system.
 pub fn is_forking_supervisable() -> bool {
@@ -32,7 +28,7 @@ pub fn reload_image() -> std::io::Result<Infallible> {
 /// If the process has `pid == 1`, this will start a shell and reloads the process image. Otherwise this will make current
 /// process exit.
 pub fn emergency() -> ! {
-    if *ID == 1 {
+    if std::process::id() == 1 {
         loop {
             tracing::error!(target: "console", "A fatal error has occured. Starting shell...");
             if let Err(e) = shell() {

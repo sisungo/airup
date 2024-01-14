@@ -33,7 +33,7 @@ pub fn reload_image() -> std::io::Result<Infallible> {
 }
 
 pub fn is_forking_supervisable() -> bool {
-    *crate::process::ID == 1
+    std::process::id() == 1
 }
 
 /// Sends the given signal to the specified process.

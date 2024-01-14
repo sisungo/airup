@@ -32,7 +32,7 @@ impl Lock {
     pub async fn new(path: PathBuf) -> std::io::Result<Self> {
         let mut options = tokio::fs::File::options();
         options.write(true);
-        if *crate::process::ID != 1 {
+        if std::process::id() != 1 {
             options.create_new(true);
         } else {
             options.create(true).truncate(true);
@@ -40,7 +40,7 @@ impl Lock {
 
         let mut holder = options.open(&path).await?;
         holder
-            .write_all(crate::process::ID.to_string().as_bytes())
+            .write_all(std::process::id().to_string().as_bytes())
             .await?;
         set_permission(&path, Permission::Lock).await.ok();
 
