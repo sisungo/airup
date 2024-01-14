@@ -99,7 +99,7 @@ impl Cmdline {
                 continue;
             }
         }
-        
+
         object
     }
 

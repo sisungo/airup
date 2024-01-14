@@ -10,7 +10,7 @@ use std::{path::PathBuf, time::Duration};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Service {
     /// Name of the service.
-    /// 
+    ///
     /// **NOTE**: This is an internal implementation detail and may subject to change in the future. This
     /// should **never** appear in any `.airs` files.
     #[doc(hidden)]

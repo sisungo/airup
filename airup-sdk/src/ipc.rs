@@ -19,16 +19,16 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 pub const DEFAULT_SIZE_LIMIT: usize = 6 * 1024 * 1024;
 
 /// A request object in the Airup IPC protocol.
-/// 
+///
 /// Interpreted as JSON, a serialized request object looks like:
-/// 
+///
 /// ```json
 /// {
 ///     "status": "<ok | err>",
 ///     "payload": <payload>,
 /// }
 /// ```
-/// 
+///
 /// If the method requires no parameters, `params` can be `null` or even not present. If the method requires only one parameter,
 /// the field is the parameter itself. If the method requires more than one parameters, the field is an array filled with
 /// parameters.
@@ -59,18 +59,18 @@ impl Request {
 }
 
 /// A response object in the Airup IPC protocol.
-/// 
+///
 /// Interpreted as JSON, a serialized response object looks like:
-/// 
+///
 /// ```json
 /// {
 ///     "status": "<ok | err>",
 ///     "payload": <payload>,
 /// }
 /// ```
-/// 
+///
 /// On success, `status` is `ok`, and `payload` is the return value of the requested method.
-/// 
+///
 /// On failure, `status` is `err`, and `payload` is an [`Error`] object.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", tag = "status", content = "payload")]

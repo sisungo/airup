@@ -3,6 +3,7 @@ members = ["airup-sdk", "airupfx", "airupd", "airup"]
 resolver = "2"
 
 [profile.release]
+codegen-units = 1
 lto = true
 
 [workspace.dependencies.tokio]

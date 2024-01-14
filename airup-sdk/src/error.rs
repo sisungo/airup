@@ -166,7 +166,7 @@ impl ApiError {
     }
 }
 
-/// A trait that hints the error type may be converted into [`ApiError`]. 
+/// A trait that hints the error type may be converted into [`ApiError`].
 pub trait IntoApiError {
     /// Convert from the error type into [`ApiError`].
     fn into_api_error(self) -> ApiError;
