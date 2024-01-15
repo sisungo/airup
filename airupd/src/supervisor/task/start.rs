@@ -145,6 +145,7 @@ impl StartService {
     async fn start_notify(&mut self, ace: &Ace, countdown: &Countdown) -> Result<(), Error> {
         let mut events = airupd().events.subscribe();
         let interest = format!("notify_active:{}", self.context.service.name);
+        let interest2 = format!("notify_active:{}.airs", self.context.service.name);
         let child = ace.run(&self.context.service.exec.start).await?;
         self.context.set_child(child).await;
         loop {
@@ -159,7 +160,7 @@ impl StartService {
                 return Err(Error::TimedOut);
             };
             if let Ok(x) = receive {
-                if x == interest {
+                if x == interest || x == interest2 {
                     break Ok(());
                 }
             }

@@ -4,12 +4,16 @@
 #[derive(Debug)]
 pub struct Bus {
     sender: async_broadcast::Sender<String>,
+    _receiver: async_broadcast::InactiveReceiver<String>,
 }
 impl Bus {
     /// Creates a new [`Bus`] instance.
     pub fn new() -> Self {
+        let (sender, _receiver) = async_broadcast::broadcast(16);
+        let _receiver = _receiver.deactivate();
         Self {
-            sender: async_broadcast::broadcast(16).0,
+            sender,
+            _receiver,
         }
     }
 
