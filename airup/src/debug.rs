@@ -56,10 +56,10 @@ pub fn send_raw(raw: &str) -> anyhow::Result<()> {
 
 pub fn use_logger(logger: &str) -> anyhow::Result<()> {
     let mut conn = super::connect()?;
-    if logger.is_empty() {
+    if logger.is_empty() || logger == "null" {
         conn.use_logger(None)??;
     } else {
-        conn.use_logger(Some(&logger))??;
+        conn.use_logger(Some(logger))??;
     }
 
     Ok(())

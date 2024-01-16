@@ -1,3 +1,15 @@
+Changes in v0.7.0:
+ * [Feature] Implement `notify`-kinded services
+ * [Feature] Event API
+ * [Feature] Add `airupd::env::Cmdline::parse_as_unix_command()` argument parser
+ * [Feature] Implement login groups
+ * [Feature] Userspace reboot
+ * [Developer] Implements Airup SDK for C
+ * [Developer] `blocking` API in the Airup SDK
+ * [Fix] `forking`-kinded services can be started as the system does not support
+ * [Fix] User cache is too big
+ * [Fix] Some services are not updated in a `self-reload`
+
 Changes in v0.6.0:
  * [Feature] Implement delayed retrying
  * [Feature] `airup debug --use-logger` and `airup debug --print-build-manifest` CLI utilities

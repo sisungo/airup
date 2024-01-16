@@ -44,7 +44,6 @@ impl TaskHandle for HealthCheckHandle {
     }
 }
 
-#[derive(Debug)]
 struct HealthCheck {
     helper: TaskHelper,
     ace: Result<Ace, Error>,

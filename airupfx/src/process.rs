@@ -172,7 +172,7 @@ impl From<crate::sys::process::Child> for Child {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Default)]
 pub enum Stdio {
     /// The child inherits from the corresponding parent descriptor.
     #[default]
@@ -181,13 +181,28 @@ pub enum Stdio {
     /// A new pipe should be arranged to connect the parent and child processes.
     Piped,
 
+    /// Similar to [`Stdio::Piped`], but a callback is called on each line.
+    Callback(Box<dyn super::io::PiperCallback>),
+
+    /// The child's stdio is redirected to the file.
     File(PathBuf),
+}
+impl Clone for Stdio {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Inherit => Self::Inherit,
+            Self::Piped => Self::Piped,
+            Self::Callback(c) => Self::Callback(c.clone_boxed()),
+            Self::File(f) => Self::File(f.clone()),
+        }
+    }
 }
 impl Stdio {
     pub async fn to_std(&self) -> std::io::Result<std::process::Stdio> {
         Ok(match self {
             Self::Inherit => std::process::Stdio::inherit(),
             Self::Piped => std::process::Stdio::piped(),
+            Self::Callback(_) => std::process::Stdio::piped(),
             Self::File(path) => tokio::fs::File::options()
                 .append(true)
                 .create(true)
@@ -201,7 +216,7 @@ impl Stdio {
 }
 
 /// Cross-platform representation of a child process' environment.
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct CommandEnv {
     pub(crate) uid: Option<u32>,
     pub(crate) gid: Option<u32>,
@@ -318,7 +333,6 @@ impl CommandEnv {
 }
 
 /// Cross-platform representation of creation of a child process.
-#[derive(Debug)]
 pub struct Command {
     pub(crate) env: CommandEnv,
     pub(crate) program: OsString,

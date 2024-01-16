@@ -1,4 +1,5 @@
-//! File: `airup.h`: Main header file of Airup SDK for C
+//! File: airup.h
+//! Description: Main header file of the Airup SDK for C
 //! License: MIT
 
 #pragma once

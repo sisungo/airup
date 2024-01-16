@@ -10,7 +10,7 @@ use airup_sdk::{
     system::{QueryService, Status},
     Error,
 };
-use airupfx::{ace::Child, io::PiperHandle, process::Wait, time::Alarm};
+use airupfx::{ace::Child, process::Wait, time::Alarm};
 use std::{
     cmp,
     sync::{
@@ -266,11 +266,7 @@ impl Supervisor {
         loop {
             tokio::select! {
                 req = self.receiver.recv() => self.handle_req(req?).await,
-                Some(do_child) = do_child(&self.context, self.current_task.has_task()) => match do_child {
-                    DoChild::Wait(wait) => self.handle_wait(wait).await,
-                    DoChild::Stdout(msg) => self.log("stdout", &msg).await,
-                    DoChild::Stderr(msg) => self.log("stderr", &msg).await,
-                },
+                Some(wait) = do_child(&self.context, self.current_task.has_task()) => self.handle_wait(wait).await,
                 Some(handle) = self.current_task.wait() => self.handle_wait_task(handle).await,
                 Some(_) = Timers::wait(&mut self.timers.health_check) => self.handle_health_check().await,
             }
@@ -472,8 +468,7 @@ impl Supervisor {
             .await
     }
 
-    /// Writes to the global logger.
-    pub async fn log(&self, module: &str, msg: &[u8]) {
+    /*pub async fn log(&self, module: &str, msg: &[u8]) {
         airupd()
             .logger
             .write(
@@ -483,7 +478,7 @@ impl Supervisor {
             )
             .await
             .ok();
-    }
+    }*/
 }
 
 /// A container of current running task in the supervisor.
@@ -866,27 +861,14 @@ enum Request {
     MakeActive(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
 }
 
-enum DoChild {
-    Wait(Wait),
-    Stdout(Vec<u8>),
-    Stderr(Vec<u8>),
-}
-
-async fn do_child(context: &SupervisorContext, has_task: bool) -> Option<DoChild> {
+async fn do_child(context: &SupervisorContext, has_task: bool) -> Option<Wait> {
     let mut lock = context.child.write().await;
-
-    let stdout = lock.as_ref().and_then(|x| x.stdout());
-    let stderr = lock.as_ref().and_then(|x| x.stderr());
 
     if has_task || lock.is_none() {
         return None;
     }
 
-    tokio::select! {
-        Some(wait) = wait(&mut lock) => Some(DoChild::Wait(wait)),
-        Some(line) = wait_piper(stdout) => Some(DoChild::Stdout(line)),
-        Some(line) = wait_piper(stderr) => Some(DoChild::Stderr(line)),
-    }
+    wait(&mut lock).await
 }
 
 async fn wait(lock: &mut Option<Child>) -> Option<Wait> {
@@ -894,8 +876,4 @@ async fn wait(lock: &mut Option<Child>) -> Option<Wait> {
     let wait = lock.as_mut().unwrap().wait().await.ok();
     *lock = None;
     wait
-}
-
-async fn wait_piper(piper: Option<Arc<PiperHandle>>) -> Option<Vec<u8>> {
-    piper?.read_line().await
 }

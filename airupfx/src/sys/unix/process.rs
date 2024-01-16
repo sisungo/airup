@@ -10,7 +10,7 @@
 use super::std_port::CommandExt as _;
 use crate::{
     io::PiperHandle,
-    process::{ExitStatus, Wait},
+    process::{CommandEnv, ExitStatus, Stdio, Wait},
 };
 use ahash::AHashMap;
 use std::{
@@ -87,6 +87,16 @@ impl ExitStatusExt for crate::process::ExitStatus {
     }
 }
 
+macro_rules! map_stdio {
+    ($fx:expr, $std:expr) => {
+        match &$fx {
+            Stdio::Piped => PiperHandle::new($std),
+            Stdio::Callback(c) => PiperHandle::with_callback($std, c.clone_boxed()),
+            _ => PiperHandle::new($std),
+        }
+    };
+}
+
 /// Representation of a running or exited child process.
 #[derive(Debug)]
 pub(crate) struct Child {
@@ -100,17 +110,17 @@ impl Child {
         self.pid
     }
 
-    fn from_std(c: std::process::Child) -> Self {
+    fn from_std(env: &CommandEnv, c: std::process::Child) -> Self {
         let pid = c.id();
         let stdout = c
             .stdout
             .and_then(|x| tokio::process::ChildStdout::from_std(x).ok())
-            .map(PiperHandle::new)
+            .map(|x| map_stdio!(env.stdout, x))
             .map(Arc::new);
         let stderr = c
             .stderr
             .and_then(|x| tokio::process::ChildStderr::from_std(x).ok())
-            .map(PiperHandle::new)
+            .map(|x| map_stdio!(env.stderr, x))
             .map(Arc::new);
         Self {
             pid: pid as _,
@@ -333,7 +343,7 @@ pub(crate) fn command_login(
 }
 
 pub(crate) async fn spawn(cmd: &crate::process::Command) -> anyhow::Result<Child> {
-    Ok(Child::from_std(command_to_std(cmd).await?.spawn()?))
+    Ok(Child::from_std(&cmd, command_to_std(cmd).await?.spawn()?))
 }
 
 /// An error occured by calling `wait` on a [`Child`].

@@ -11,10 +11,7 @@ impl Bus {
     pub fn new() -> Self {
         let (sender, _receiver) = async_broadcast::broadcast(16);
         let _receiver = _receiver.deactivate();
-        Self {
-            sender,
-            _receiver,
-        }
+        Self { sender, _receiver }
     }
 
     /// Subscribes to the bus.

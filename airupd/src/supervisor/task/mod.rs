@@ -17,7 +17,7 @@ pub use stop::StopServiceHandle;
 use super::SupervisorContext;
 use airup_sdk::Error;
 use airupfx::prelude::*;
-use std::{future::Future, path::PathBuf};
+use std::{future::Future, path::PathBuf, pin::Pin};
 use tokio::sync::watch;
 
 /// Representation of handle to a task.
@@ -143,36 +143,55 @@ pub fn task_helper() -> (TaskHelperHandle, TaskHelper) {
     (handle, helper)
 }
 
+async fn ace_environment(
+    service: &airup_sdk::files::Service,
+) -> anyhow::Result<airupfx::process::CommandEnv> {
+    let env = &service.env;
+    let mut result = airupfx::process::CommandEnv::new();
+    let log = |y| {
+        let name = format!("airup_service_{}", service.name);
+        let module = match y {
+            1 => "stdout",
+            2 => "stderr",
+            _ => unreachable!(),
+        };
+        let callback = move |msg: Vec<u8>| -> Pin<Box<dyn Future<Output = _> + Send>> {
+            Box::pin(async move {
+                crate::app::airupd()
+                    .logger
+                    .write(&name, module, &msg)
+                    .await
+                    .ok();
+            })
+        };
+        airupfx::process::Stdio::Callback(Box::new(callback))
+    };
+
+    let to_ace = |x, y| match x {
+        airup_sdk::files::service::Stdio::Inherit => airupfx::process::Stdio::Inherit,
+        airup_sdk::files::service::Stdio::File(path) => airupfx::process::Stdio::File(path),
+        airup_sdk::files::service::Stdio::Log => log(y),
+    };
+
+    result
+        .login(env.login.as_deref())?
+        .uid(env.uid)
+        .gid(env.gid)
+        .stdout(to_ace(env.stdout.clone(), 1))
+        .stderr(to_ace(env.stderr.clone(), 2))
+        .clear_vars(env.clear_vars)
+        .vars::<String, _, String>(env.vars.clone().into_iter())
+        .working_dir::<PathBuf, _>(env.working_dir.clone())
+        .setsid(true);
+
+    Ok(result)
+}
+
 /// Creates an [`Ace`] instance matching the given [`SupervisorContext`].
 pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
     let mut ace = Ace::new();
 
-    async fn env_convert(
-        env: &airup_sdk::files::service::Env,
-    ) -> anyhow::Result<airupfx::process::CommandEnv> {
-        let mut result = airupfx::process::CommandEnv::new();
-
-        let to_ace = |x| match x {
-            airup_sdk::files::service::Stdio::Inherit => airupfx::process::Stdio::Inherit,
-            airup_sdk::files::service::Stdio::File(path) => airupfx::process::Stdio::File(path),
-            airup_sdk::files::service::Stdio::Log => airupfx::process::Stdio::Piped,
-        };
-
-        result
-            .login(env.login.as_deref())?
-            .uid(env.uid)
-            .gid(env.gid)
-            .stdout(to_ace(env.stdout.clone()))
-            .stderr(to_ace(env.stderr.clone()))
-            .clear_vars(env.clear_vars)
-            .vars::<String, _, String>(env.vars.clone().into_iter())
-            .working_dir::<PathBuf, _>(env.working_dir.clone())
-            .setsid(true);
-
-        Ok(result)
-    }
-
-    ace.env = env_convert(&context.service.env)
+    ace.env = ace_environment(&context.service)
         .await
         .map_err(|x| Error::Io {
             message: x.to_string(),

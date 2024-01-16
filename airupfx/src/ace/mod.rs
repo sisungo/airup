@@ -14,7 +14,7 @@ use std::{sync::Arc, time::Duration};
 use tokio::task::JoinHandle;
 
 /// The Airup Command Engine.
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct Ace {
     pub env: CommandEnv,
     pub modules: Modules,

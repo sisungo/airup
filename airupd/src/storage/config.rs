@@ -4,6 +4,7 @@ use ahash::HashMap;
 use airup_sdk::{files::SystemConf, prelude::*};
 use std::path::PathBuf;
 
+/// Main navigator of Airup's config directory.
 #[derive(Debug)]
 pub struct Config {
     pub base_dir: DirChain<'static>,

@@ -4,7 +4,6 @@
 pub mod blocking;
 pub mod build;
 pub mod error;
-pub mod ffi;
 pub mod files;
 pub mod ipc;
 pub mod prelude;
@@ -13,6 +12,9 @@ mod util;
 
 #[cfg(feature = "nonblocking")]
 pub mod nonblocking;
+
+#[cfg(feature = "ffi")]
+pub mod ffi;
 
 pub use error::ApiError as Error;
 
