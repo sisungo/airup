@@ -13,9 +13,6 @@ cfg_if::cfg_if! {
         pub use freebsd::*;
     } else if #[cfg(target_family = "unix")] {
         pub use unix::*;
-    } else if #[cfg(target_family = "windows")] {
-        mod windows;
-        pub use windows::*;
     } else {
         std::compile_error!("This target is not supported by `Airup` yet. Consider opening an issue at https://github.com/sisungo/airup/issues?");
     }

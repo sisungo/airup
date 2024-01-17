@@ -84,15 +84,7 @@ impl StartService {
 
         match self.context.service.service.kind {
             Kind::Simple => {
-                self.context
-                    .set_child(ace.run(&self.context.service.exec.start).await?)
-                    .await;
-
-                if let Some(pid_file) = &self.context.service.service.pid_file {
-                    tokio::fs::write(pid_file, self.context.pid().await.unwrap().to_string())
-                        .await
-                        .ok();
-                }
+                self.start_simple(&ace).await?;
             }
             Kind::Forking => {
                 self.start_forking(&ace, &countdown).await?;
@@ -139,6 +131,19 @@ impl StartService {
 
         self.context.set_child(child).await;
 
+        Ok(())
+    }
+
+    async fn start_simple(&mut self, ace: &Ace) -> Result<(), Error> {
+        self.context
+            .set_child(ace.run(&self.context.service.exec.start).await?)
+            .await;
+
+        if let Some(pid_file) = &self.context.service.service.pid_file {
+            tokio::fs::write(pid_file, self.context.pid().await.unwrap().to_string())
+                .await
+                .ok();
+        }
         Ok(())
     }
 

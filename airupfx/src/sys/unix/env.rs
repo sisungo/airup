@@ -2,7 +2,7 @@
 
 use std::{os::fd::AsRawFd, path::Path};
 
-pub fn setsid() -> std::io::Result<libc::pid_t> {
+pub(super) fn setsid() -> std::io::Result<libc::pid_t> {
     unsafe {
         let pgid = libc::setsid();
         match pgid {
@@ -12,7 +12,7 @@ pub fn setsid() -> std::io::Result<libc::pid_t> {
     }
 }
 
-pub fn setgroups(groups: &[libc::gid_t]) -> std::io::Result<()> {
+pub(super) fn setgroups(groups: &[libc::gid_t]) -> std::io::Result<()> {
     unsafe {
         let pgid = libc::setgroups(groups.len() as _, groups.as_ptr()) as _;
         match pgid {
@@ -23,7 +23,7 @@ pub fn setgroups(groups: &[libc::gid_t]) -> std::io::Result<()> {
     }
 }
 
-pub async fn setup_stdio<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
+pub(crate) async fn setup_stdio<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
     let path = path.as_ref();
 
     loop {
@@ -40,6 +40,6 @@ pub async fn setup_stdio<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
     }
 }
 
-pub fn current_uid() -> sysinfo::Uid {
+pub(crate) fn current_uid() -> sysinfo::Uid {
     sysinfo::Uid::try_from(unsafe { libc::getuid() as usize }).unwrap()
 }

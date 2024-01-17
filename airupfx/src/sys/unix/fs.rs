@@ -30,7 +30,7 @@ async fn set_lock_permission(path: &Path) -> std::io::Result<()> {
 }
 
 /// Commits filesystem caches to disk.
-pub fn sync() {
+pub(crate) fn sync() {
     unsafe {
         libc::sync();
     }

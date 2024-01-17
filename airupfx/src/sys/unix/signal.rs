@@ -64,7 +64,7 @@ pub fn signal<
 >(
     signum: i32,
     mut op: F,
-) -> anyhow::Result<()> {
+) -> std::io::Result<()> {
     let mut signal = tokio::signal::unix::signal(SignalKind::from_raw(signum))?;
     tokio::spawn(async move {
         loop {

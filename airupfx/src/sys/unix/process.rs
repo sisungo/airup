@@ -343,18 +343,10 @@ pub(crate) fn command_login(
 }
 
 pub(crate) async fn spawn(cmd: &crate::process::Command) -> anyhow::Result<Child> {
-    Ok(Child::from_std(&cmd, command_to_std(cmd).await?.spawn()?))
+    Ok(Child::from_std(cmd, command_to_std(cmd).await?.spawn()?))
 }
 
-/// An error occured by calling `wait` on a [`Child`].
-#[derive(Debug, Clone, thiserror::Error)]
-pub enum WaitError {
-    #[error("subscribed queue for pid `{0}` was preempted")]
-    PreemptedQueue(Pid),
-
-    #[error("the child was already successfully waited without caching")]
-    AlreadyWaited,
-}
+pub type WaitError = std::convert::Infallible;
 
 /// Initializes the process manager.
 pub fn init() {
