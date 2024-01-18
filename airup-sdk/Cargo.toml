@@ -15,8 +15,9 @@ crate-type = ["rlib", "cdylib"]
 
 [features]
 _internal = ["tokio-1"]
+blocking = []
 nonblocking = []
-ffi = []
+ffi = ["blocking"]
 tokio-1 = ["tokio", "nonblocking"]
 
 [dependencies]

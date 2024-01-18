@@ -94,6 +94,10 @@ impl Services {
             .map(IntoIterator::into_iter)
             .into_iter()
             .flatten()
+            .filter(|x| {
+                let x = x.to_string_lossy();
+                !x.starts_with('.') && x.ends_with(".airs")
+            })
             .for_each(|x| {
                 let name = x.to_string_lossy();
                 let name = name.strip_suffix(".airs").unwrap_or(&name);

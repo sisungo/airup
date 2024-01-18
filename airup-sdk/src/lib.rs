@@ -1,7 +1,6 @@
 //! # The Airup SDK
 //! The Airup SDK provides interface to deal with Airup elements, for example, interacting with the daemon, `airupd`.
 
-pub mod blocking;
 pub mod build;
 pub mod error;
 pub mod files;
@@ -15,6 +14,9 @@ pub mod nonblocking;
 
 #[cfg(feature = "ffi")]
 pub mod ffi;
+
+#[cfg(feature = "blocking")]
+pub mod blocking;
 
 pub use error::ApiError as Error;
 

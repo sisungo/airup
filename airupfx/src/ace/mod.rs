@@ -17,7 +17,7 @@ use tokio::task::JoinHandle;
 #[derive(Default)]
 pub struct Ace {
     pub env: CommandEnv,
-    pub modules: Modules,
+    modules: Modules,
 }
 impl Ace {
     /// Creates a new [`Ace`] instance with default settings.
@@ -67,14 +67,13 @@ impl Ace {
         Box::pin(async {
             let cmd: parser::Command = tokens.into();
             if cmd.module == "-" {
+                let otherwise = |_| {
+                    Child::AlwaysSuccess(Box::new(Child::Builtin(builtins::noop(vec![]).into())))
+                };
                 Ok(Child::AlwaysSuccess(Box::new(
                     self.run_tokenized(cmd.args.into_iter())
                         .await
-                        .unwrap_or_else(|_| {
-                            Child::AlwaysSuccess(Box::new(Child::Builtin(
-                                builtins::noop(vec![]).into(),
-                            )))
-                        }),
+                        .unwrap_or_else(otherwise),
                 )))
             } else if cmd.module == "&" {
                 Ok(Child::Async(Box::new(
@@ -99,11 +98,11 @@ impl Ace {
 }
 
 #[derive(Debug, Clone)]
-pub struct Modules {
+struct Modules {
     builtins: AHashMap<&'static str, builtins::BuiltinModule>,
 }
 impl Modules {
-    pub fn new() -> Self {
+    fn new() -> Self {
         let mut builtins = AHashMap::with_capacity(32);
         builtins::init(&mut builtins);
         Self { builtins }
@@ -219,6 +218,7 @@ impl Child {
         }
     }
 
+    #[inline]
     pub fn stdout(&self) -> Option<Arc<super::io::PiperHandle>> {
         match self {
             Self::Async(child) => child.stdout(),
@@ -228,6 +228,7 @@ impl Child {
         }
     }
 
+    #[inline]
     pub fn stderr(&self) -> Option<Arc<super::io::PiperHandle>> {
         match self {
             Self::Async(child) => child.stderr(),
@@ -260,11 +261,6 @@ pub enum Error {
 }
 impl From<std::io::Error> for Error {
     fn from(value: std::io::Error) -> Self {
-        Self::Io(value.to_string())
-    }
-}
-impl From<anyhow::Error> for Error {
-    fn from(value: anyhow::Error) -> Self {
         Self::Io(value.to_string())
     }
 }

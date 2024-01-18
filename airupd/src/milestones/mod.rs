@@ -137,7 +137,7 @@ async fn exec_milestone_async(def: &Milestone) {
         match item {
             Item::Cache(service) => {
                 if let Err(err) = app::airupd().cache_service(&service).await {
-                    tracing::error!(target: "console", "Failed to load unit {}: {}", service, err);
+                    tracing::error!(target: "console", "Failed to load service {}: {}", service, err);
                 }
             }
             Item::Start(service) => match app::airupd().start_service(&service).await {
@@ -163,7 +163,7 @@ async fn exec_milestone_serial(def: &Milestone) {
         match item {
             Item::Cache(service) => {
                 if let Err(err) = app::airupd().cache_service(&service).await {
-                    tracing::error!(target: "console", "Failed to load unit {}: {}", service, err);
+                    tracing::error!(target: "console", "Failed to load service {}: {}", service, err);
                 }
             }
             Item::Start(service) => match app::airupd().make_service_active(&service).await {
@@ -192,7 +192,7 @@ async fn exec_milestone_sync(def: &Milestone) {
         match item {
             Item::Cache(service) => {
                 if let Err(err) = app::airupd().cache_service(&service).await {
-                    tracing::error!(target: "console", "Failed to load unit {}: {}", service, err);
+                    tracing::error!(target: "console", "Failed to load service {}: {}", service, err);
                 }
             }
             Item::Start(service) => match app::airupd().start_service(&service).await {

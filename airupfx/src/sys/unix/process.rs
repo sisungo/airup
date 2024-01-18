@@ -205,7 +205,7 @@ impl ChildQueue {
     }
 
     /// Starts the child queue task.
-    fn start(&'static self) -> anyhow::Result<tokio::task::JoinHandle<()>> {
+    fn start(&'static self) -> std::io::Result<tokio::task::JoinHandle<()>> {
         let mut signal = tokio::signal::unix::signal(SignalKind::child())?;
         Ok(tokio::spawn(async move {
             loop {
@@ -280,7 +280,7 @@ fn wait_nonblocking(pid: Pid) -> std::io::Result<Option<Wait>> {
 /// Converts from [`crate::process::Command`] to [`std::process::Command`].
 pub(crate) async fn command_to_std(
     command: &crate::process::Command,
-) -> anyhow::Result<std::process::Command> {
+) -> std::io::Result<std::process::Command> {
     let mut result = std::process::Command::new(&command.program);
     command.args.iter().for_each(|x| {
         result.arg(x);
@@ -324,7 +324,7 @@ pub(crate) async fn command_to_std(
 pub(crate) fn command_login(
     env: &mut crate::process::CommandEnv,
     name: &str,
-) -> anyhow::Result<()> {
+) -> std::io::Result<()> {
     let (uid, gid, groups_id) = crate::env::with_user_by_name(name, |entry| {
         (
             **entry.id(),
@@ -336,13 +336,18 @@ pub(crate) fn command_login(
                 .collect::<Vec<_>>(),
         )
     })
-    .ok_or_else(|| anyhow::anyhow!("user \"{name}\" not found"))?;
+    .ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("user \"{name}\" not found"),
+        )
+    })?;
     env.uid(uid).gid(gid).groups(groups_id);
 
     Ok(())
 }
 
-pub(crate) async fn spawn(cmd: &crate::process::Command) -> anyhow::Result<Child> {
+pub(crate) async fn spawn(cmd: &crate::process::Command) -> std::io::Result<Child> {
     Ok(Child::from_std(cmd, command_to_std(cmd).await?.spawn()?))
 }
 

@@ -294,7 +294,7 @@ impl CommandEnv {
         self
     }
 
-    pub fn login<'a, U: Into<Option<&'a str>>>(&mut self, name: U) -> anyhow::Result<&mut Self> {
+    pub fn login<'a, U: Into<Option<&'a str>>>(&mut self, name: U) -> std::io::Result<&mut Self> {
         if let Some(x) = name.into() {
             crate::sys::process::command_login(self, x)?;
         }
@@ -363,7 +363,7 @@ impl Command {
     }
 
     #[inline]
-    pub async fn spawn(&self) -> anyhow::Result<Child> {
+    pub async fn spawn(&self) -> std::io::Result<Child> {
         Ok(crate::sys::process::spawn(self).await?.into())
     }
 }

@@ -18,8 +18,12 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
             airup_sdk::files::Service::read_merge(vec![s.into()])?;
             Ok(())
         })
-    } else if cmdline.file.strip_suffix(".airc").is_some() {
-        todo!()
+    } else if let Some(x) = cmdline.file.strip_suffix(".airc") {
+        let service = find_or_create_service(&format!("{x}.airs"))?;
+        do_edit(&editor, &find_or_create_config(&cmdline.file)?, |s| {
+            airup_sdk::files::Service::read_merge(vec![service, s.into()])?;
+            Ok(())
+        })
     } else {
         let (n, name) = cmdline.file.split('.').enumerate().last().unwrap();
         if n > 0 {
@@ -59,4 +63,8 @@ fn do_edit(
 
 fn find_or_create_service(name: &str) -> std::io::Result<PathBuf> {
     DirChain::new(&airup_sdk::build::manifest().service_dir).find_or_create(name)
+}
+
+fn find_or_create_config(name: &str) -> std::io::Result<PathBuf> {
+    DirChain::new(&airup_sdk::build::manifest().config_dir).find_or_create(name)
 }

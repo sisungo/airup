@@ -6,22 +6,22 @@ use anyhow::anyhow;
 use chrono::prelude::*;
 use clap::Parser;
 use console::{style, Emoji};
-use std::{fmt::Display, ops::Deref};
+use std::{collections::HashMap, fmt::Display, ops::Deref};
 
 /// Query system information
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
     /// Queries all information, including which is not loaded
-    #[arg(short, long, conflicts_with = "unit")]
+    #[arg(short, long, conflicts_with = "selector")]
     all: bool,
 
-    unit: Option<String>,
+    selector: Option<String>,
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = super::connect()?;
-    match cmdline.unit {
+    match cmdline.selector {
         Some(x) if x.starts_with("pid=") => {
             todo!()
         }
@@ -88,22 +88,22 @@ fn print_query_system(
     query_system: &QuerySystem,
     cmdline: &Cmdline,
 ) -> anyhow::Result<()> {
-    let mut services = Vec::with_capacity(query_system.services.len());
+    let mut services = HashMap::with_capacity(query_system.services.len());
     for i in query_system.services.iter() {
         let query_service = conn.query_service(i)?.ok();
-        services.push((
+        services.insert(
             i.clone(),
             query_service.map(|x| PrintedStatus::of_service(&x)),
-        ));
+        );
     }
     if cmdline.all {
         for name in conn.list_services()?? {
-            services.push((
+            services.insert(
                 name.clone(),
                 conn.query_service(&name)?
                     .ok()
                     .map(|x| PrintedStatus::of_service(&x)),
-            ));
+            );
         }
     }
 
