@@ -19,7 +19,7 @@ ahash = "0.8"
 anyhow = "1"
 async-broadcast = "0.6"
 async-trait = "0.1"
-airupfx = { path = "../airupfx" }
+airupfx = { path = "../airupfx/airupfx" }
 airup-sdk = { path = "../airup-sdk", features = ["_internal"] }
 libc = "0.2"
 once_cell = "1"

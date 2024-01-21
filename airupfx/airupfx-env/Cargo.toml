@@ -1,0 +1,19 @@
+[package]
+name = "airupfx-env"
+authors = ["sisungo <sisungo@icloud.com>"]
+version = "0.6.1"
+edition = "2021"
+license = "MIT"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ahash = "0.8"
+cfg-if = "1"
+mini-moka = "0.10"
+sysinfo = { version = "0.30", features = ["serde"] }
+tokio = { workspace = true }
+
+[target.'cfg(target_family = "unix")'.dependencies]
+libc = "0.2"

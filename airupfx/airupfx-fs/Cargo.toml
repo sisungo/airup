@@ -1,0 +1,16 @@
+[package]
+name = "airupfx-fs"
+authors = ["sisungo <sisungo@icloud.com>"]
+version = "0.6.1"
+edition = "2021"
+license = "MIT"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cfg-if = "1"
+tokio = { workspace = true }
+
+[target.'cfg(target_family = "unix")'.dependencies]
+libc = "0.2"

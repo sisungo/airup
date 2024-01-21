@@ -8,8 +8,11 @@ pub async fn enter() {
 
     for i in &airup_sdk::build::manifest().early_cmds {
         if let Err(x) = super::run_wait(&ace, i).await {
-            tracing::error!(target: "console", "Failed to execute command `{i}` in `early_boot` milestone: {}", x);
-            airupfx::process::emergency();
+            Err::<(), _>(x)
+                .unwrap_log(&format!(
+                    "Failed to execute command `{i}` in `early_boot` milestone"
+                ))
+                .await;
         }
     }
 }

@@ -37,11 +37,6 @@ impl System {
         self.send(Event::Halt);
     }
 
-    /// Reloads `airupd` process image.
-    pub fn reload_image(&self) {
-        self.send(Event::ReloadImage);
-    }
-
     /// Sends an process-wide lifetime event.
     fn send(&self, event: Event) {
         self.0.send(event).ok();
@@ -67,26 +62,17 @@ pub enum Event {
 
     /// Halts the device.
     Halt,
-
-    /// Reloads `airupd` process image.
-    ReloadImage,
 }
 impl Event {
     /// Handles the event.
     pub async fn handle(&self) -> ! {
         match self {
             Self::Exit(code) => std::process::exit(*code),
-            Self::Poweroff => power_manager()
-                .poweroff()
-                .await
-                .unwrap_log("poweroff() failed"),
-            Self::Reboot => power_manager().reboot().await.unwrap_log("reboot() failed"),
-            Self::Halt => power_manager().halt().await.unwrap_log("halt() failed"),
-            Self::ReloadImage => {
-                airupfx::process::reload_image().unwrap_log("reload_image() failed")
-            }
+            Self::Poweroff => power_manager().poweroff().await.ok(),
+            Self::Reboot => power_manager().reboot().await.ok(),
+            Self::Halt => power_manager().halt().await.ok(),
         };
 
-        unreachable!()
+        std::process::exit(1);
     }
 }

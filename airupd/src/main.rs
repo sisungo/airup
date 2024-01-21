@@ -15,8 +15,6 @@ use airupfx::prelude::*;
 /// Entrypoint of the program.
 #[tokio::main]
 async fn main() {
-    // Initializes Airup subsystems
-    airupfx::sys::init();
     let cmdline = self::env::cmdline();
     airupfx::log::Builder::new()
         .name("airupd")
@@ -34,13 +32,15 @@ async fn main() {
         .runtime
         .lock()
         .await
-        .unwrap_log("unable to lock database");
+        .unwrap_log("unable to lock database")
+        .await;
     app::airupd()
         .storage
         .runtime
         .ipc_server()
         .await
         .unwrap_log("failed to create airupd ipc socket")
+        .await
         .start();
     app::airupd().listen_signals();
 
