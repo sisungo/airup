@@ -117,10 +117,10 @@ fn print_query_system(
     println!("{:>14} /", "Services:");
     for (name, status) in &services {
         match status {
-            Some(status) => println!("{1:>0$} ({2})", 18 + name.len(), name, status.kind),
+            Some(status) => println!("{}{} ({})", " ".repeat(16), name, status.kind),
             None => println!(
-                "{1:>0$} ({2})",
-                16 + name.len(),
+                "{}{} ({})",
+                " ".repeat(16),
                 style(name).strikethrough(),
                 style("deleted").dim()
             ),
