@@ -1,6 +1,7 @@
 use airup_sdk::{
-    blocking::{files::*, fs::DirChain, system::ConnectionExt as _},
+    blocking::{files::*, fs::DirChain},
     files::{milestone, Milestone},
+    system::ConnectionExt as _,
 };
 use anyhow::anyhow;
 use clap::Parser;

@@ -1,15 +1,15 @@
 pub mod files;
 pub mod fs;
-pub mod info;
 pub mod ipc;
-pub mod system;
 
 use crate::{ipc::Request, Error};
 use anyhow::anyhow;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
+    future::Future,
     ops::{Deref, DerefMut},
     path::Path,
+    pin::Pin,
 };
 
 /// A high-level wrapper of a connection to `airupd`.
@@ -64,5 +64,17 @@ impl Deref for Connection {
 impl DerefMut for Connection {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.underlying
+    }
+}
+
+impl crate::Connection for Connection {
+    type Invoke<'a, T: 'a> = Pin<Box<dyn Future<Output = anyhow::Result<Result<T, Error>>> + 'a>>;
+
+    fn invoke<'a, P: Serialize + 'a, T: DeserializeOwned + 'a>(
+        &'a mut self,
+        method: &'a str,
+        params: P,
+    ) -> Self::Invoke<'a, T> {
+        Box::pin(self.invoke(method, params))
     }
 }

@@ -1,7 +1,4 @@
-use airup_sdk::{
-    blocking::{files::*, system::ConnectionExt as _},
-    files::Service,
-};
+use airup_sdk::{blocking::files::*, files::Service, system::ConnectionExt as _};
 use anyhow::anyhow;
 use clap::Parser;
 use std::path::PathBuf;

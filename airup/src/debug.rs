@@ -1,4 +1,4 @@
-use airup_sdk::blocking::{info::ConnectionExt as _, system::ConnectionExt as _};
+use airup_sdk::prelude::*;
 use clap::Parser;
 use console::style;
 

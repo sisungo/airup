@@ -1,4 +1,4 @@
-use airup_sdk::blocking::system::ConnectionExt as _;
+use airup_sdk::system::ConnectionExt as _;
 use clap::Parser;
 
 /// Reload `airupd` daemon itself

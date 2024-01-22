@@ -1,6 +1,6 @@
 use airup_sdk::{
-    blocking::{system::ConnectionExt as _, Connection},
-    system::{QueryService, QuerySystem, Status},
+    blocking::Connection,
+    system::{ConnectionExt as _, QueryService, QuerySystem, Status},
 };
 use anyhow::anyhow;
 use chrono::prelude::*;

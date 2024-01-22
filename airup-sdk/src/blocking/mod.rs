@@ -1,8 +1,6 @@
 pub mod files;
 pub mod fs;
-pub mod info;
 pub mod ipc;
-pub mod system;
 
 use crate::{ipc::Request, Error};
 use anyhow::anyhow;
@@ -62,5 +60,17 @@ impl Deref for Connection {
 impl DerefMut for Connection {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.underlying
+    }
+}
+
+impl crate::Connection for Connection {
+    type Invoke<'a, T: 'a> = anyhow::Result<Result<T, Error>>;
+
+    fn invoke<'a, P: Serialize + 'a, T: DeserializeOwned + 'a>(
+        &'a mut self,
+        method: &'a str,
+        params: P,
+    ) -> Self::Invoke<'a, T> {
+        self.invoke(method, params)
     }
 }

@@ -4,6 +4,7 @@
 pub mod build;
 pub mod error;
 pub mod files;
+pub mod info;
 pub mod ipc;
 pub mod prelude;
 pub mod system;
@@ -20,6 +21,7 @@ pub mod blocking;
 
 pub use error::ApiError as Error;
 
+use serde::{de::DeserializeOwned, Serialize};
 use std::{
     path::{Path, PathBuf},
     sync::OnceLock,
@@ -40,4 +42,16 @@ pub fn socket_path() -> &'static Path {
                 .into(),
         )
     })
+}
+
+pub trait Connection {
+    type Invoke<'a, T: 'a>
+    where
+        Self: 'a;
+
+    fn invoke<'a, P: Serialize + 'a, T: DeserializeOwned + 'a>(
+        &'a mut self,
+        method: &'a str,
+        params: P,
+    ) -> Self::Invoke<'a, T>;
 }
