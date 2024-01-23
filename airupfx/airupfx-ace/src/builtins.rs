@@ -1,6 +1,7 @@
 //! Built-in commands of ACE.
 
-use crate::{process::ExitStatus, signal::SIGTERM};
+use airupfx_process::ExitStatus;
+use libc::SIGTERM;
 use std::{collections::HashMap, hash::BuildHasher, time::Duration};
 use tokio::task::JoinHandle;
 
@@ -21,7 +22,7 @@ pub fn console_setup(args: Vec<String>) -> JoinHandle<i32> {
             Some(x) => x,
             None => return 1,
         };
-        match crate::env::setup_stdio(path.as_ref()).await {
+        match airupfx_env::setup_stdio(path.as_ref()).await {
             Ok(()) => 0,
             Err(_) => 2,
         }

@@ -1,5 +1,3 @@
-//! Signal handling for Unix platforms.
-
 use std::future::Future;
 use tokio::signal::unix::SignalKind;
 

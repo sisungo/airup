@@ -11,19 +11,15 @@ publish = false
 [features]
 
 [dependencies]
-ahash = "0.8"
+airupfx-ace = { path = "../airupfx-ace" }
 airupfx-env = { path = "../airupfx-env" }
 airupfx-fs = { path = "../airupfx-fs" }
 airupfx-io = { path = "../airupfx-io" }
 airupfx-power = { path = "../airupfx-power" }
 airupfx-process = { path = "../airupfx-process" }
+airupfx-signal = { path = "../airupfx-signal" }
+airupfx-time = { path = "../airupfx-time" }
 airup-sdk = { path = "../../airup-sdk", features = ["_internal"] }
-async-trait = "0.1"
-cfg-if = "1"
-libc = "0.2"
-shlex = "1.2"
-thiserror = "1"
-tokio = { workspace = true }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 

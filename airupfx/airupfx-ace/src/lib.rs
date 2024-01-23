@@ -3,15 +3,14 @@
 pub mod builtins;
 pub mod parser;
 
-use crate::{
-    process::{CommandEnv, ExitStatus, Wait, WaitError},
-    signal::SIGTERM,
-    util::BoxFuture,
-};
 use ahash::AHashMap;
 use airup_sdk::error::IntoApiError;
-use std::{sync::Arc, time::Duration};
+use airupfx_process::{CommandEnv, ExitStatus, Wait, WaitError};
+use libc::SIGTERM;
+use std::{future::Future, pin::Pin, sync::Arc, time::Duration};
 use tokio::task::JoinHandle;
+
+pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
 /// The Airup Command Engine.
 #[derive(Default)]
@@ -88,7 +87,7 @@ impl Ace {
     }
 
     async fn run_bin_command(&self, cmd: &parser::Command) -> Result<Child, Error> {
-        let mut command = crate::process::Command::new(&cmd.module);
+        let mut command = airupfx_process::Command::new(&cmd.module);
         cmd.args.iter().for_each(|x| {
             command.arg(x);
         });
@@ -119,7 +118,7 @@ impl Default for Modules {
 pub enum Child {
     Async(Box<Self>),
     AlwaysSuccess(Box<Self>),
-    Process(crate::process::Child),
+    Process(airupfx_process::Child),
     Builtin(tokio::sync::Mutex<JoinHandle<i32>>),
 }
 impl Child {
@@ -219,7 +218,7 @@ impl Child {
     }
 
     #[inline]
-    pub fn stdout(&self) -> Option<Arc<crate::io::LinePiper>> {
+    pub fn stdout(&self) -> Option<Arc<airupfx_io::LinePiper>> {
         match self {
             Self::Async(child) => child.stdout(),
             Self::AlwaysSuccess(child) => child.stdout(),
@@ -229,7 +228,7 @@ impl Child {
     }
 
     #[inline]
-    pub fn stderr(&self) -> Option<Arc<crate::io::LinePiper>> {
+    pub fn stderr(&self) -> Option<Arc<airupfx_io::LinePiper>> {
         match self {
             Self::Async(child) => child.stderr(),
             Self::AlwaysSuccess(child) => child.stderr(),
@@ -238,8 +237,8 @@ impl Child {
         }
     }
 }
-impl From<crate::process::Child> for Child {
-    fn from(value: crate::process::Child) -> Self {
+impl From<airupfx_process::Child> for Child {
+    fn from(value: airupfx_process::Child) -> Self {
         Self::Process(value)
     }
 }

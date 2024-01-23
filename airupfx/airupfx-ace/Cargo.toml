@@ -1,0 +1,21 @@
+[package]
+name = "airupfx-ace"
+authors = ["sisungo <sisungo@icloud.com>"]
+version = "0.6.1"
+edition = "2021"
+license = "MIT"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ahash = "0.8"
+airup-sdk = { path = "../../airup-sdk" }
+airupfx-env = { path = "../airupfx-env" }
+airupfx-io = { path = "../airupfx-io" }
+airupfx-process = { path = "../airupfx-process" }
+libc = "0.2"
+shlex = "1.2"
+thiserror = "1"
+tokio = { workspace = true }
+tracing = "0.1"

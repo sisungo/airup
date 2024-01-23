@@ -1,4 +1,4 @@
-use crate::blocking::system::ConnectionExt;
+use crate::system::ConnectionExt;
 use libc::{c_char, c_int};
 use std::ffi::CStr;
 
