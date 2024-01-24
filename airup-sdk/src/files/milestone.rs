@@ -31,6 +31,7 @@ impl Manifest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct Metadata {
     /// Display of the milestone.
     pub display_name: Option<String>,
