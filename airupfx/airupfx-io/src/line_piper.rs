@@ -5,18 +5,9 @@ use tokio::{
     task::JoinHandle,
 };
 
-pub trait LinePiperCallback:
-    FnOnce(Vec<u8>) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync
-{
-    fn clone_boxed(&self) -> Box<dyn LinePiperCallback>;
-}
-impl<T> LinePiperCallback for T
-where
-    T: FnOnce(Vec<u8>) -> Pin<Box<dyn Future<Output = ()> + Send>> + Clone + Send + Sync + 'static,
-{
-    fn clone_boxed(&self) -> Box<dyn LinePiperCallback> {
-        Box::new(self.clone())
-    }
+pub trait Callback: Send + Sync {
+    fn invoke<'a>(&'a self, a: &'a [u8]) -> Pin<Box<dyn for<'b> Future<Output = ()> + Send + 'a>>;
+    fn clone_boxed(&self) -> Box<dyn Callback>;
 }
 
 #[derive(Debug)]
@@ -36,7 +27,7 @@ impl LinePiper {
 
     pub fn with_callback(
         reader: impl AsyncRead + Unpin + Send + 'static,
-        callback: Box<dyn LinePiperCallback>,
+        callback: Box<dyn Callback>,
     ) -> Self {
         let (tx, rx) = mpsc::channel(4);
         let join_handle: JoinHandle<()> =
@@ -60,7 +51,7 @@ impl Drop for LinePiper {
 struct LinePiperEntity<R> {
     reader: R,
     tx: mpsc::Sender<Vec<u8>>,
-    callback: Option<Box<dyn LinePiperCallback>>,
+    callback: Option<Box<dyn Callback>>,
 }
 impl<R: AsyncRead + Unpin + Send + 'static> LinePiperEntity<R> {
     fn new(reader: R, tx: mpsc::Sender<Vec<u8>>) -> Self {
@@ -71,11 +62,7 @@ impl<R: AsyncRead + Unpin + Send + 'static> LinePiperEntity<R> {
         }
     }
 
-    fn with_callback(
-        reader: R,
-        tx: mpsc::Sender<Vec<u8>>,
-        callback: Box<dyn LinePiperCallback>,
-    ) -> Self {
+    fn with_callback(reader: R, tx: mpsc::Sender<Vec<u8>>, callback: Box<dyn Callback>) -> Self {
         Self {
             reader,
             tx,
@@ -97,7 +84,7 @@ impl<R: AsyncRead + Unpin + Send + 'static> LinePiperEntity<R> {
             limited.read_until(b'\n', &mut buf).await.ok()?;
             match &self.callback {
                 Some(callback) => {
-                    (callback.clone_boxed())(buf.clone()).await;
+                    callback.invoke(&buf).await;
                 }
                 None => {
                     self.tx.send(buf.clone()).await.ok()?;

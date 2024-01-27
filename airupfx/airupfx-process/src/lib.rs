@@ -9,7 +9,7 @@ cfg_if::cfg_if! {
     }
 }
 
-use airupfx_io::line_piper::{LinePiper, LinePiperCallback};
+use airupfx_io::line_piper::{Callback as LinePiperCallback, LinePiper};
 use std::{
     convert::Infallible,
     ffi::OsString,

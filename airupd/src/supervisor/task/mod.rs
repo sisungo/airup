@@ -16,7 +16,7 @@ pub use stop::StopServiceHandle;
 
 use super::SupervisorContext;
 use airup_sdk::Error;
-use airupfx::prelude::*;
+use airupfx::{io::line_piper::Callback as LinePiperCallback, prelude::*};
 use std::{future::Future, path::PathBuf, pin::Pin};
 use tokio::sync::watch;
 
@@ -149,21 +149,36 @@ async fn ace_environment(
     let env = &service.env;
     let mut result = airupfx::process::CommandEnv::new();
     let log = |y| {
+        #[derive(Clone)]
+        struct Callback {
+            name: String,
+            module: &'static str,
+        }
+        impl LinePiperCallback for Callback {
+            fn invoke<'a>(
+                &'a self,
+                msg: &'a [u8],
+            ) -> Pin<Box<dyn for<'b> Future<Output = ()> + Send + 'a>> {
+                Box::pin(async move {
+                    crate::app::airupd()
+                        .logger
+                        .write(&self.name, self.module, &msg)
+                        .await
+                        .ok();
+                })
+            }
+            fn clone_boxed(&self) -> Box<dyn LinePiperCallback> {
+                Box::new(self.clone())
+            }
+        }
         let name = format!("airup_service_{}", service.name);
         let module = match y {
             1 => "stdout",
             2 => "stderr",
             _ => unreachable!(),
         };
-        let callback = move |msg: Vec<u8>| -> Pin<Box<dyn Future<Output = _> + Send>> {
-            Box::pin(async move {
-                crate::app::airupd()
-                    .logger
-                    .write(&name, module, &msg)
-                    .await
-                    .ok();
-            })
-        };
+
+        let callback = Callback { name, module };
         airupfx::process::Stdio::Callback(Box::new(callback))
     };
 
