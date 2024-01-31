@@ -1,8 +1,7 @@
 use crate::{
     error::ApiError,
-    ipc::{Request, Response, DEFAULT_SIZE_LIMIT},
+    ipc::{Error as IpcError, Request, Response, DEFAULT_SIZE_LIMIT},
 };
-use anyhow::anyhow;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     ops::{Deref, DerefMut},
@@ -25,12 +24,12 @@ impl Connection {
     }
 
     /// Receives a datagram and deserializes it from JSON to `T`.
-    pub async fn recv<T: DeserializeOwned>(&mut self) -> anyhow::Result<T> {
+    pub async fn recv<T: DeserializeOwned>(&mut self) -> Result<T, IpcError> {
         Ok(serde_json::from_slice(&self.0.recv().await?)?)
     }
 
     /// Receives a request from the underlying protocol.
-    pub async fn recv_req(&mut self) -> anyhow::Result<Request> {
+    pub async fn recv_req(&mut self) -> Result<Request, IpcError> {
         let req: Request = serde_json::from_slice(&self.0.recv().await?).unwrap_or_else(|err| {
             Request::new(
                 "debug.echo_raw",
@@ -42,12 +41,12 @@ impl Connection {
     }
 
     /// Receives a response from the underlying protocol.
-    pub async fn recv_resp(&mut self) -> anyhow::Result<Response> {
+    pub async fn recv_resp(&mut self) -> Result<Response, IpcError> {
         self.recv().await
     }
 
     /// Sends a datagram with JSON-serialized given object.
-    pub async fn send<T: Serialize>(&mut self, obj: &T) -> anyhow::Result<()> {
+    pub async fn send<T: Serialize>(&mut self, obj: &T) -> Result<(), IpcError> {
         self.0.send(serde_json::to_string(obj)?.as_bytes()).await
     }
 }
@@ -98,10 +97,10 @@ impl<T> MessageProto<T> {
 }
 impl<T: AsyncRead + Unpin> MessageProto<T> {
     /// Receives a datagram from the stream.
-    pub async fn recv(&mut self) -> anyhow::Result<Vec<u8>> {
+    pub async fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
         let len = self.inner.read_u64_le().await? as usize;
         if len > self.size_limit {
-            return Err(anyhow!("datagram is too big ({} bytes)", len));
+            return Err(IpcError::MessageTooLong);
         }
         let mut blob = vec![0u8; len];
         self.inner.read_exact(&mut blob).await?;
@@ -111,7 +110,7 @@ impl<T: AsyncRead + Unpin> MessageProto<T> {
 }
 impl<T: AsyncWrite + Unpin> MessageProto<T> {
     /// Sends a datagram to the stream.
-    pub async fn send(&mut self, blob: &[u8]) -> anyhow::Result<()> {
+    pub async fn send(&mut self, blob: &[u8]) -> Result<(), IpcError> {
         self.inner.write_u64_le(blob.len() as _).await?;
         self.inner.write_all(blob).await?;
 

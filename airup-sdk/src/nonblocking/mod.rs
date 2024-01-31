@@ -2,8 +2,10 @@ pub mod files;
 pub mod fs;
 pub mod ipc;
 
-use crate::{ipc::Request, Error};
-use anyhow::anyhow;
+use crate::{
+    ipc::{Error as IpcError, Request},
+    Error as ApiError,
+};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     future::Future,
@@ -26,12 +28,12 @@ impl Connection {
     }
 
     /// Sends a raw message.
-    pub async fn send_raw(&mut self, msg: &[u8]) -> anyhow::Result<()> {
+    pub async fn send_raw(&mut self, msg: &[u8]) -> Result<(), IpcError> {
         (*self.underlying).send(msg).await
     }
 
     /// Receives a raw message.
-    pub async fn recv_raw(&mut self) -> anyhow::Result<Vec<u8>> {
+    pub async fn recv_raw(&mut self) -> Result<Vec<u8>, IpcError> {
         (*self.underlying).recv().await
     }
 
@@ -40,18 +42,10 @@ impl Connection {
         &mut self,
         method: &str,
         params: P,
-    ) -> anyhow::Result<Result<T, Error>> {
+    ) -> Result<Result<T, ApiError>, IpcError> {
         let req = Request::new(method, params).unwrap();
-        self.underlying
-            .send(&req)
-            .await
-            .map_err(|e| anyhow!("cannot send request to airup daemon: {e}"))?;
-        Ok(self
-            .underlying
-            .recv_resp()
-            .await
-            .map_err(|e| anyhow!("cannot receive response from airup daemon: {e}"))?
-            .into_result())
+        self.underlying.send(&req).await?;
+        Ok(self.underlying.recv_resp().await?.into_result())
     }
 }
 impl Deref for Connection {
@@ -68,7 +62,8 @@ impl DerefMut for Connection {
 }
 
 impl crate::Connection for Connection {
-    type Invoke<'a, T: 'a> = Pin<Box<dyn Future<Output = anyhow::Result<Result<T, Error>>> + 'a>>;
+    type Invoke<'a, T: 'a> =
+        Pin<Box<dyn Future<Output = Result<Result<T, ApiError>, IpcError>> + 'a>>;
 
     fn invoke<'a, P: Serialize + 'a, T: DeserializeOwned + 'a>(
         &'a mut self,

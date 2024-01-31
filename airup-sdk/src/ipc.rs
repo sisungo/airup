@@ -13,7 +13,7 @@
 //! should be less than 6MiB and cannot be zero, or a serious protocol error will be occured. Then follows content of the
 //! datagram.
 
-use crate::Error;
+use crate::error::ApiError;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub const DEFAULT_SIZE_LIMIT: usize = 6 * 1024 * 1024;
@@ -52,9 +52,9 @@ impl Request {
     }
 
     /// Extracts parameters from the request.
-    pub fn extract_params<T: DeserializeOwned>(self) -> Result<T, Error> {
+    pub fn extract_params<T: DeserializeOwned>(self) -> Result<T, ApiError> {
         let value: serde_json::Value = self.params.into();
-        serde_json::from_value(value).map_err(Error::invalid_params)
+        serde_json::from_value(value).map_err(ApiError::invalid_params)
     }
 }
 
@@ -76,7 +76,7 @@ impl Request {
 #[serde(rename_all = "kebab-case", tag = "status", content = "payload")]
 pub enum Response {
     Ok(serde_json::Value),
-    Err(Error),
+    Err(ApiError),
 }
 impl Response {
     /// Creates a new `Response` from given `Result`.
@@ -84,7 +84,7 @@ impl Response {
     /// # Panics
     /// Panics when `serde_json::to_value` fails. This always assumes that the passed value is always interpreted as a value
     /// JSON object.
-    pub fn new<T: Serialize>(result: Result<T, Error>) -> Self {
+    pub fn new<T: Serialize>(result: Result<T, ApiError>) -> Self {
         match result {
             Ok(val) => Self::Ok(serde_json::to_value(&val).unwrap()),
             Err(err) => Self::Err(err),
@@ -92,11 +92,33 @@ impl Response {
     }
 
     /// Converts from `Response` to a `Result`.
-    pub fn into_result<T: DeserializeOwned>(self) -> Result<T, Error> {
+    pub fn into_result<T: DeserializeOwned>(self) -> Result<T, ApiError> {
         match self {
             Self::Ok(val) => Ok(serde_json::from_value(val)
-                .map_err(|err| Error::bad_response("TypeError", format!("{:?}", err)))?),
+                .map_err(|err| ApiError::bad_response("TypeError", format!("{:?}", err)))?),
             Self::Err(err) => Err(err),
         }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("{0}")]
+    Io(std::io::Error),
+
+    #[error("{0}")]
+    Json(serde_json::Error),
+
+    #[error("message too long")]
+    MessageTooLong,
+}
+impl From<std::io::Error> for Error {
+    fn from(value: std::io::Error) -> Self {
+        Self::Io(value)
+    }
+}
+impl From<serde_json::Error> for Error {
+    fn from(value: serde_json::Error) -> Self {
+        Self::Json(value)
     }
 }

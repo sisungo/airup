@@ -467,18 +467,6 @@ impl Supervisor {
             })
             .await
     }
-
-    /*pub async fn log(&self, module: &str, msg: &[u8]) {
-        airupd()
-            .logger
-            .write(
-                &format!("airup_service_{}", self.context.service.name),
-                module,
-                msg,
-            )
-            .await
-            .ok();
-    }*/
 }
 
 /// A container of current running task in the supervisor.

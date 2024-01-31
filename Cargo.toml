@@ -10,7 +10,8 @@ members = [
     "airupfx/airupfx-process",
     "airupfx/airupfx-power",
     "airupfx/airupfx-ace",
-    "airupfx/airupfx-signal", "airupfx/airupfx-time",
+    "airupfx/airupfx-signal",
+    "airupfx/airupfx-time",
 ]
 resolver = "2"
 

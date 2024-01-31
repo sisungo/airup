@@ -6,7 +6,6 @@ use airup_sdk::{
 use anyhow::anyhow;
 use clap::Parser;
 use console::style;
-use std::io::{BufRead, BufReader};
 
 /// Disable an unit
 #[derive(Debug, Clone, Parser)]
@@ -54,17 +53,12 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let path = chain
         .find_or_create("97-auto-generated.list.airf")
         .map_err(|x| anyhow!("failed to open list file: {x}"))?;
-    let file = std::fs::File::options()
-        .create(true)
-        .write(true)
-        .read(true)
-        .open(&path)
-        .map_err(|x| anyhow!("failed to open list file: {x}"))?;
 
-    let mut new = String::with_capacity(file.metadata()?.len() as usize);
-    let mut lines = BufReader::new(file).lines();
+    let old = std::fs::read_to_string(&path).unwrap_or_default();
+    let mut new = String::with_capacity(old.len());
     let mut disabled = false;
-    while let Some(Ok(x)) = lines.next() {
+
+    for x in old.lines() {
         if let Ok(item) = x.parse::<milestone::Item>() {
             match item {
                 milestone::Item::Start(x) if x.strip_suffix(".airs").unwrap_or(&x) == service => {
@@ -74,7 +68,7 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
                     disabled = true;
                 }
                 _ => {
-                    new.push_str(&x);
+                    new.push_str(x);
                     new.push('\n');
                 }
             };
