@@ -143,42 +143,47 @@ pub fn task_helper() -> (TaskHelperHandle, TaskHelper) {
     (handle, helper)
 }
 
+#[derive(Clone)]
+struct LogCallback {
+    name: String,
+    module: &'static str,
+}
+impl LogCallback {
+    pub fn new(name: String, module: &'static str) -> Self {
+        Self { name, module }
+    }
+}
+impl LinePiperCallback for LogCallback {
+    fn invoke<'a>(
+        &'a self,
+        msg: &'a [u8],
+    ) -> Pin<Box<dyn for<'b> Future<Output = ()> + Send + 'a>> {
+        Box::pin(async move {
+            crate::app::airupd()
+                .logger
+                .write(&self.name, self.module, msg)
+                .await
+                .ok();
+        })
+    }
+    fn clone_boxed(&self) -> Box<dyn LinePiperCallback> {
+        Box::new(self.clone())
+    }
+}
+
 async fn ace_environment(
     service: &airup_sdk::files::Service,
 ) -> anyhow::Result<airupfx::process::CommandEnv> {
     let env = &service.env;
     let mut result = airupfx::process::CommandEnv::new();
     let log = |y| {
-        #[derive(Clone)]
-        struct Callback {
-            name: String,
-            module: &'static str,
-        }
-        impl LinePiperCallback for Callback {
-            fn invoke<'a>(
-                &'a self,
-                msg: &'a [u8],
-            ) -> Pin<Box<dyn for<'b> Future<Output = ()> + Send + 'a>> {
-                Box::pin(async move {
-                    crate::app::airupd()
-                        .logger
-                        .write(&self.name, self.module, &msg)
-                        .await
-                        .ok();
-                })
-            }
-            fn clone_boxed(&self) -> Box<dyn LinePiperCallback> {
-                Box::new(self.clone())
-            }
-        }
-        let name = format!("airup_service_{}", service.name);
         let module = match y {
             1 => "stdout",
             2 => "stderr",
             _ => unreachable!(),
         };
 
-        let callback = Callback { name, module };
+        let callback = LogCallback::new(format!("airup_service_{}", service.name), module);
         airupfx::process::Stdio::Callback(Box::new(callback))
     };
 

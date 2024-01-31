@@ -77,7 +77,7 @@ pub struct Session {
     context: Arc<SessionContext>,
 }
 impl Session {
-    /// Creates a new `Session` with the given [airup_sdk::ipc::Connection].
+    /// Creates a new `Session` with the given [`airup_sdk::nonblocking::ipc::Connection`].
     pub fn new(conn: airup_sdk::nonblocking::ipc::Connection) -> Self {
         Self {
             conn,

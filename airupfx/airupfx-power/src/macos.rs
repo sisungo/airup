@@ -28,21 +28,21 @@ impl Power {
 impl PowerManager for Power {
     async fn poweroff(&self) -> std::io::Result<Infallible> {
         self.prepare().await;
-        macos_reboot(RB_HALT)
+        safe_reboot(RB_HALT)
     }
 
     async fn reboot(&self) -> std::io::Result<Infallible> {
         self.prepare().await;
-        macos_reboot(RB_AUTOBOOT)
+        safe_reboot(RB_AUTOBOOT)
     }
 
     async fn halt(&self) -> std::io::Result<Infallible> {
         self.prepare().await;
-        macos_reboot(RB_HALT)
+        safe_reboot(RB_HALT)
     }
 }
 
-fn macos_reboot(cmd: libc::c_int) -> std::io::Result<Infallible> {
+fn safe_reboot(cmd: libc::c_int) -> std::io::Result<Infallible> {
     let status = unsafe { reboot(cmd) };
     match status {
         -1 => Err(std::io::Error::last_os_error()),

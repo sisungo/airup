@@ -30,7 +30,7 @@ impl Config {
         self.base_dir.find(format!("{name}.service.airc")).await
     }
 
-    /// Overrides the environment with this [`Env`] object.
+    /// Overrides the environment with the system config.
     pub fn override_env(&self) {
         let mut vars: HashMap<String, Option<String>> = HashMap::default();
         for (k, v) in &airup_sdk::build::manifest().env_vars {

@@ -19,6 +19,10 @@ cfg_if::cfg_if! {
 use std::convert::Infallible;
 
 /// Interface of power management.
+///
+/// Methods in this trait are considered to securely reboot the device. These methods should never return (because the host is
+/// down) unless the operation failed. To reboot "securely", it should do necessary work before the device is powered down, for
+/// example, killing processes, syncing disks, etc.
 #[async_trait::async_trait]
 pub trait PowerManager: Send + Sync {
     /// Immediately powers the device off.

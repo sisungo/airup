@@ -21,24 +21,24 @@ impl Power {
 impl PowerManager for Power {
     async fn poweroff(&self) -> std::io::Result<Infallible> {
         self.prepare().await;
-        linux_reboot(LINUX_REBOOT_CMD_POWER_OFF, None)?;
+        reboot(LINUX_REBOOT_CMD_POWER_OFF, None)?;
         unreachable!()
     }
 
     async fn reboot(&self) -> std::io::Result<Infallible> {
         self.prepare().await;
-        linux_reboot(LINUX_REBOOT_CMD_RESTART, None)?;
+        reboot(LINUX_REBOOT_CMD_RESTART, None)?;
         unreachable!()
     }
 
     async fn halt(&self) -> std::io::Result<Infallible> {
         self.prepare().await;
-        linux_reboot(LINUX_REBOOT_CMD_HALT, None)?;
+        reboot(LINUX_REBOOT_CMD_HALT, None)?;
         unreachable!()
     }
 }
 
-fn linux_reboot(cmd: libc::c_int, arg: Option<NonNull<c_void>>) -> std::io::Result<()> {
+fn reboot(cmd: libc::c_int, arg: Option<NonNull<c_void>>) -> std::io::Result<()> {
     let status = unsafe {
         syscall(
             SYS_reboot,
@@ -48,10 +48,10 @@ fn linux_reboot(cmd: libc::c_int, arg: Option<NonNull<c_void>>) -> std::io::Resu
             arg,
         )
     };
-    match status {
-        0 => Ok(()),
-        -1 => Err(std::io::Error::last_os_error()),
-        _ => unreachable!(),
+    if status < 0 {
+        Err(std::io::ErrorKind::PermissionDenied.into())
+    } else {
+        Ok(())
     }
 }
 
