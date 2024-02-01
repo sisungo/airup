@@ -13,6 +13,7 @@ use std::{
     path::Path,
     pin::Pin,
 };
+use ipc::MessageProtoExt;
 
 /// A high-level wrapper of a connection to `airupd`.
 #[derive(Debug)]

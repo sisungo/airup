@@ -16,8 +16,6 @@
 use crate::error::ApiError;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-pub const DEFAULT_SIZE_LIMIT: usize = 6 * 1024 * 1024;
-
 /// A request object in the Airup IPC protocol.
 ///
 /// Interpreted as JSON, a serialized request object looks like:
@@ -101,6 +99,46 @@ impl Response {
     }
 }
 
+/// A middle layer that splits a stream into messages.
+#[derive(Debug)]
+pub struct MessageProto<T> {
+    pub(crate) inner: T,
+    pub(crate) size_limit: usize,
+}
+impl<T> MessageProto<T> {
+    pub const DEFAULT_SIZE_LIMIT: usize = 6 * 1024 * 1024;
+
+    /// Creates a new [`MessageProto`] with provided stream.
+    pub fn new(inner: T, size_limit: usize) -> Self {
+        Self { inner, size_limit }
+    }
+
+    /// Sets received message size limitation.
+    pub fn set_size_limit(&mut self, new: usize) -> usize {
+        std::mem::replace(&mut self.size_limit, new)
+    }
+
+    /// Gets received message size limitation.
+    pub fn size_limit(&self) -> usize {
+        self.size_limit
+    }
+}
+impl<T> AsRef<T> for MessageProto<T> {
+    fn as_ref(&self) -> &T {
+        &self.inner
+    }
+}
+impl<T> AsMut<T> for MessageProto<T> {
+    fn as_mut(&mut self) -> &mut T {
+        &mut self.inner
+    }
+}
+impl<T> From<T> for MessageProto<T> {
+    fn from(value: T) -> Self {
+        Self::new(value, Self::DEFAULT_SIZE_LIMIT)
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("{0}")]
@@ -109,8 +147,8 @@ pub enum Error {
     #[error("{0}")]
     Json(serde_json::Error),
 
-    #[error("message too long")]
-    MessageTooLong,
+    #[error("message too long: {0} bytes")]
+    MessageTooLong(usize),
 }
 impl From<std::io::Error> for Error {
     fn from(value: std::io::Error) -> Self {

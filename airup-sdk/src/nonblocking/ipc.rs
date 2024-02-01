@@ -1,11 +1,10 @@
 use crate::{
     error::ApiError,
-    ipc::{Error as IpcError, Request, Response, DEFAULT_SIZE_LIMIT},
+    ipc::{Error as IpcError, Request, Response, MessageProto},
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
-    ops::{Deref, DerefMut},
-    path::Path,
+    future::Future, ops::{Deref, DerefMut}, path::Path
 };
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
@@ -78,57 +77,29 @@ impl Server {
     }
 }
 
-/// A middle layer that splits a stream into messages.
-#[derive(Debug)]
-pub struct MessageProto<T> {
-    inner: T,
-    size_limit: usize,
-}
-impl<T> MessageProto<T> {
-    /// Sets received datagram size limitation.
-    pub fn set_size_limit(&mut self, new: usize) -> usize {
-        std::mem::replace(&mut self.size_limit, new)
-    }
+pub trait MessageProtoExt {
+    /// Receives a message from the stream.
+    fn recv(&mut self) -> impl Future<Output = Result<Vec<u8>, IpcError>>;
 
-    /// Creates a new [`MessageProto`] with provided stream.
-    pub fn new(inner: T, size_limit: usize) -> Self {
-        Self { inner, size_limit }
-    }
+    /// Sends a message to the stream.
+    fn send(&mut self, blob: &[u8]) -> impl Future<Output = Result<(), IpcError>>;
 }
-impl<T: AsyncRead + Unpin> MessageProto<T> {
-    /// Receives a datagram from the stream.
-    pub async fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
+impl<T: AsyncRead + AsyncWrite + Unpin> MessageProtoExt for MessageProto<T> {
+    async fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
         let len = self.inner.read_u64_le().await? as usize;
         if len > self.size_limit {
-            return Err(IpcError::MessageTooLong);
+            return Err(IpcError::MessageTooLong(len));
         }
         let mut blob = vec![0u8; len];
         self.inner.read_exact(&mut blob).await?;
 
         Ok(blob)
     }
-}
-impl<T: AsyncWrite + Unpin> MessageProto<T> {
-    /// Sends a datagram to the stream.
-    pub async fn send(&mut self, blob: &[u8]) -> Result<(), IpcError> {
+
+    async fn send(&mut self, blob: &[u8]) -> Result<(), IpcError> {
         self.inner.write_u64_le(blob.len() as _).await?;
         self.inner.write_all(blob).await?;
 
         Ok(())
-    }
-}
-impl<T> AsRef<T> for MessageProto<T> {
-    fn as_ref(&self) -> &T {
-        &self.inner
-    }
-}
-impl<T> AsMut<T> for MessageProto<T> {
-    fn as_mut(&mut self) -> &mut T {
-        &mut self.inner
-    }
-}
-impl<T: AsyncRead + AsyncWrite + Unpin> From<T> for MessageProto<T> {
-    fn from(inner: T) -> Self {
-        Self::new(inner, DEFAULT_SIZE_LIMIT)
     }
 }

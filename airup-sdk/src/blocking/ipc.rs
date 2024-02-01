@@ -1,6 +1,6 @@
 use crate::{
     error::ApiError,
-    ipc::{Error as IpcError, Request, Response, DEFAULT_SIZE_LIMIT},
+    ipc::{Error as IpcError, Request, Response, MessageProto},
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
@@ -61,59 +61,31 @@ impl DerefMut for Connection {
     }
 }
 
-/// A middle layer that splits a stream into messages.
-#[derive(Debug)]
-pub struct MessageProto<T> {
-    inner: T,
-    size_limit: usize,
-}
-impl<T> MessageProto<T> {
-    /// Sets received datagram size limitation.
-    pub fn set_size_limit(&mut self, new: usize) -> usize {
-        std::mem::replace(&mut self.size_limit, new)
-    }
+pub trait MessageProtoExt {
+    /// Receives a message from the stream.
+    fn recv(&mut self) -> Result<Vec<u8>, IpcError>;
 
-    /// Creates a new [`MessageProto`] with provided stream.
-    pub fn new(inner: T, size_limit: usize) -> Self {
-        Self { inner, size_limit }
-    }
+    /// Sends a message to the stream
+    fn send(&mut self, blob: &[u8]) -> Result<(), IpcError>;
 }
-impl<T: Read> MessageProto<T> {
-    /// Receives a datagram from the stream.
-    pub fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
+impl<T: Read + Write> MessageProtoExt for MessageProto<T> {
+    fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
         let mut len = [0u8; 8];
         self.inner.read_exact(&mut len)?;
         let len = u64::from_le_bytes(len) as usize;
         if len > self.size_limit {
-            return Err(IpcError::MessageTooLong);
+            return Err(IpcError::MessageTooLong(len));
         }
         let mut blob = vec![0u8; len];
         self.inner.read_exact(&mut blob)?;
 
         Ok(blob)
     }
-}
-impl<T: Write> MessageProto<T> {
-    /// Sends a datagram to the stream.
-    pub fn send(&mut self, blob: &[u8]) -> Result<(), IpcError> {
+
+    fn send(&mut self, blob: &[u8]) -> Result<(), IpcError> {
         self.inner.write_all(&u64::to_le_bytes(blob.len() as _))?;
         self.inner.write_all(blob)?;
 
         Ok(())
-    }
-}
-impl<T> AsRef<T> for MessageProto<T> {
-    fn as_ref(&self) -> &T {
-        &self.inner
-    }
-}
-impl<T> AsMut<T> for MessageProto<T> {
-    fn as_mut(&mut self) -> &mut T {
-        &mut self.inner
-    }
-}
-impl<T: Read + Write> From<T> for MessageProto<T> {
-    fn from(inner: T) -> Self {
-        Self::new(inner, DEFAULT_SIZE_LIMIT)
     }
 }

@@ -1,63 +1,72 @@
+Changes in v0.7.1:
+ * \[Feature\] CLI utility `airup edit` for `.airs` and `.airc` files
+ * \[Developer\] Improved SDK API: Unified `?Async`-like traits
+ * \[Performance\] No longer copying the line buffer when using callbacks
+ * \[Fix\] `milestone.airf`'s \[milestone\] isn't kebeb-case
+ * \[Fix\] Output of `airup query` is not correctly aligned when handling CJK characters
+ * \[Fix\] Incorrect duplicating behavior when calling `airup query -a`
+ * Large `airupfx` crate is splited into multiple crates
+
 Changes in v0.7.0:
- * [Feature] Implement `notify`-kinded services
- * [Feature] Event API
- * [Feature] Add `airupd::env::Cmdline::parse_as_unix_command()` argument parser
- * [Feature] Implement login groups
- * [Feature] Userspace reboot
- * [Developer] Implements Airup SDK for C
- * [Developer] `blocking` API in the Airup SDK
- * [Fix] `forking`-kinded services can be started as the system does not support
- * [Fix] User cache is too big
- * [Fix] Some services are not updated in a `self-reload`
+ * \[Feature\] Implement `notify`-kinded services
+ * \[Feature\] Event API
+ * \[Feature\] Add `airupd::env::Cmdline::parse_as_unix_command()` argument parser
+ * \[Feature\] Implement login groups
+ * \[Feature\] Userspace reboot
+ * \[Developer\] Implements Airup SDK for C
+ * \[Developer\] `blocking` API in the Airup SDK
+ * \[Fix\] `forking`-kinded services can be started as the system does not support
+ * \[Fix\] User cache is too big
+ * \[Fix\] Some services are not updated in a `self-reload`
 
 Changes in v0.6.0:
- * [Feature] Implement delayed retrying
- * [Feature] `airup debug --use-logger` and `airup debug --print-build-manifest` CLI utilities
- * [Feature] `airup enable` and `airup disable` CLI utilities
- * [Feature] `airup stop --force` CLI utility and `system.kill_service` API
- * [Feature] Allow specifying reboot/poweroff/halt timeout
- * [Feature] Support `health-check`-kinded watchdogs
- * [Internals] Task importance measurement
- * [Fix] Potential race condition in Unix process subsystem
- * [Fix] Unexpected logging in `reboot` milestone
- * [Developer] Move `SystemConf` structure from `airupd` to `airup-sdk`
+ * \[Feature\] Implement delayed retrying
+ * \[Feature\] `airup debug --use-logger` and `airup debug --print-build-manifest` CLI utilities
+ * \[Feature\] `airup enable` and `airup disable` CLI utilities
+ * \[Feature\] `airup stop --force` CLI utility and `system.kill_service` API
+ * \[Feature\] Allow specifying reboot/poweroff/halt timeout
+ * \[Feature\] Support `health-check`-kinded watchdogs
+ * \[Internals\] Task importance measurement
+ * \[Fix\] Potential race condition in Unix process subsystem
+ * \[Fix\] Unexpected logging in `reboot` milestone
+ * \[Developer\] Move `SystemConf` structure from `airupd` to `airup-sdk`
  * ACE performance optimization
 
 Changes in v0.5.0:
- * [Feature] Gracefully reboot
- * [Feature] Support of recording of service logs
- * [Feature] Support of separated configuration files
- * [BREAKING] New `retry` manifest format
- * [Developer] Upload `airup_sdk` to `crates.io`
+ * \[Feature\] Gracefully reboot
+ * \[Feature\] Support of recording of service logs
+ * \[Feature\] Support of separated configuration files
+ * \[BREAKING\] New `retry` manifest format
+ * \[Developer\] Upload `airup_sdk` to `crates.io`
 
 Changes in v0.4.0:
- * [Feature] Command-line: `airup start --cache` and `airup stop --uncache`
- * [Feature] `airup self-reload` CLI utility
- * [Feature] `stdio` setup
- * [Feature] API: `system.is_booting` and `info.build_manifest`
- * [Feature] Better ACE
- * [Feature] Supervisor timestamp
- * [BREAKING] Environment variables: `AIRUP_SOCK`, `AIRUP_SERVICE`, `AIRUP_SERVICE_MAINPID`
- * [BREAKING] Deprecate policy model
- * [Fix] Deadlock with `forking`
- * [Fix] Corrupt `StopService` failure condition
+ * \[Feature\] Command-line: `airup start --cache` and `airup stop --uncache`
+ * \[Feature\] `airup self-reload` CLI utility
+ * \[Feature\] `stdio` setup
+ * \[Feature\] API: `system.is_booting` and `info.build_manifest`
+ * \[Feature\] Better ACE
+ * \[Feature\] Supervisor timestamp
+ * \[BREAKING\] Environment variables: `AIRUP_SOCK`, `AIRUP_SERVICE`, `AIRUP_SERVICE_MAINPID`
+ * \[BREAKING\] Deprecate policy model
+ * \[Fix\] Deadlock with `forking`
+ * \[Fix\] Corrupt `StopService` failure condition
  * Performance optimizations
 
 Changes in v0.3.1:
- * [Feature] Support of `airup query -a` CLI tool
- * [Feature] ACE Improvements
- * [Feature] Milestones that are `sync`-kinded
- * [Feature] Support of running commands directly in milestones
- * [Fix] `airup reboot` is not working as expected
- * [Fix] `early_boot` milestone is called after creating `runtime_dir`
- * [Fix] Redirecting `stdio` to file is not working properly
+ * \[Feature\] Support of `airup query -a` CLI tool
+ * \[Feature\] ACE Improvements
+ * \[Feature\] Milestones that are `sync`-kinded
+ * \[Feature\] Support of running commands directly in milestones
+ * \[Fix\] `airup reboot` is not working as expected
+ * \[Fix\] `early_boot` milestone is called after creating `runtime_dir`
+ * \[Fix\] Redirecting `stdio` to file is not working properly
 
 Changes in v0.3.0:
- * [BREAKING] Milestone v2 Format
- * [BREAKING] New build manifest format with better performance
- * [Feature] Service caching & uncaching
- * [Feature] Service conflicts
- * [Feature] The `early_boot` pseudo-milestone
- * [Feature] Support of service providers
+ * \[BREAKING\] Milestone v2 Format
+ * \[BREAKING\] New build manifest format with better performance
+ * \[Feature\] Service caching & uncaching
+ * \[Feature\] Service conflicts
+ * \[Feature\] The `early_boot` pseudo-milestone
+ * \[Feature\] Support of service providers
  * Support of power management on Apple platforms
  * Some bug fixes and performance improvements

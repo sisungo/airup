@@ -11,6 +11,7 @@ use std::{
     ops::{Deref, DerefMut},
     path::Path,
 };
+use ipc::MessageProtoExt;
 
 /// A high-level wrapper of a connection to `airupd`.
 #[derive(Debug)]
