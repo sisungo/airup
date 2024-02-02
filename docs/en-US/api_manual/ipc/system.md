@@ -2,79 +2,79 @@
 Module `system` provides methods for managing the system.
 
 ## Method: `system.refresh`
-- Name: `system.refresh`
-- Parameters: None
-- Return Value: `null`
-- Description: Refreshes some of `airupd`'s internal status.
+- **Name**: `system.refresh`
+- **Parameters**: None
+- **Return Value**: `null`
+- **Description**: Refreshes some of `airupd`'s internal status.
 
 ## Method: `system.gc`
-- Name: `system.gc`
-- Parameters: None
-- Return Value: `null`
-- Description: Releases `airupd`'s cached system resources.
+- **Name**: `system.gc`
+- **Parameters**: None
+- **Return Value**: `null`
+- **Description**: Releases `airupd`'s cached system resources.
 
 ## Method: `system.query_service`
-- Name: `system.query_service`
-- Parameters: `string (name of service to query)` (optional)
-- Return Value: `QueryService` object
-- Description: Returns queried information of the service.
+- **Name**: `system.query_service`
+- **Parameters**: `string (name of service to query)` (optional)
+- **Return Value**: `QueryService` object
+- **Description**: Returns queried information of the service.
 
 ## Method: `system.query_system`
-- Name: `system.query_system`
-- Parameters: None
-- Return Value: `QuerySystem` object
-- Description: Returns queried macro information about the whole system.
+- **Name**: `system.query_system`
+- **Parameters**: None
+- **Return Value**: `QuerySystem` object
+- **Description**: Returns queried macro information about the whole system.
 
 ## Method: `system.list_services`
-- Name: `system.list_services`
-- Parameters: None
-- Return Value: `string` array
-- Description: Returns a list over names of all installed services on the system.
+- **Name**: `system.list_services`
+- **Parameters**: None
+- **Return Value**: `string` array
+- **Description**: Returns a list over names of all installed services on the system.
 
 ## Method: `system.start_service`
-- Name: `system.start_service`
-- Parameters: `string (name of service to operate)`
-- Return Value: `null`
-- Description: Starts the specified service.
+- **Name**: `system.start_service`
+- **Parameters**: `string (name of service to operate)`
+- **Return Value**: `null`
+- **Description**: Starts the specified service.
 
 ## Method: `system.stop_service`
-- Name: `system.stop_service`
-- Parameters: `string (name of service to operate)`
-- Return Value: `null`
-- Description: Stops the specified service.
+- **Name**: `system.stop_service`
+- **Parameters**: `string (name of service to operate)`
+- **Return Value**: `null`
+- **Description**: Stops the specified service.
 
 ## Method: `system.cache_service`
-- Name: `system.cache_service`
-- Parameters: `string (name of service to operate)`
-- Return Value: `null`
-- Description: Caches the specified service.
+- **Name**: `system.cache_service`
+- **Parameters**: `string (name of service to operate)`
+- **Return Value**: `null`
+- **Description**: Caches the specified service.
 
 ## Method: `system.uncache_service`
-- Name: `system.uncache_service`
-- Parameters: `string (name of service to operate)`
-- Return Value: `null`
-- Description: Uncaches the specified service.
+- **Name**: `system.uncache_service`
+- **Parameters**: `string (name of service to operate)`
+- **Return Value**: `null`
+- **Description**: Uncaches the specified service.
 
 ## Method: `system.sideload_service`
-- Name: `system.sideload_service`
-- Parameters: `string (name of service)`, `Service` object
-- Return Value: `null`
-- Description: Sideloads the given service in given name.
+- **Name**: `system.sideload_service`
+- **Parameters**: `string (name of service)`, `Service` object
+- **Return Value**: `null`
+- **Description**: Sideloads the given service in given name.
 
 ## Method: `system.unsideload_service`
-- Name: `system.unsideload_service`
-- Parameters: `string (name of service to operate)`
-- Return Value: `null`
-- Description: Removes the specified service from sideload store.
+- **Name**: `system.unsideload_service`
+- **Parameters**: `string (name of service to operate)`
+- **Return Value**: `null`
+- **Description**: Removes the specified service from sideload store.
 
 ## Method: `system.kill_service`
-- Name: `system.kill_service`
-- Parameters: `string (name of service to operate)`
-- Return Value: `null`
-- Description: Forces the specified service to stop.
+- **Name**: `system.kill_service`
+- **Parameters**: `string (name of service to operate)`
+- **Return Value**: `null`
+- **Description**: Forces the specified service to stop.
 
 ## Method: `system.reload_service`
-- Name: `system.reload_service`
-- Parameters: `string (name of service to operate)`
-- Return Value: `null`
-- Description: Notifies the specified service to reload.
+- **Name**: `system.reload_service`
+- **Parameters**: `string (name of service to operate)`
+- **Return Value**: `null`
+- **Description**: Notifies the specified service to reload.

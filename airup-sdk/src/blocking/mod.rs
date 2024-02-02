@@ -6,12 +6,12 @@ use crate::{
     error::ApiError,
     ipc::{Error as IpcError, Request},
 };
+use ipc::MessageProtoExt;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     ops::{Deref, DerefMut},
     path::Path,
 };
-use ipc::MessageProtoExt;
 
 /// A high-level wrapper of a connection to `airupd`.
 #[derive(Debug)]

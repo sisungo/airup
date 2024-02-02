@@ -65,7 +65,9 @@ pub extern "C" fn airup_default_path() -> *const libc::c_char {
     VALUE.get_or_init(default).as_ptr()
 }
 
-fn api_function<F: FnOnce() -> anyhow::Result<Result<(), crate::Error>>>(f: F) -> libc::c_int {
+fn api_function<F: FnOnce() -> Result<Result<(), crate::Error>, Box<dyn std::error::Error>>>(
+    f: F,
+) -> libc::c_int {
     match f() {
         Ok(Ok(())) => 0,
         Ok(Err(err)) => {

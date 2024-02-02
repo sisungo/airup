@@ -21,7 +21,6 @@ ffi = ["blocking"]
 tokio-1 = ["tokio", "nonblocking"]
 
 [dependencies]
-anyhow = "1"
 ahash = "0.8"
 cfg-if = "1"
 libc = "0.2"

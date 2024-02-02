@@ -9,7 +9,7 @@ pub unsafe extern "C" fn airup_start_service(
     conn: &mut crate::blocking::Connection,
     name: *const c_char,
 ) -> c_int {
-    super::api_function(|| conn.start_service(&CStr::from_ptr(name).to_string_lossy()))
+    super::api_function(|| Ok(conn.start_service(&CStr::from_ptr(name).to_string_lossy())?))
 }
 
 /// # Safety
@@ -19,5 +19,5 @@ pub unsafe extern "C" fn airup_stop_service(
     conn: &mut crate::blocking::Connection,
     name: *const c_char,
 ) -> c_int {
-    super::api_function(|| conn.stop_service(&CStr::from_ptr(name).to_string_lossy()))
+    super::api_function(|| Ok(conn.stop_service(&CStr::from_ptr(name).to_string_lossy())?))
 }

@@ -1,6 +1,5 @@
 //! # Milestones
 
-use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, str::FromStr};
 
@@ -72,23 +71,21 @@ pub enum Item {
     Run(String),
 }
 impl FromStr for Item {
-    type Err = anyhow::Error;
+    type Err = super::ReadError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut splited = s.splitn(2, ' ');
         let verb = splited
             .next()
-            .ok_or_else(|| anyhow!("missing verb in milestone items"))?;
+            .ok_or_else(|| super::ReadError::from("missing verb in milestone items"))?;
         let entity = splited
             .next()
-            .ok_or_else(|| anyhow!("missing unit in milestone items"))?;
+            .ok_or_else(|| super::ReadError::from("missing object in milestone items"))?;
         match verb {
             "cache" => Ok(Self::Cache(entity.into())),
             "start" => Ok(Self::Start(entity.into())),
             "run" => Ok(Self::Run(entity.into())),
-            _ => Err(anyhow!(
-                "verb `{verb}` is not considered in milestone items"
-            )),
+            _ => Err("verb `{verb}` is not considered in milestone items".into()),
         }
     }
 }

@@ -1,10 +1,12 @@
 use crate::{
     error::ApiError,
-    ipc::{Error as IpcError, Request, Response, MessageProto},
+    ipc::{Error as IpcError, MessageProto, Request, Response},
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
-    future::Future, ops::{Deref, DerefMut}, path::Path
+    future::Future,
+    ops::{Deref, DerefMut},
+    path::Path,
 };
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
