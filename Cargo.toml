@@ -12,6 +12,7 @@ members = [
     "airupfx/airupfx-ace",
     "airupfx/airupfx-signal",
     "airupfx/airupfx-time",
+    "airupfx/airupfx-macros",
 ]
 resolver = "2"
 

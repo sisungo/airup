@@ -1,11 +1,10 @@
 //! APIs that provides system operations.
 
 use super::{
-    util::{ok, ok_null},
     Method, MethodFuture,
 };
 use crate::{app::airupd, ipc::SessionContext};
-use airup_sdk::ipc::Request;
+use airup_sdk::{ipc::Request, system::{LogRecord, QueryService, QuerySystem}, Error, files::Service};
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
@@ -30,9 +29,6 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
             tail_logs,
             enter_milestone,
             trigger_event,
-            poweroff,
-            reboot,
-            halt,
         ]
     )
     .iter()
@@ -41,171 +37,122 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     });
 }
 
-fn refresh(_: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async move {
-        airupfx::env::refresh().await;
-        airupd().supervisors.refresh_all().await;
+#[airupfx::macros::api]
+async fn refresh() -> Result<(), Error> {
+    airupfx::env::refresh().await;
+    airupd().supervisors.refresh_all().await;
 
-        ok_null()
-    })
+    Ok(())
 }
 
-fn gc(_: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async move {
-        airupd().supervisors.gc().await;
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn gc() -> Result<(), Error> {
+    airupd().supervisors.gc().await;
+    Ok(())
 }
 
-fn query_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let service: String = req.extract_params()?;
-        ok(airupd().query_service(&service).await?)
-    })
+#[airupfx::macros::api]
+async fn query_service(service: String) -> Result<QueryService, Error> {
+    airupd().query_service(&service).await
 }
 
-fn query_system(_: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async move { ok(airupd().query_system().await) })
+#[airupfx::macros::api]
+async fn query_system() -> Result<QuerySystem, Error> {
+    Ok(airupd().query_system().await)
 }
 
-fn start_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let service: String = req.extract_params()?;
-        let handle = airupd().start_service(&service).await?;
-        handle.wait().await?;
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn start_service(service: String) -> Result<(), Error> {
+    let handle = airupd().start_service(&service).await?;
+    handle.wait().await?;
+    Ok(())
 }
 
-fn stop_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let service: String = req.extract_params()?;
-        airupd().stop_service(&service).await?.wait().await?;
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn stop_service(service: String) -> Result<(), Error> {
+    airupd().stop_service(&service).await?.wait().await?;
+    Ok(())
 }
 
-fn kill_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let service: String = req.extract_params()?;
-        airupd().kill_service(&service).await?;
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn kill_service(service: String) -> Result<(), Error> {
+    airupd().kill_service(&service).await?;
+    Ok(())
 }
 
-fn reload_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let service: String = req.extract_params()?;
-        airupd().reload_service(&service).await?.wait().await?;
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn reload_service(service: String) -> Result<(), Error> {
+    airupd().reload_service(&service).await?.wait().await?;
+    Ok(())
 }
 
-fn interrupt_service_task(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let service: String = req.extract_params()?;
-        airupd()
-            .interrupt_service_task(&service)
-            .await?
-            .wait()
-            .await?;
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn interrupt_service_task(service: String) -> Result<(), Error> {
+    airupd()
+        .interrupt_service_task(&service)
+        .await?
+        .wait()
+        .await?;
+    Ok(())
 }
 
-fn sideload_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let (name, service): (String, _) = req.extract_params()?;
-        airupd().storage.services.load(&name, service)?;
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn sideload_service(name: String, service: Service) -> Result<(), Error> {
+    airupd().storage.services.load(&name, service)?;
+    Ok(())
 }
 
-fn unsideload_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let name: String = req.extract_params()?;
-        airupd().storage.services.unload(&name)?;
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn unsideload_service(name: String) -> Result<(), Error> {
+    airupd().storage.services.unload(&name)?;
+    Ok(())
 }
 
-fn cache_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let service: String = req.extract_params()?;
-        airupd().cache_service(&service).await?;
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn cache_service(service: String) -> Result<(), Error> {
+    airupd().cache_service(&service).await?;
+    Ok(())
 }
 
-fn uncache_service(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let service: String = req.extract_params()?;
-        airupd().uncache_service(&service).await?;
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn uncache_service(service: String) -> Result<(), Error> {
+    airupd().uncache_service(&service).await?;
+    Ok(())
 }
 
-fn list_services(_: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async move { ok(airupd().storage.services.list().await) })
+#[airupfx::macros::api]
+async fn list_services() -> Result<Vec<String>, Error> {
+    Ok(airupd().storage.services.list().await)
 }
 
-fn use_logger(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let logger: Option<String> = req.extract_params()?;
-        if let Some(name) = logger {
-            airupd().logger.set_logger_by_name(&name).await?;
-        } else {
-            airupd().logger.remove_logger().await;
-        }
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn use_logger(logger: Option<String>) -> Result<(), Error> {
+    if let Some(name) = logger {
+        airupd().logger.set_logger_by_name(&name).await?;
+    } else {
+        airupd().logger.remove_logger().await;
+    }
+    Ok(())
 }
 
-fn tail_logs(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let (subject, n): (String, usize) = req.extract_params()?;
-        let queried = airupd()
-            .logger
-            .tail(&subject, n)
-            .await
-            .map_err(airup_sdk::Error::custom)?;
-        ok(queried)
-    })
+#[airupfx::macros::api]
+async fn tail_logs(subject: String, n: usize) -> Result<Vec<LogRecord>, Error> {
+    let queried = airupd()
+        .logger
+        .tail(&subject, n)
+        .await
+        .map_err(airup_sdk::Error::custom)?;
+    Ok(queried)
 }
 
-fn enter_milestone(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let name: String = req.extract_params()?;
-        airupd().enter_milestone(name).await?;
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn enter_milestone(name: String) -> Result<(), Error> {
+    airupd().enter_milestone(name).await?;
+    Ok(())
 }
 
-fn trigger_event(_: Arc<SessionContext>, req: Request) -> MethodFuture {
-    Box::pin(async move {
-        let event: String = req.extract_params()?;
-        airupd().events.trigger(event).await;
-        ok_null()
-    })
-}
-
-fn poweroff(_: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async move {
-        airupd().lifetime.poweroff();
-        ok_null()
-    })
-}
-
-fn reboot(_: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async move {
-        airupd().lifetime.reboot();
-        ok_null()
-    })
-}
-
-fn halt(_: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async move {
-        airupd().lifetime.halt();
-        ok_null()
-    })
+#[airupfx::macros::api]
+async fn trigger_event(event: String) -> Result<(), Error> {
+    airupd().events.trigger(event).await;
+    Ok(())
 }

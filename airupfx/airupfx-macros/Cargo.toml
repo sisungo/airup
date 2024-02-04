@@ -1,0 +1,17 @@
+[package]
+name = "airupfx-macros"
+authors = ["sisungo <sisungo@icloud.com>"]
+version = "0.7.1"
+edition = "2021"
+license = "MIT"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = "2"

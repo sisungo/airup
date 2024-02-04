@@ -1,8 +1,8 @@
 //! APIs that provides information about Airup and the system.
 
 use super::{Method, MethodFuture};
-use crate::ipc::{api::util::ok, SessionContext};
-use airup_sdk::ipc::Request;
+use crate::ipc::SessionContext;
+use airup_sdk::{build::BuildManifest, ipc::Request, Error};
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
@@ -15,10 +15,12 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     methods.insert("info.build_manifest", build_manifest);
 }
 
-fn version(_: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async { ok(env!("CARGO_PKG_VERSION")) })
+#[airupfx::macros::api]
+async fn version() -> Result<&'static str, Error> {
+    Ok(env!("CARGO_PKG_VERSION"))
 }
 
-fn build_manifest(_: Arc<SessionContext>, _: Request) -> MethodFuture {
-    Box::pin(async { ok(airup_sdk::build::manifest()) })
+#[airupfx::macros::api]
+async fn build_manifest() -> Result<&'static BuildManifest, Error> {
+    Ok(airup_sdk::build::manifest())
 }
