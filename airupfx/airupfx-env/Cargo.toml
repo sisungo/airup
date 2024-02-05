@@ -11,7 +11,7 @@ publish = false
 [dependencies]
 ahash = "0.8"
 cfg-if = "1"
-mini-moka = "0.10"
+quick_cache = "0.4"
 sysinfo = { version = "0.30", features = ["serde"] }
 tokio = { workspace = true }
 
