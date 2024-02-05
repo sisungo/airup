@@ -1,10 +1,13 @@
 //! APIs that provides system operations.
 
-use super::{
-    Method, MethodFuture,
-};
+use super::{Method, MethodFuture};
 use crate::{app::airupd, ipc::SessionContext};
-use airup_sdk::{ipc::Request, system::{LogRecord, QueryService, QuerySystem}, Error, files::Service};
+use airup_sdk::{
+    files::Service,
+    ipc::Request,
+    system::{LogRecord, QueryService, QuerySystem},
+    Error,
+};
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
 pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
@@ -63,8 +66,7 @@ async fn query_system() -> Result<QuerySystem, Error> {
 
 #[airupfx::macros::api]
 async fn start_service(service: String) -> Result<(), Error> {
-    let handle = airupd().start_service(&service).await?;
-    handle.wait().await?;
+    airupd().start_service(&service).await?.wait().await?;
     Ok(())
 }
 
@@ -76,8 +78,7 @@ async fn stop_service(service: String) -> Result<(), Error> {
 
 #[airupfx::macros::api]
 async fn kill_service(service: String) -> Result<(), Error> {
-    airupd().kill_service(&service).await?;
-    Ok(())
+    airupd().kill_service(&service).await
 }
 
 #[airupfx::macros::api]
@@ -92,32 +93,28 @@ async fn interrupt_service_task(service: String) -> Result<(), Error> {
         .interrupt_service_task(&service)
         .await?
         .wait()
-        .await?;
-    Ok(())
+        .await
+        .map(|_| ())
 }
 
 #[airupfx::macros::api]
 async fn sideload_service(name: String, service: Service) -> Result<(), Error> {
-    airupd().storage.services.load(&name, service)?;
-    Ok(())
+    airupd().storage.services.load(&name, service)
 }
 
 #[airupfx::macros::api]
 async fn unsideload_service(name: String) -> Result<(), Error> {
-    airupd().storage.services.unload(&name)?;
-    Ok(())
+    airupd().storage.services.unload(&name)
 }
 
 #[airupfx::macros::api]
 async fn cache_service(service: String) -> Result<(), Error> {
-    airupd().cache_service(&service).await?;
-    Ok(())
+    airupd().cache_service(&service).await
 }
 
 #[airupfx::macros::api]
 async fn uncache_service(service: String) -> Result<(), Error> {
-    airupd().uncache_service(&service).await?;
-    Ok(())
+    airupd().uncache_service(&service).await
 }
 
 #[airupfx::macros::api]
@@ -127,10 +124,13 @@ async fn list_services() -> Result<Vec<String>, Error> {
 
 #[airupfx::macros::api]
 async fn use_logger(logger: Option<String>) -> Result<(), Error> {
-    if let Some(name) = logger {
-        airupd().logger.set_logger_by_name(&name).await?;
-    } else {
-        airupd().logger.remove_logger().await;
+    match logger {
+        Some(name) => {
+            airupd().logger.set_logger_by_name(&name).await?;
+        }
+        None => {
+            airupd().logger.remove_logger().await;
+        }
     }
     Ok(())
 }
@@ -142,13 +142,13 @@ async fn tail_logs(subject: String, n: usize) -> Result<Vec<LogRecord>, Error> {
         .tail(&subject, n)
         .await
         .map_err(airup_sdk::Error::custom)?;
+
     Ok(queried)
 }
 
 #[airupfx::macros::api]
 async fn enter_milestone(name: String) -> Result<(), Error> {
-    airupd().enter_milestone(name).await?;
-    Ok(())
+    airupd().enter_milestone(name).await
 }
 
 #[airupfx::macros::api]

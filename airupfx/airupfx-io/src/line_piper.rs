@@ -6,7 +6,7 @@ use tokio::{
 };
 
 pub trait Callback: Send + Sync {
-    fn invoke<'a>(&'a self, a: &'a [u8]) -> Pin<Box<dyn for<'b> Future<Output = ()> + Send + 'a>>;
+    fn invoke<'a>(&'a self, a: &'a [u8]) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>>;
     fn clone_boxed(&self) -> Box<dyn Callback>;
 }
 

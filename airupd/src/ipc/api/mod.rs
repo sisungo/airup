@@ -3,7 +3,6 @@
 mod debug;
 mod info;
 mod system;
-pub mod util;
 
 use super::SessionContext;
 use ahash::AHashMap;
@@ -23,7 +22,7 @@ impl Manager {
     /// Creates a new `Manager` instance.
     pub fn new() -> Self {
         let mut object = Self {
-            methods: AHashMap::with_capacity(64),
+            methods: AHashMap::with_capacity(32),
         };
         object.init();
         object
