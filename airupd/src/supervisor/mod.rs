@@ -19,7 +19,7 @@ use std::{
     },
     time::Duration,
 };
-use task::*;
+use task::{Empty, TaskHandle};
 use tokio::sync::{mpsc, oneshot};
 
 macro_rules! supervisor_req {
@@ -414,7 +414,7 @@ impl Supervisor {
         self.timers.on_start().await;
         self.current_task
             ._start_task(&self.context, async {
-                StartServiceHandle::new(self.context.clone())
+                task::start::start(self.context.clone())
             })
             .await
     }
@@ -423,7 +423,7 @@ impl Supervisor {
     async fn stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
             ._start_task(&self.context, async {
-                StopServiceHandle::new(self.context.clone())
+                task::stop::start(self.context.clone())
             })
             .await
     }
@@ -445,7 +445,7 @@ impl Supervisor {
     async fn reload_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
             ._start_task(&self.context, async {
-                ReloadServiceHandle::new(self.context.clone())
+                task::reload::start(self.context.clone())
             })
             .await
     }
@@ -454,7 +454,7 @@ impl Supervisor {
     async fn cleanup_service(&mut self, wait: Wait) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
             ._start_task(&self.context, async {
-                CleanupServiceHandle::new(self.context.clone(), wait)
+                task::cleanup::start(self.context.clone(), wait)
             })
             .await
     }
@@ -463,7 +463,7 @@ impl Supervisor {
     async fn health_check(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
             ._start_task(&self.context, async {
-                HealthCheckHandle::new(&self.context).await
+                task::health_check::start(&self.context).await
             })
             .await
     }

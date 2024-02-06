@@ -18,34 +18,6 @@ pub struct CleanupServiceHandle {
     important: Arc<AtomicBool>,
     retry: bool,
 }
-impl CleanupServiceHandle {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(context: Arc<SupervisorContext>, wait: Wait) -> Arc<dyn TaskHandle> {
-        let (handle, helper) = task_helper();
-        let important: Arc<AtomicBool> = AtomicBool::new(true).into();
-
-        let retry_cond1 = context.service.watchdog.successful_exit || !wait.is_success();
-        let retry_cond2 = context
-            .retry
-            .check_and_mark(context.service.retry.max_attempts);
-        let retry = retry_cond1 && retry_cond2;
-
-        let cleanup_service = CleanupService {
-            helper,
-            context,
-            important: important.clone(),
-            retry,
-            wait,
-        };
-        cleanup_service.start();
-
-        Arc::new(Self {
-            helper: handle,
-            important,
-            retry,
-        })
-    }
-}
 impl TaskHandle for CleanupServiceHandle {
     fn task_class(&self) -> &'static str {
         match self.retry {
@@ -65,6 +37,32 @@ impl TaskHandle for CleanupServiceHandle {
     fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>> {
         self.helper.wait()
     }
+}
+
+pub fn start(context: Arc<SupervisorContext>, wait: Wait) -> Arc<dyn TaskHandle> {
+    let (handle, helper) = task_helper();
+    let important: Arc<AtomicBool> = AtomicBool::new(true).into();
+
+    let retry_cond1 = context.service.watchdog.successful_exit || !wait.is_success();
+    let retry_cond2 = context
+        .retry
+        .check_and_mark(context.service.retry.max_attempts);
+    let retry = retry_cond1 && retry_cond2;
+
+    let cleanup_service = CleanupService {
+        helper,
+        context,
+        important: important.clone(),
+        retry,
+        wait,
+    };
+    cleanup_service.start();
+
+    Arc::new(CleanupServiceHandle {
+        helper: handle,
+        important,
+        retry,
+    })
 }
 
 #[derive(Debug)]
@@ -103,7 +101,7 @@ impl CleanupService {
 
         if self.retry {
             self.important.store(true, atomic::Ordering::SeqCst);
-            let handle = super::StartServiceHandle::new(self.context.clone());
+            let handle = super::start::start(self.context.clone());
             tokio::select! {
                 _ = handle.wait() => {},
                 _ = self.helper.interrupt_flag.wait_for(|x| *x) => {

@@ -8,17 +8,6 @@ use std::sync::Arc;
 pub struct ReloadServiceHandle {
     helper: TaskHelperHandle,
 }
-impl ReloadServiceHandle {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(context: Arc<SupervisorContext>) -> Arc<dyn TaskHandle> {
-        let (handle, helper) = task_helper();
-
-        let reload_service = ReloadService { helper, context };
-        reload_service.start();
-
-        Arc::new(Self { helper: handle })
-    }
-}
 impl TaskHandle for ReloadServiceHandle {
     fn task_class(&self) -> &'static str {
         "ReloadService"
@@ -35,6 +24,15 @@ impl TaskHandle for ReloadServiceHandle {
     fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>> {
         self.helper.wait()
     }
+}
+
+pub fn start(context: Arc<SupervisorContext>) -> Arc<dyn TaskHandle> {
+    let (handle, helper) = task_helper();
+
+    let reload_service = ReloadService { helper, context };
+    reload_service.start();
+
+    Arc::new(ReloadServiceHandle { helper: handle })
 }
 
 #[derive(Debug)]

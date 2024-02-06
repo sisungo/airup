@@ -8,17 +8,6 @@ use std::sync::Arc;
 pub struct StopServiceHandle {
     helper: TaskHelperHandle,
 }
-impl StopServiceHandle {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(context: Arc<SupervisorContext>) -> Arc<dyn TaskHandle> {
-        let (handle, helper) = task_helper();
-
-        let stop_service = StopService { helper, context };
-        stop_service.start();
-
-        Arc::new(Self { helper: handle })
-    }
-}
 impl TaskHandle for StopServiceHandle {
     fn task_class(&self) -> &'static str {
         "StopService"
@@ -35,6 +24,15 @@ impl TaskHandle for StopServiceHandle {
     fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>> {
         self.helper.wait()
     }
+}
+
+pub fn start(context: Arc<SupervisorContext>) -> Arc<dyn TaskHandle> {
+    let (handle, helper) = task_helper();
+
+    let stop_service = StopService { helper, context };
+    stop_service.start();
+
+    Arc::new(StopServiceHandle { helper: handle })
 }
 
 #[derive(Debug)]
@@ -84,7 +82,7 @@ impl StopService {
 
         self.context.status.set(Status::Stopped);
 
-        super::cleanup_service(&ace, &self.context.service, &countdown)
+        super::cleanup::cleanup_service(&ace, &self.context.service, &countdown)
             .await
             .ok();
 

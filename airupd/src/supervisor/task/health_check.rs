@@ -8,24 +8,6 @@ use std::{sync::Arc, time::Duration};
 pub struct HealthCheckHandle {
     helper: TaskHelperHandle,
 }
-impl HealthCheckHandle {
-    #[allow(clippy::new_ret_no_self)]
-    pub async fn new(context: &SupervisorContext) -> Arc<dyn TaskHandle> {
-        let (handle, helper) = task_helper();
-        let command = context.service.exec.health_check.clone();
-        let timeout = context.service.exec.health_check_timeout();
-
-        let reload_service = HealthCheck {
-            helper,
-            ace: super::ace(context).await,
-            command,
-            timeout,
-        };
-        reload_service.start();
-
-        Arc::new(Self { helper: handle })
-    }
-}
 impl TaskHandle for HealthCheckHandle {
     fn task_class(&self) -> &'static str {
         "HealthCheck"
@@ -42,6 +24,22 @@ impl TaskHandle for HealthCheckHandle {
     fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>> {
         self.helper.wait()
     }
+}
+
+pub async fn start(context: &SupervisorContext) -> Arc<dyn TaskHandle> {
+    let (handle, helper) = task_helper();
+    let command = context.service.exec.health_check.clone();
+    let timeout = context.service.exec.health_check_timeout();
+
+    let reload_service = HealthCheck {
+        helper,
+        ace: super::ace(context).await,
+        command,
+        timeout,
+    };
+    reload_service.start();
+
+    Arc::new(HealthCheckHandle { helper: handle })
 }
 
 struct HealthCheck {
