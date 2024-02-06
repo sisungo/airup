@@ -12,6 +12,7 @@ pub use airupfx_ace as ace;
 pub use airupfx_env as env;
 pub use airupfx_fs as fs;
 pub use airupfx_io as io;
+pub use airupfx_isolator as isolator;
 pub use airupfx_macros as macros;
 pub use airupfx_power as power;
 pub use airupfx_process as process;

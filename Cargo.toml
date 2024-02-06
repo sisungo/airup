@@ -13,6 +13,7 @@ members = [
     "airupfx/airupfx-signal",
     "airupfx/airupfx-time",
     "airupfx/airupfx-macros",
+    "airupfx/airupfx-isolator",
 ]
 resolver = "2"
 
