@@ -13,7 +13,7 @@ pub mod supervisor;
 use airupfx::prelude::*;
 
 /// Entrypoint of the program.
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     let cmdline = self::env::cmdline();
     airupfx::log::Builder::new()

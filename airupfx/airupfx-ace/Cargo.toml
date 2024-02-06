@@ -13,6 +13,7 @@ ahash = "0.8"
 airup-sdk = { path = "../../airup-sdk" }
 airupfx-env = { path = "../airupfx-env" }
 airupfx-io = { path = "../airupfx-io" }
+airupfx-isolator = { path = "../airupfx-isolator" }
 airupfx-process = { path = "../airupfx-process" }
 libc = "0.2"
 shlex = "1.2"

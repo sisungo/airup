@@ -5,6 +5,7 @@ pub mod parser;
 
 use ahash::AHashMap;
 use airup_sdk::error::IntoApiError;
+use airupfx_isolator::Realm;
 use airupfx_process::{CommandEnv, ExitStatus, Wait, WaitError};
 use libc::SIGTERM;
 use std::{future::Future, pin::Pin, sync::Arc, time::Duration};
@@ -16,6 +17,7 @@ pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 #[derive(Default)]
 pub struct Ace {
     pub env: CommandEnv,
+    pub realm: Option<Realm>,
     modules: Modules,
 }
 impl Ace {
@@ -123,7 +125,6 @@ pub enum Child {
 }
 impl Child {
     /// Returns process ID of the child.
-    #[inline]
     pub const fn id(&self) -> i64 {
         match self {
             Self::Async(child) => child.id(),
