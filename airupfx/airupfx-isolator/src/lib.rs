@@ -16,7 +16,7 @@ cfg_if::cfg_if! {
 pub struct Realm(sys::Realm);
 impl Realm {
     pub async fn new() -> std::io::Result<Self> {
-        sys::Realm::new().await.map(|realm| Self(realm))
+        sys::Realm::new().await.map(Self)
     }
 
     pub async fn set_cpu_limit(&self, max: u64) -> std::io::Result<()> {
