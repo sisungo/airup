@@ -23,7 +23,7 @@ async fn main() {
         .verbose(cmdline.verbose)
         .init();
     milestones::early_boot::enter().await;
-    app::Airupd::init().await;
+    app::init().await;
 
     // Creates Airup runtime primitives
     app::airupd().storage.config.override_env();

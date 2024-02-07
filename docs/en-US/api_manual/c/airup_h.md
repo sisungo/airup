@@ -12,6 +12,19 @@ struct airup_error {
 };
 ```
 
+**Description**: Representation of an error caused by call to Airup SDK functions.
+
+**Field** *`code`*: Represents to type of the error.
+
+**Field** *`message`*: UTF-8 encoded string which describes the error in plain text.
+
+**Field** *`payload`*: Payload information attached to the error. Its type depends on value of field `code`.
+
+**Macro** *`AIRUP_EIO`*: An error code, which indicates the error is caused by an operating system IO failure.
+
+**Macro** *`AIRUP_EAPI`*: An error code, which indicates the error is an API error returned from the Airupd server. When
+the field `code` is set to `AIRUP_EAPI`, type of field `payload` is `struct airup_api_error`.
+
 ## Struct: `struct airup_api_error`
 ```c
 struct airup_api_error {
@@ -20,6 +33,14 @@ struct airup_api_error {
     const char *json;
 };
 ```
+
+**Description**: Representation of an API error returned from Airupd server.
+
+**Field** *`code*: UTF-8 encoded string which represents to the error code.
+
+**Field** *`message`*: UTF-8 encoded string which describes the error in plain text.
+
+**Field** *`json`*: Contains raw UTF-8 encoded JSON string which is received from the Airupd server.
 
 ## Function: `airup_last_error`
 ```c

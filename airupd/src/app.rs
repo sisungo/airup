@@ -37,22 +37,6 @@ pub struct Airupd {
     pub events: events::Bus,
 }
 impl Airupd {
-    /// Initializes the Airupd app for use of [`airupd`].
-    pub async fn init() {
-        let object = Self {
-            storage: storage::Storage::new().await,
-            ipc: ipc::Context::new(),
-            lifetime: lifetime::System::new(),
-            milestones: milestones::Manager::new(),
-            supervisors: supervisor::Manager::new(),
-            logger: logger::Manager::new(),
-            boot_timestamp: airupfx::time::timestamp_ms(),
-            events: events::Bus::new(),
-        };
-
-        AIRUPD.set(object).unwrap();
-    }
-
     /// Queries information about the whole system.
     pub async fn query_system(&self) -> QuerySystem {
         let booted_since = self
@@ -89,4 +73,20 @@ impl Airupd {
 /// This method would panic if `Airupd::init` was not previously called.
 pub fn airupd() -> &'static Airupd {
     AIRUPD.get().unwrap()
+}
+
+/// Initializes the Airupd app for use of [`airupd`].
+pub async fn init() {
+    let object = Airupd {
+        storage: storage::Storage::new().await,
+        ipc: ipc::Context::new(),
+        lifetime: lifetime::System::new(),
+        milestones: milestones::Manager::new(),
+        supervisors: supervisor::Manager::new(),
+        logger: logger::Manager::new(),
+        boot_timestamp: airupfx::time::timestamp_ms(),
+        events: events::Bus::new(),
+    };
+
+    AIRUPD.set(object).unwrap();
 }

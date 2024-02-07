@@ -12,6 +12,19 @@ struct airup_error {
 };
 ```
 
+**描述**：表示调用 Airup SDK 函数时发生的错误。
+
+**字段** *`code`*：表示错误的类型。
+
+**字段** *`message`*：UTF-8 编码的字符串，以纯文本描述该错误的信息。
+
+**字段** *`payload`*：该错误的附加信息。其类型取决于 `code` 字段的值。
+
+**宏** *`AIRUP_EIO`*：错误代码，表示该错误由操作系统 IO 失败导致。
+
+**宏** *`AIRUP_EAPI`*：错误代码，表示该错误由从 Airupd 服务器返回的 API 错误导致。当 `code` 字段被设置为 `AIRUP_EAPI` 时，`payload` 字段的
+类型将为 `struct airup_api_error`。
+
 ## 结构体：`airup_api_error`
 ```c
 struct airup_api_error {
@@ -20,6 +33,14 @@ struct airup_api_error {
     const char *json;
 };
 ```
+
+**描述**：表示从 Airupd 服务器返回的 API 错误。
+
+**字段** *`code`*：UTF-8 编码的字符串，表示错误代码。
+
+**字段** *`message`*：UTF-8 编码的字符串，以纯文本描述该错误的信息。
+
+**字段** *`json`*：从 Airupd 服务器接收到的原始 JSON 字符串，以 UTF-8 编码。
 
 ## 函数：`airup_last_error`
 ```c
