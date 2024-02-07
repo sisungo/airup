@@ -17,7 +17,7 @@ pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 #[derive(Default)]
 pub struct Ace {
     pub env: CommandEnv,
-    pub realm: Option<Realm>,
+    pub realm: Option<Arc<Realm>>,
     modules: Modules,
 }
 impl Ace {
@@ -94,7 +94,11 @@ impl Ace {
             command.arg(x);
         });
         command.env = self.env.clone();
-        Ok(Child::Process(command.spawn().await?))
+        let child = command.spawn().await?;
+        if let Some(realm) = &self.realm {
+            realm.add(child.id())?;
+        }
+        Ok(Child::Process(child))
     }
 }
 

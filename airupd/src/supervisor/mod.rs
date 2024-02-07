@@ -10,7 +10,7 @@ use airup_sdk::{
     system::{QueryService, Status},
     Error,
 };
-use airupfx::{ace::Child, process::Wait, time::Alarm};
+use airupfx::{ace::Child, isolator::Realm, process::Wait, time::Alarm};
 use std::{
     cmp,
     sync::{
@@ -536,16 +536,20 @@ pub struct SupervisorContext {
     pub service: Service,
     pub last_error: LastErrorContext,
     pub status: StatusContext,
+    pub realm: Option<Arc<Realm>>,
     child: tokio::sync::RwLock<Option<Child>>,
     retry: RetryContext,
 }
 impl SupervisorContext {
     /// Creates a new [`SupervisorContext`] instance for the given [`Service`].
     pub fn new(service: Service) -> Arc<Self> {
+        let realm = Realm::new().ok().map(Arc::new);
+        setup_realm(&realm, &service);
         Arc::new(Self {
             service,
             last_error: Default::default(),
             status: Default::default(),
+            realm,
             child: Default::default(),
             retry: Default::default(),
         })
@@ -864,4 +868,16 @@ async fn wait(lock: &mut Option<Child>) -> Option<Wait> {
     let wait = lock.as_mut().unwrap().wait().await.ok();
     *lock = None;
     wait
+}
+
+fn setup_realm(realm: &Option<Arc<Realm>>, service: &Service) {
+    if let Some(realm) = &realm {
+        if let Some(x) = service.reslimit.cpu {
+            realm.set_cpu_limit(x).ok();
+        }
+
+        if let Some(x) = service.reslimit.memory {
+            realm.set_mem_limit(x as usize).ok();
+        }
+    }
 }

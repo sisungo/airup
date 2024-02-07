@@ -30,6 +30,9 @@ pub struct Service {
 
     #[serde(default)]
     pub watchdog: Watchdog,
+
+    #[serde(default)]
+    pub reslimit: Reslimit,
 }
 impl Service {
     /// Returns `Ok(())` if the service is correct, otherwise returns `Err(ReadError::Validation(_))`.
@@ -288,4 +291,15 @@ impl Watchdog {
 pub enum WatchdogKind {
     /// Make the supervisor poll to execute the health check command.
     HealthCheck,
+}
+
+/// Resource limitation.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub struct Reslimit {
+    /// Max CPU usage.
+    pub cpu: Option<u64>,
+
+    /// Max memory usage.
+    pub memory: Option<u64>,
 }

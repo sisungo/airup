@@ -206,6 +206,7 @@ async fn ace_environment(
 pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
     let mut ace = Ace::new();
 
+    ace.realm = context.realm.clone();
     ace.env = ace_environment(&context.service)
         .await
         .map_err(|x| Error::Io {

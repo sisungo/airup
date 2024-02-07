@@ -32,7 +32,8 @@ pub struct Realm {
     cg: cgroups_rs::Cgroup,
 }
 impl Realm {
-    pub async fn new() -> std::io::Result<Self> {
+    pub fn new() -> std::io::Result<Self> {
+        Self::pid_detect()?;
         let ctrl = controller();
         let id = ctrl.allocate_id();
         let hier = cgroups_rs::hierarchies::auto();
@@ -47,7 +48,7 @@ impl Realm {
         Ok(Self { cg })
     }
 
-    pub async fn set_cpu_limit(&self, max: u64) -> std::io::Result<()> {
+    pub fn set_cpu_limit(&self, max: u64) -> std::io::Result<()> {
         self.cg
             .controller_of::<CpuController>()
             .ok_or_else(|| std::io::Error::from(ErrorKind::PermissionDenied))?
@@ -57,7 +58,7 @@ impl Realm {
         Ok(())
     }
 
-    pub async fn set_mem_limit(&self, max: usize) -> std::io::Result<()> {
+    pub fn set_mem_limit(&self, max: usize) -> std::io::Result<()> {
         self.cg
             .controller_of::<MemController>()
             .ok_or_else(|| std::io::Error::from(ErrorKind::PermissionDenied))?
@@ -67,7 +68,7 @@ impl Realm {
         Ok(())
     }
 
-    pub async fn add(&self, pid: i64) -> std::io::Result<()> {
+    pub fn add(&self, pid: i64) -> std::io::Result<()> {
         self.cg
             .add_task(CgroupPid::from(pid as u64))
             .map_err(|x| std::io::Error::new(ErrorKind::PermissionDenied, x.to_string()))?;
@@ -75,12 +76,19 @@ impl Realm {
         Ok(())
     }
 
-    pub async fn kill(&self) -> std::io::Result<()> {
+    pub fn kill(&self) -> std::io::Result<()> {
         self.cg
             .kill()
             .map_err(|x| std::io::Error::new(ErrorKind::PermissionDenied, x.to_string()))?;
 
         Ok(())
+    }
+
+    fn pid_detect() -> std::io::Result<()> {
+        match std::process::id() {
+            1 => Ok(()),
+            _ => Err(ErrorKind::PermissionDenied.into()),
+        }
     }
 }
 impl Drop for Realm {

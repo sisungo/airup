@@ -15,25 +15,25 @@ cfg_if::cfg_if! {
 #[derive(Debug)]
 pub struct Realm(sys::Realm);
 impl Realm {
-    pub async fn new() -> std::io::Result<Self> {
-        sys::Realm::new().await.map(Self)
+    pub fn new() -> std::io::Result<Self> {
+        sys::Realm::new().map(Self)
     }
 
-    pub async fn set_cpu_limit(&self, max: u64) -> std::io::Result<()> {
-        self.0.set_cpu_limit(max).await
+    pub fn set_cpu_limit(&self, max: u64) -> std::io::Result<()> {
+        self.0.set_cpu_limit(max)
     }
 
-    pub async fn set_mem_limit(&self, max: usize) -> std::io::Result<()> {
-        self.0.set_mem_limit(max).await
+    pub fn set_mem_limit(&self, max: usize) -> std::io::Result<()> {
+        self.0.set_mem_limit(max)
     }
 
     /// Adds a process to the realm.
-    pub async fn add(&self, pid: i64) -> std::io::Result<()> {
-        self.0.add(pid).await
+    pub fn add(&self, pid: i64) -> std::io::Result<()> {
+        self.0.add(pid)
     }
 
     /// Force-kills all processes in the realm.
-    pub async fn kill(&self) -> std::io::Result<()> {
-        self.0.kill().await
+    pub fn kill(&self) -> std::io::Result<()> {
+        self.0.kill()
     }
 }
