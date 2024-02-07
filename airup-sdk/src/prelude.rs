@@ -1,5 +1,6 @@
 //! The Airup SDK preludes.
 
+pub use crate::debug::ConnectionExt as _;
 pub use crate::error::IntoApiError;
 pub use crate::info::ConnectionExt as _;
 pub use crate::system::{ConnectionExt as _, QueryService, QuerySystem, Status};

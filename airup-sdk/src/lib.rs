@@ -2,6 +2,7 @@
 //! The Airup SDK provides interface to deal with Airup elements, for example, interacting with the daemon, `airupd`.
 
 pub mod build;
+pub mod debug;
 pub mod error;
 pub mod files;
 pub mod info;

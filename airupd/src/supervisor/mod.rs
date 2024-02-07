@@ -382,6 +382,7 @@ impl Supervisor {
         if context.service != new {
             self.timers = Timers::from(&new).into();
         }
+        setup_realm(&context.realm, &new);
 
         Ok(std::mem::replace(&mut context.service, new))
     }

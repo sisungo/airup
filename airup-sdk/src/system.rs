@@ -153,21 +153,6 @@ pub trait ConnectionExt<'a>: crate::Connection {
         self.invoke("system.gc", ())
     }
 
-    /// Powers the system off.
-    fn poweroff(&'a mut self) -> Self::Invoke<'a, ()> {
-        self.invoke("system.poweroff", ())
-    }
-
-    /// Reboots the system.
-    fn reboot(&'a mut self) -> Self::Invoke<'a, ()> {
-        self.invoke("system.reboot", ())
-    }
-
-    /// Halts the system.
-    fn halt(&'a mut self) -> Self::Invoke<'a, ()> {
-        self.invoke("system.halt", ())
-    }
-
     /// Indicates `airupd` to register the specified logger.
     fn use_logger(&'a mut self, name: Option<&'a str>) -> Self::Invoke<'a, ()> {
         self.invoke("system.use_logger", name)
