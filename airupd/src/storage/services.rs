@@ -23,6 +23,7 @@ impl From<DirChain<'static>> for Services {
     }
 }
 impl Services {
+    /// Creates a new [`Services`] instance.
     pub fn new() -> Self {
         Self {
             base_chain: DirChain::new(airup_sdk::build::manifest().service_dir.clone()),
@@ -31,10 +32,10 @@ impl Services {
     }
 
     /// Sideloads a service, fails if the service already exists or is invalid.
-    pub fn load(&self, name: &str, mut service: Service) -> Result<(), Error> {
+    pub fn load(&self, name: &str, mut service: Service, ovrd: bool) -> Result<(), Error> {
         let name = name.strip_suffix(".airs").unwrap_or(name);
         let mut lock = self.sideloaded.write().unwrap();
-        if lock.contains_key(name) {
+        if !ovrd && lock.contains_key(name) {
             return Err(Error::UnitExists);
         }
         service.validate()?;
@@ -81,6 +82,7 @@ impl Services {
         Service::read_merge(paths).await
     }
 
+    /// Lists names of all services installed on the system, including sideloaded ones and on-filesystem ones.
     pub async fn list(&self) -> Vec<String> {
         let mut result = Vec::new();
         self.sideloaded

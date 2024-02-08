@@ -1,4 +1,4 @@
-//! Represents to Airup's system config.
+//! Represents to Airup's config directory.
 
 use ahash::HashMap;
 use airup_sdk::{files::SystemConf, prelude::*};

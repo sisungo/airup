@@ -98,8 +98,8 @@ async fn interrupt_service_task(service: String) -> Result<(), Error> {
 }
 
 #[airupfx::macros::api]
-async fn sideload_service(name: String, service: Service) -> Result<(), Error> {
-    airupd().storage.services.load(&name, service)
+async fn sideload_service(name: String, service: Service, ovrd: bool) -> Result<(), Error> {
+    airupd().storage.services.load(&name, service, ovrd)
 }
 
 #[airupfx::macros::api]

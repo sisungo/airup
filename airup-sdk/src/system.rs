@@ -89,8 +89,13 @@ pub struct EnteredMilestone {
 
 pub trait ConnectionExt<'a>: crate::Connection {
     /// Sideloads a service.
-    fn sideload_service(&'a mut self, name: &'a str, service: &'a Service) -> Self::Invoke<'a, ()> {
-        self.invoke("system.sideload_service", (name, service))
+    fn sideload_service(
+        &'a mut self,
+        name: &'a str,
+        service: &'a Service,
+        ovrd: bool,
+    ) -> Self::Invoke<'a, ()> {
+        self.invoke("system.sideload_service", (name, service, ovrd))
     }
 
     /// Starts the specified service.

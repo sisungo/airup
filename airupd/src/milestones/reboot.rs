@@ -61,6 +61,19 @@ async fn enter_halt() -> Result<(), Error> {
     Ok(())
 }
 
+/// Enters the `userspace-reboot` milestone.
+async fn enter_userspace_reboot() -> Result<(), Error> {
+    super::enter_milestone("userspace-reboot".into(), &mut AHashSet::with_capacity(8))
+        .await
+        .ok();
+
+    let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
+    stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
+    airupd().bootstrap_milestone(crate::env::cmdline().milestone.to_string());
+
+    Ok(())
+}
+
 /// Stops all running services.
 async fn stop_all_services(timeout: Duration) {
     tokio::time::timeout(timeout, async {
@@ -75,19 +88,6 @@ async fn stop_all_services(timeout: Duration) {
     })
     .await
     .ok();
-}
-
-/// Enters the `userspace-reboot` milestone.
-async fn enter_userspace_reboot() -> Result<(), Error> {
-    super::enter_milestone("userspace-reboot".into(), &mut AHashSet::with_capacity(8))
-        .await
-        .ok();
-
-    let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
-    stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
-    airupd().bootstrap_milestone(crate::env::cmdline().milestone.to_string());
-
-    Ok(())
 }
 
 /// Spawns a task to interactively stop a service.
@@ -118,6 +118,8 @@ fn stop_service_task(service: String) -> JoinHandle<()> {
                 super::display_name(&service).await,
                 err
             );
+            airupd().kill_service(&service).await.ok();
         }
+        airupd().uncache_service(&service).await.ok();
     })
 }

@@ -16,6 +16,7 @@ impl From<DirChain<'static>> for Milestones {
     }
 }
 impl Milestones {
+    /// Creates a new [`Milestones`] instance.
     pub fn new() -> Self {
         Self {
             base_chain: DirChain::new(airup_sdk::build::manifest().milestone_dir.clone()),

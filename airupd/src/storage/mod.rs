@@ -34,6 +34,7 @@ impl Storage {
         }
     }
 
+    /// Gets a patched service installation.
     pub async fn get_service_patched(&self, name: &str) -> Result<Service, ReadError> {
         let patch = self.config.of_service(name).await;
         self.services.get_and_patch(name, patch).await
