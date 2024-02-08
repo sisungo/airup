@@ -1,4 +1,5 @@
 # Airup IPC API 手册
+这是 Airup 的 IPC API 的手册。
 
 ## 模块
 - [debug](debug.md): 提供用于调试的实用工具。

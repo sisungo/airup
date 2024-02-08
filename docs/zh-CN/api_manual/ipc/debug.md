@@ -18,9 +18,4 @@
  - **参数**：`Response` 对象
  - **返回值**：参数的内容
  - **描述**：返回参数中提供的 `Response` 对象。
-
-## `debug.reload_image` 方法
- - **名称**：`debug.reload_image`
- - **参数**：无
- - **返回值**：`null`
- - **描述**：让 `airupd` 守护进程重新加载其进程映像。
+ 

@@ -18,9 +18,4 @@ Module `debug` provides methods that are used for Airup debugging.
  - **Parameters**: `Response` object
  - **Return Value**: Content of the parameter.
  - **Description**: Returns the `Response` object provided by the parameter.
-
-## Method: `debug.reload_image`
- - **Name**: `debug.reload_image`
- - **Parameters**: None
- - **Return Value**: `null`
- - **Description**: Makes `airupd` daemon process reloads its process image.
+ 

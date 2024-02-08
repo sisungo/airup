@@ -12,3 +12,4 @@
  - **参数**：无
  - **返回值**：`BuildManifest` 对象
  - **描述**：返回构建 `airupd` 时所嵌入的 `build_manifest.json`。
+ 

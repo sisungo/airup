@@ -89,3 +89,11 @@ int airup_stop_service(airup_connection *connection, const char *name);
 
 **Description**: Invokes `system.stop_service` method on connection `connection` with parameter `name`. On success,
 returns `0`. On failure, returns `-1` and current thread's Airup error is set.
+
+## Function: `airup_trigger_event`
+```c
+int airup_trigger_event(airup_connection *connection, const char *event);
+```
+
+**Description**: Invokes `system.trigger_event` method on connection `connection` with parameter `event`. On success,
+returns `0`. On failure, returns `-1` and current thread's Airup error is set.

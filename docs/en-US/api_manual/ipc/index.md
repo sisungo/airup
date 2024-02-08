@@ -1,4 +1,5 @@
 # Airup IPC API manual
+This is manual of Airup's IPC APIs.
 
 ## Modules
 - [debug](debug.md): Provides useful methods for debugging.

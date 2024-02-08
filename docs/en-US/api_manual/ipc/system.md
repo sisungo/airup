@@ -57,9 +57,10 @@ Module `system` provides methods for managing the system.
 
 ## Method: `system.sideload_service`
 - **Name**: `system.sideload_service`
-- **Parameters**: `string (name of service)`, `Service` object
+- **Parameters**: `string (name of service)`, `Service` object and `bool`
 - **Return Value**: `null`
-- **Description**: Sideloads the given service in given name.
+- **Description**: Sideloads the given service in given name. If the third parameter is set `true`, existing sideloaded service
+with the same name will be overridden, rather than returning an error.
 
 ## Method: `system.unsideload_service`
 - **Name**: `system.unsideload_service`
@@ -78,3 +79,9 @@ Module `system` provides methods for managing the system.
 - **Parameters**: `string (name of service to operate)`
 - **Return Value**: `null`
 - **Description**: Notifies the specified service to reload.
+
+## Method: `system.trigger_event`
+- **Name**: `system.trigger_event`
+- **Parameters**: `string (name of event)`
+- **Return Value**: `null`
+- **Description**: Triggers the specified event.

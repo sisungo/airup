@@ -57,9 +57,9 @@
 
 ## `system.sideload_service` 方法
 - **名称**：`system.sideload_service`
-- **参数**：`字符串（服务名称）`, `Service` 对象
+- **参数**：`字符串（服务名称）`, `Service` 对象, `bool`
 - **返回值**：`null`
-- **描述**：以指定名称侧载给出的服务。
+- **描述**：以指定名称侧载给出的服务。如果第三个参数为 `true`，如果指定名称的侧载服务已经存在，将会覆盖该槽位而不是返回错误。
 
 ## `system.unsideload_service` 方法
 - **名称**：`system.unsideload_service`
@@ -78,3 +78,9 @@
 - **参数**：`字符串（要操作的服务名称）`
 - **返回值**：`null`
 - **描述**：通知指定的服务重新加载。
+
+## `system.trigger_event` 方法
+- **名称**：`system.trigger_event`
+- **参数**：`字符串（要触发的事件名称）`
+- **返回值**：`null`
+- **描述**：触发指定事件。

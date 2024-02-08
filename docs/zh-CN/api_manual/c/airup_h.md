@@ -87,3 +87,11 @@ int airup_stop_service(airup_connection *connection, const char *name);
 
 **描述**：在连接 `connection` 上调用 `system.stop_service` 方法并传递 `name` 作为参数。如果成功，返回 `0`。如果失败，返回 `-1` 并设置当前
 线程的 Airup 错误。
+
+## 函数：`airup_trigger_event`
+```c
+int airup_trigger_event(airup_connection *connection, const char *event);
+```
+
+**描述**：在连接 `connection` 上调用 `system.trigger_event` 方法并传递 `event` 作为参数。如果成功，返回 `0`。如果失败，返回 `-1` 并设置当前
+线程的 Airup 错误。

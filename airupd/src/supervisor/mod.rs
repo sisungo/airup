@@ -432,6 +432,13 @@ impl Supervisor {
     /// Forces the service to stop.
     async fn kill_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         let child = self.context.child.read().await;
+        
+        if let Some(realm) = &self.context.realm {
+            if realm.kill().is_ok() {
+                return Ok(Arc::new(Empty));
+            }
+        }
+
         if let Some(ch) = &*child {
             ch.kill().await?;
             Ok(Arc::new(Empty))

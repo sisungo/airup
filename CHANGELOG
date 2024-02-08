@@ -1,3 +1,8 @@
+Changes in v0.8.0:
+ * \[Feature\] Support of resource limitation (currently cgroup is supported on Linux)
+ * \[Performance\] Switch to single-threaded async runtime to decrease CPU and memory usage
+ * \[Performance\] Switch caching from `mini-moka` to `quick_cache`, which is smaller in size
+
 Changes in v0.7.1:
  * \[Feature\] CLI utility `airup edit` for `.airs` and `.airc` files
  * \[Developer\] Improved SDK API: Unified `?Async`-like traits

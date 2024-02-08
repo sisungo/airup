@@ -21,3 +21,13 @@ pub unsafe extern "C" fn airup_stop_service(
 ) -> c_int {
     super::api_function(|| Ok(conn.stop_service(&CStr::from_ptr(name).to_string_lossy())?))
 }
+
+/// # Safety
+/// The caller must guarantee the pointer `event` is valid.
+#[no_mangle]
+pub unsafe extern "C" fn airup_trigger_event(
+    conn: &mut crate::blocking::Connection,
+    event: *const c_char,
+) -> c_int {
+    super::api_function(|| Ok(conn.trigger_event(&CStr::from_ptr(event).to_string_lossy())?))
+}

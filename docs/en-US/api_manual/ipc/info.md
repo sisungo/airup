@@ -12,3 +12,4 @@ Module `info` provides methods that are used for querying information about Airu
  - **Parameters**: None
  - **Return Value**: `BuildManifest` object
  - **Description**: Returns the `build_manifest.json` which is embedded building `airupd`.
+ 
