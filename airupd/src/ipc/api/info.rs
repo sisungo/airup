@@ -11,8 +11,6 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
         .for_each(|(k, v)| {
             methods.insert(k, *v);
         });
-    methods.insert("info.version", version);
-    methods.insert("info.build_manifest", build_manifest);
 }
 
 #[airupfx::macros::api]
