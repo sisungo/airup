@@ -36,7 +36,7 @@ struct airup_api_error {
 
 **Description**: Representation of an API error returned from Airupd server.
 
-**Field** *`code*: UTF-8 encoded string which represents to the error code.
+**Field** *`code`*: UTF-8 encoded string which represents to the error code.
 
 **Field** *`message`*: UTF-8 encoded string which describes the error in plain text.
 
