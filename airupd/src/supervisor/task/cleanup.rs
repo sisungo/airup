@@ -1,8 +1,7 @@
 //! # The `CleanupService` Task
 
 use super::*;
-use crate::supervisor::SupervisorContext;
-use airup_sdk::{files::Service, Error};
+use airup_sdk::files::Service;
 use airupfx::{ace::CommandExitError, prelude::*, process::Wait};
 use std::{
     sync::{

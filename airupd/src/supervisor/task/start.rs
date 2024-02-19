@@ -1,6 +1,6 @@
 use super::*;
-use crate::{app::airupd, supervisor::SupervisorContext};
-use airup_sdk::{files::service::Kind, system::Status, Error};
+use crate::app::airupd;
+use airup_sdk::{files::service::Kind, system::Status};
 use airupfx::prelude::*;
 use std::sync::Arc;
 

@@ -1,7 +1,6 @@
 use super::*;
-use crate::supervisor::SupervisorContext;
-use airup_sdk::{system::Status, Error};
-use airupfx::{signal::SIGTERM, util::BoxFuture};
+use airup_sdk::system::Status;
+use airupfx::signal::SIGTERM;
 use std::sync::Arc;
 
 #[derive(Debug)]
