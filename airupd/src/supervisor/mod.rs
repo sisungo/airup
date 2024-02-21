@@ -204,6 +204,7 @@ impl SupervisorHandle {
             current_task: CurrentTask::default(),
             context: SupervisorContext::new(service),
             timers: Box::default(),
+            events: airupd().events.subscribe(),
         };
         supervisor.start();
 
@@ -251,6 +252,7 @@ struct Supervisor {
     current_task: CurrentTask,
     context: Arc<SupervisorContext>,
     timers: Box<Timers>,
+    events: async_broadcast::Receiver<String>,
 }
 impl Supervisor {
     /// Starts the supervisor task.
@@ -269,6 +271,7 @@ impl Supervisor {
                 Some(wait) = do_child(&self.context, self.current_task.has_task()) => self.handle_wait(wait).await,
                 Some(handle) = self.current_task.wait() => self.handle_wait_task(handle).await,
                 Some(_) = Timers::wait(&mut self.timers.health_check) => self.handle_health_check().await,
+                Ok(event) = self.events.recv() => self.handle_event(&event).await,
             }
         }
     }
@@ -319,6 +322,15 @@ impl Supervisor {
                     },
                 };
             }
+        }
+    }
+
+    async fn handle_event(&mut self, event: &str) {
+        if let Some(exec) = self.context.service.event_handlers.get(event) {
+            let Ok(ace) = task::ace(&self.context).await else {
+                return;
+            };
+            ace.run(exec).await.ok();
         }
     }
 

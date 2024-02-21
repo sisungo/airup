@@ -8,6 +8,7 @@ use std::{path::PathBuf, time::Duration};
 
 /// An Airup service.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "kebab-case")]
 pub struct Service {
     /// Name of the service.
     ///
@@ -33,6 +34,9 @@ pub struct Service {
 
     #[serde(default)]
     pub reslimit: Reslimit,
+
+    #[serde(default)]
+    pub event_handlers: HashMap<String, String>,
 }
 impl Service {
     /// Returns `Ok(())` if the service is correct, otherwise returns `Err(ReadError::Validation(_))`.
