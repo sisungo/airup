@@ -325,6 +325,7 @@ impl Supervisor {
         }
     }
 
+    /// Called when an event is triggered.
     async fn handle_event(&mut self, event: &str) {
         if let Some(exec) = self.context.service.event_handlers.get(event) {
             let Ok(ace) = task::ace(&self.context).await else {

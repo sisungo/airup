@@ -34,6 +34,7 @@ struct airup_error airup_last_error(void);
 airup_connection *airup_connect(const char *path);
 void airup_disconnect(airup_connection *connection);
 const char *airup_default_path(void);
+const char *airup_build_manifest(void);
 int airup_start_service(airup_connection *connection, const char *name);
 int airup_stop_service(airup_connection *connection, const char *name);
 int airup_trigger_event(airup_connection *connection, const char *event);

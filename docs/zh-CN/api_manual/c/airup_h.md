@@ -72,6 +72,13 @@ const char *airup_default_path(void);
 **描述**：获取默认的 Airup IPC 端口路径。如果设置了 `AIRUP_SOCK` 环境变量，返回该环境变量的值，否则返回根据构建该 SDK 时
 的 `build_manifest.json` 中计算出的路径。
 
+## 函数：`airup_build_manifest`
+```c
+const char *airup_build_manifest(void);
+```
+
+**描述**：获取此 SDK 的构建清单的 JSON 字符串表示，或称为此 Airup SDK 的编译时 `build_manifest.json` 的内容。
+
 ## 函数：`airup_start_service`
 ```c
 int airup_start_service(airup_connection *connection, const char *name);

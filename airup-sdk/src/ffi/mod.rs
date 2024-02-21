@@ -65,6 +65,18 @@ pub extern "C" fn airup_default_path() -> *const libc::c_char {
     VALUE.get_or_init(default).as_ptr()
 }
 
+#[no_mangle]
+pub extern "C" fn airup_build_manifest() -> *const libc::c_char {
+    static VALUE: std::sync::OnceLock<std::ffi::CString> = std::sync::OnceLock::new();
+
+    let default = || {
+        std::ffi::CString::new(include_str!("../../../build_manifest.json"))
+            .expect("`build_manifest.json` should never contain NUL")
+    };
+
+    VALUE.get_or_init(default).as_ptr()
+}
+
 fn api_function<F: FnOnce() -> Result<Result<(), crate::Error>, Box<dyn std::error::Error>>>(
     f: F,
 ) -> libc::c_int {

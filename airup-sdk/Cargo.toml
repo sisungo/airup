@@ -14,7 +14,7 @@ license = "MIT"
 crate-type = ["rlib", "cdylib"]
 
 [features]
-_internal = ["tokio-1"]
+_internal = ["tokio-1", "ffi"]
 blocking = []
 nonblocking = []
 ffi = ["blocking"]

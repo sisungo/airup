@@ -74,6 +74,14 @@ const char *airup_default_path(void);
 **Description**：Returns default path to Airup's IPC port. If environment variable `AIRUP_SOCK` is present, its value is
 returned. Otherwise a value calculated from `build_manifest.json` provided at compile-time of this SDK is returned.
 
+## Function: `airup_build_manifest`
+```c
+const char *airup_build_manifest(void);
+```
+
+**Description**：Returns JSON string representation of the SDK's built-in build manifest, a.k.a content of compile-time
+`build_manifest.json` of the SDK.
+
 ## Function: `airup_start_service`
 ```c
 int airup_start_service(airup_connection *connection, const char *name);
