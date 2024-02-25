@@ -3,7 +3,7 @@
 use crate::*;
 use airup_sdk::system::{QuerySystem, Status};
 use airupfx::signal::*;
-use std::sync::OnceLock;
+use std::{path::Path, sync::OnceLock};
 
 static AIRUPD: OnceLock<Airupd> = OnceLock::new();
 
@@ -89,4 +89,19 @@ pub async fn init() {
     };
 
     AIRUPD.set(object).unwrap();
+}
+
+pub async fn set_manifest_at(path: Option<&Path>) {
+    if let Some(path) = path {
+        airup_sdk::build::set_manifest(
+            serde_json::from_slice(
+                &tokio::fs::read(path)
+                    .await
+                    .unwrap_log("failed to read overridden build manifest")
+                    .await,
+            )
+            .unwrap_log("failed to parse overridden build manifest")
+            .await,
+        );
+    }
 }

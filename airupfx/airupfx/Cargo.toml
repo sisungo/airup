@@ -22,7 +22,6 @@ airupfx-process = { path = "../airupfx-process" }
 airupfx-signal = { path = "../airupfx-signal" }
 airupfx-time = { path = "../airupfx-time" }
 airupfx-macros = { path = "../airupfx-macros" }
-airup-sdk = { path = "../../airup-sdk", features = ["_internal"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 

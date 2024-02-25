@@ -1,7 +1,16 @@
 //! Inspection and manipulation of `airupd`’s environment.
 
-use std::borrow::Cow;
-use std::sync::OnceLock;
+use std::{borrow::Cow, path::PathBuf, sync::OnceLock};
+
+macro_rules! feed_parser {
+    ($flag:ident, $storage:expr, $arg:expr) => {
+        if $flag {
+            $storage = $arg;
+            $flag = false;
+            continue;
+        }
+    };
+}
 
 #[derive(Debug, Clone)]
 pub struct Cmdline {
@@ -17,8 +26,8 @@ pub struct Cmdline {
     /// Specify bootstrap milestone
     pub milestone: Cow<'static, str>,
 
-    /// Start Airupd in user mode (experimental)
-    pub user: bool,
+    /// Overriding build manifest path
+    pub build_manifest: Option<PathBuf>,
 }
 impl Cmdline {
     /// Parses a new [`Cmdline`] instance from the command-line arguments. This function will automatically detect the
@@ -64,17 +73,19 @@ impl Cmdline {
         let mut object = Self::default();
 
         let mut parsing_milestone = false;
+        let mut parsing_build_manifest = false;
         for arg in std::env::args() {
-            if parsing_milestone {
-                object.milestone = arg.into();
-                parsing_milestone = false;
-                continue;
-            }
+            feed_parser!(parsing_milestone, object.milestone, arg.into());
+            feed_parser!(
+                parsing_build_manifest,
+                object.build_manifest,
+                Some(arg.into())
+            );
 
             if arg == "-m" || arg == "--milestone" {
                 parsing_milestone = true;
-            } else if arg == "-u" || arg == "--user" {
-                object.user = true;
+            } else if arg == "--build-manifest" {
+                parsing_build_manifest = true;
             } else if arg == "--verbose" {
                 object.verbose = true;
             } else if arg == "-q" || arg == "--quiet" {
@@ -85,18 +96,6 @@ impl Cmdline {
                 Self::print_help();
             } else if arg == "-V" || arg == "--version" {
                 Self::print_version();
-            }
-
-            let mut parsing_milestone2 = None;
-            if let Some(x) = arg.strip_prefix("-m") {
-                parsing_milestone2 = Some(x);
-            } else if let Some(x) = arg.strip_prefix("--milestone=") {
-                parsing_milestone2 = Some(x);
-            }
-
-            if let Some(x) = parsing_milestone2 {
-                object.milestone = String::from(x).into();
-                continue;
             }
         }
 
@@ -109,8 +108,8 @@ impl Cmdline {
         println!("Options:");
         println!("    -h, --help                        Print help");
         println!("    -V, --version                     Print version");
+        println!("        --build-manifest <PATH>       Override builtin build manifest");
         println!("    -m, --milestone <NAME>            Specify bootstrap milestone");
-        println!("    -u, --user                        Run `airupd` in user mode (experimental)");
         println!("    -q, --quiet                       Disable console outputs");
         println!("        --verbose                     Enable verbose console outputs");
         println!("        --no-color                    Disable colorful console outputs");
@@ -129,7 +128,7 @@ impl Default for Cmdline {
             no_color: false,
             verbose: false,
             milestone: "default".into(),
-            user: false,
+            build_manifest: None,
         }
     }
 }

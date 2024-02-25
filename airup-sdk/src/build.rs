@@ -71,6 +71,6 @@ pub fn set_manifest(manifest: BuildManifest) {
 /// Panics if the compile-time `build_manifest.json` was invalid.
 #[doc(hidden)]
 #[cfg(feature = "_internal")]
-pub fn embedded_manifest() -> BuildManifest {
+fn embedded_manifest() -> BuildManifest {
     serde_json::from_str(include_str!("../../build_manifest.json")).expect("bad airup build")
 }

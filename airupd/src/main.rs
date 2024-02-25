@@ -22,6 +22,7 @@ async fn main() {
         .color(!cmdline.no_color)
         .verbose(cmdline.verbose)
         .init();
+    app::set_manifest_at(cmdline.build_manifest.as_deref()).await;
     milestones::early_boot::enter().await;
     app::init().await;
 
