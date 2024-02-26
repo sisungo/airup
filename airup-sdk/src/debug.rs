@@ -1,3 +1,4 @@
+/// An extension trait to provide `debug.*` API invocation.
 pub trait ConnectionExt<'a>: crate::Connection {
     fn is_forking_supervisable(&'a mut self) -> Self::Invoke<'a, bool> {
         self.invoke("debug.is_forking_supervisable", ())

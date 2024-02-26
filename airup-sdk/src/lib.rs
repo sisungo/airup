@@ -45,11 +45,14 @@ pub fn socket_path() -> &'static Path {
     })
 }
 
+/// A trait that unifies `async` and `non-async` connections.
 pub trait Connection {
+    /// Return type of the [`Connection::invoke`] method.
     type Invoke<'a, T: 'a>
     where
         Self: 'a;
 
+    /// Invokes specified method with given parameters on the connection, then wait for a response.
     fn invoke<'a, P: Serialize + 'a, T: DeserializeOwned + 'a>(
         &'a mut self,
         method: &'a str,

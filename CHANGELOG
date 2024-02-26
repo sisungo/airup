@@ -1,3 +1,11 @@
+Changes in v0.8.1:
+ * \[Feature\] Custom build manifest overriding
+ * \[Feature\] Service Event Handlers
+ * \[Feature\] Initial SELinux support -- SELinux Policy for Airup
+ * \[Developer\] Allow getting `build_manifest.json` from C SDK
+ * \[Fix\] Corrupt implementation of `line_piper`
+ * \[Performance\] Remove double-register of `info.*` APIs
+
 Changes in v0.8.0:
  * \[Feature\] Support of resource limitation (currently cgroup is supported on Linux)
  * \[Performance\] Switch to single-threaded async runtime to decrease CPU and memory usage

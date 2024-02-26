@@ -87,6 +87,7 @@ pub struct EnteredMilestone {
     pub finish_timestamp: i64,
 }
 
+/// An extension trait to provide `system.*` API invocation.
 pub trait ConnectionExt<'a>: crate::Connection {
     /// Sideloads a service.
     fn sideload_service(
