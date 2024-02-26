@@ -9,12 +9,12 @@
 
 use super::{CommandEnv, ExitStatus, Stdio, Wait};
 use ahash::AHashMap;
-use airupfx_io::LinePiper;
+use airupfx_io::line_piper;
 use std::{
     cmp,
     convert::Infallible,
     os::unix::process::CommandExt as _,
-    sync::{Arc, OnceLock, RwLock},
+    sync::{OnceLock, RwLock},
 };
 use tokio::{signal::unix::SignalKind, sync::watch};
 
@@ -111,9 +111,8 @@ impl ExitStatusExt for ExitStatus {
 macro_rules! map_stdio {
     ($fx:expr, $std:expr) => {
         match &$fx {
-            Stdio::Piped => LinePiper::new($std),
-            Stdio::Callback(c) => LinePiper::with_callback($std, c.clone_boxed()),
-            _ => LinePiper::new($std),
+            Stdio::Callback(c) => line_piper::set_callback($std, c.clone_boxed()),
+            _ => (),
         }
     };
 }
@@ -123,8 +122,6 @@ macro_rules! map_stdio {
 pub(crate) struct Child {
     pid: Pid,
     wait_queue: watch::Receiver<Option<Wait>>,
-    stdout: Option<Arc<LinePiper>>,
-    stderr: Option<Arc<LinePiper>>,
 }
 impl Child {
     pub(crate) const fn id(&self) -> Pid {
@@ -133,21 +130,21 @@ impl Child {
 
     fn from_std(env: &CommandEnv, c: std::process::Child) -> Self {
         let pid = c.id();
-        let stdout = c
+        if let Some(x) = c
             .stdout
             .and_then(|x| tokio::process::ChildStdout::from_std(x).ok())
-            .map(|x| map_stdio!(env.stdout, x))
-            .map(Arc::new);
-        let stderr = c
+        {
+            map_stdio!(env.stdout, x);
+        }
+        if let Some(x) = c
             .stderr
             .and_then(|x| tokio::process::ChildStderr::from_std(x).ok())
-            .map(|x| map_stdio!(env.stderr, x))
-            .map(Arc::new);
+        {
+            map_stdio!(env.stderr, x);
+        }
         Self {
             pid: pid as _,
             wait_queue: child_queue().subscribe(pid as _),
-            stdout,
-            stderr,
         }
     }
 
@@ -159,8 +156,6 @@ impl Child {
         Self {
             pid,
             wait_queue: child_queue().subscribe(pid),
-            stdout: None,
-            stderr: None,
         }
     }
 
@@ -189,13 +184,13 @@ impl Child {
         self.send_signal(libc::SIGKILL)
     }
 
-    pub(crate) fn stdout(&self) -> Option<Arc<LinePiper>> {
+    /*pub(crate) fn stdout(&self) -> Option<Arc<LinePiper>> {
         self.stdout.clone()
     }
 
     pub(crate) fn stderr(&self) -> Option<Arc<LinePiper>> {
         self.stderr.clone()
-    }
+    }*/
 }
 impl Drop for Child {
     fn drop(&mut self) {

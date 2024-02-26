@@ -221,26 +221,6 @@ impl Child {
             },
         }
     }
-
-    #[inline]
-    pub fn stdout(&self) -> Option<Arc<airupfx_io::LinePiper>> {
-        match self {
-            Self::Async(child) => child.stdout(),
-            Self::AlwaysSuccess(child) => child.stdout(),
-            Self::Process(proc) => proc.stdout(),
-            Self::Builtin(_) => None,
-        }
-    }
-
-    #[inline]
-    pub fn stderr(&self) -> Option<Arc<airupfx_io::LinePiper>> {
-        match self {
-            Self::Async(child) => child.stderr(),
-            Self::AlwaysSuccess(child) => child.stderr(),
-            Self::Process(proc) => proc.stderr(),
-            Self::Builtin(_) => None,
-        }
-    }
 }
 impl From<airupfx_process::Child> for Child {
     fn from(value: airupfx_process::Child) -> Self {

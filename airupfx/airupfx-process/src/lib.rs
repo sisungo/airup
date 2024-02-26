@@ -9,13 +9,12 @@ cfg_if::cfg_if! {
     }
 }
 
-use airupfx_io::line_piper::{Callback as LinePiperCallback, LinePiper};
+use airupfx_io::line_piper::Callback as LinePiperCallback;
 use std::{
     convert::Infallible,
     ffi::OsString,
     ops::{Deref, DerefMut},
     path::PathBuf,
-    sync::Arc,
 };
 
 /// Returns `true` if supervising `forking` services are supported on the system.
@@ -136,16 +135,6 @@ impl Child {
     pub fn kill(&self) -> std::io::Result<()> {
         self.0.kill()
     }
-
-    /// Returns a reference to the `stdout` piper handle of the child process.
-    pub fn stdout(&self) -> Option<Arc<LinePiper>> {
-        self.0.stdout()
-    }
-
-    /// Returns a reference to the `stderr` piper handle of the child process.
-    pub fn stderr(&self) -> Option<Arc<LinePiper>> {
-        self.0.stderr()
-    }
 }
 impl From<sys::Child> for Child {
     fn from(inner: sys::Child) -> Self {
@@ -159,9 +148,6 @@ pub enum Stdio {
     #[default]
     Inherit,
 
-    /// A new pipe should be arranged to connect the parent and child processes.
-    Piped,
-
     /// Similar to [`Stdio::Piped`], but a callback is called on each line.
     Callback(Box<dyn LinePiperCallback>),
 
@@ -172,7 +158,6 @@ impl Clone for Stdio {
     fn clone(&self) -> Self {
         match self {
             Self::Inherit => Self::Inherit,
-            Self::Piped => Self::Piped,
             Self::Callback(c) => Self::Callback(c.clone_boxed()),
             Self::File(f) => Self::File(f.clone()),
         }
@@ -182,7 +167,6 @@ impl Stdio {
     pub async fn to_std(&self) -> std::io::Result<std::process::Stdio> {
         Ok(match self {
             Self::Inherit => std::process::Stdio::inherit(),
-            Self::Piped => std::process::Stdio::piped(),
             Self::Callback(_) => std::process::Stdio::piped(),
             Self::File(path) => tokio::fs::File::options()
                 .append(true)

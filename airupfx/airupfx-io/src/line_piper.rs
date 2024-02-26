@@ -1,6 +1,6 @@
 use std::{future::Future, pin::Pin};
 use tokio::{
-    io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader},
+    io::{AsyncRead, AsyncReadExt},
     sync::mpsc,
     task::JoinHandle,
 };
@@ -18,20 +18,7 @@ pub struct LinePiper {
 impl LinePiper {
     pub fn new(reader: impl AsyncRead + Unpin + Send + 'static) -> Self {
         let (tx, rx) = mpsc::channel(4);
-        let join_handle = LinePiperEntity::new(reader, tx).start();
-        Self {
-            rx: rx.into(),
-            join_handle,
-        }
-    }
-
-    pub fn with_callback(
-        reader: impl AsyncRead + Unpin + Send + 'static,
-        callback: Box<dyn Callback>,
-    ) -> Self {
-        let (tx, rx) = mpsc::channel(4);
-        let join_handle: JoinHandle<()> =
-            LinePiperEntity::with_callback(reader, tx, callback).start();
+        let join_handle = LinePiperEntity::new(reader, Box::new(ChannelCallback::new(tx))).start();
         Self {
             rx: rx.into(),
             join_handle,
@@ -48,26 +35,17 @@ impl Drop for LinePiper {
     }
 }
 
+pub fn set_callback(reader: impl AsyncRead + Unpin + Send + 'static, callback: Box<dyn Callback>) {
+    LinePiperEntity::new(reader, callback).start();
+}
+
 struct LinePiperEntity<R> {
     reader: R,
-    tx: mpsc::Sender<Vec<u8>>,
-    callback: Option<Box<dyn Callback>>,
+    callback: Box<dyn Callback>,
 }
 impl<R: AsyncRead + Unpin + Send + 'static> LinePiperEntity<R> {
-    fn new(reader: R, tx: mpsc::Sender<Vec<u8>>) -> Self {
-        Self {
-            reader,
-            tx,
-            callback: None,
-        }
-    }
-
-    fn with_callback(reader: R, tx: mpsc::Sender<Vec<u8>>, callback: Box<dyn Callback>) -> Self {
-        Self {
-            reader,
-            tx,
-            callback: Some(callback),
-        }
+    fn new(reader: R, callback: Box<dyn Callback>) -> Self {
+        Self { reader, callback }
     }
 
     fn start(self) -> JoinHandle<()> {
@@ -76,21 +54,44 @@ impl<R: AsyncRead + Unpin + Send + 'static> LinePiperEntity<R> {
         })
     }
 
-    async fn run(self) -> Option<()> {
-        let mut buf = Vec::new();
-        let mut buf_reader = BufReader::new(self.reader);
+    async fn run(mut self) -> Option<()> {
+        let mut buf = Box::new([0u8; 4096]);
+        let mut position = 0;
         loop {
-            let mut limited = (&mut buf_reader).take(1024 * 4);
-            limited.read_until(b'\n', &mut buf).await.ok()?;
-            match &self.callback {
-                Some(callback) => {
-                    callback.invoke(&buf).await;
+            let pos = loop {
+                let count = self.reader.read(&mut buf[position..]).await.ok()?;
+                position += count;
+                if let Some(pos) = &buf[..position].iter().position(|x| b"\n\r\0".contains(x)) {
+                    break *pos;
                 }
-                None => {
-                    self.tx.send(buf.clone()).await.ok()?;
+                assert!(position <= 4096);
+                if position == 4096 {
+                    break 4096;
                 }
-            }
-            buf.clear();
+            };
+            self.callback.invoke(&buf[..pos]).await;
+            position = 0;
         }
+    }
+}
+
+#[derive(Clone)]
+struct ChannelCallback {
+    tx: mpsc::Sender<Vec<u8>>,
+}
+impl ChannelCallback {
+    fn new(tx: mpsc::Sender<Vec<u8>>) -> Self {
+        Self { tx }
+    }
+}
+impl Callback for ChannelCallback {
+    fn clone_boxed(&self) -> Box<dyn Callback> {
+        Box::new(self.clone())
+    }
+
+    fn invoke<'a>(&'a self, a: &'a [u8]) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
+        Box::pin(async {
+            self.tx.send(a.to_vec()).await.ok();
+        })
     }
 }
