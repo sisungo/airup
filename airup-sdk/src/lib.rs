@@ -9,6 +9,8 @@ pub mod info;
 pub mod ipc;
 pub mod prelude;
 pub mod system;
+
+#[allow(unused)]
 mod util;
 
 #[cfg(feature = "nonblocking")]

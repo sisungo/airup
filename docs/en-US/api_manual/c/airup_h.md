@@ -4,6 +4,7 @@
 ```c
 #define AIRUP_EIO 16
 #define AIRUP_EAPI 32
+#define AIRUP_EBUFTOOSMALL 64
 
 struct airup_error {
     uint32_t code;
@@ -24,6 +25,9 @@ struct airup_error {
 
 **Macro** *`AIRUP_EAPI`*: An error code, which indicates the error is an API error returned from the Airupd server. When
 the field `code` is set to `AIRUP_EAPI`, type of field `payload` is `struct airup_api_error`.
+
+**Macro** *`AIRUP_EBUFTOOSMALL`*: An error code, which indicates the buffer provided by the caller was too small to hold the
+data.
 
 ## Struct: `struct airup_api_error`
 ```c
@@ -105,3 +109,34 @@ int airup_trigger_event(airup_connection *connection, const char *event);
 
 **Description**: Invokes `system.trigger_event` method on connection `connection` with parameter `event`. On success,
 returns `0`. On failure, returns `-1` and current thread's Airup error is set.
+
+## Function: 
+```c
+int airup_server_version(airup_connection *connection, char *buffer, size_t size);
+```
+
+**Description**: Invokes `info.version` method on connection `connection`, fill the buffer `buffer` whose size is `size` with
+the returned string. On success, returns `0`. On failure, returns `-1` and current thread's Airup error is set.
+
+**Example**:
+```c
+#include <airup.h>
+#include <stdio.h>
+
+int main(int argc, char *argv[]) {
+    char *path = airup_default_path();
+    airup_connection *conn = airup_connect(path);
+    if (conn == NULL) {
+        printf("error: failed to connect to airup daemon: %s\n", airup_last_error().message);
+        return 1;
+    }
+    char buffer[16];
+    int status = airup_server_version(conn, buffer, 16);
+    if (status == -1) {
+        printf("error: failed to get server version: %s\n", airup_last_error().message);
+        airup_disconnect(conn);
+        return 1;
+    }
+    printf("airupd v%s\n", buffer);
+}
+```

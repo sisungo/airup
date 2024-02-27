@@ -5,12 +5,14 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 
 #ifndef _AIRUP_H
 #define _AIRUP_H
 
 #define AIRUP_EIO 16
 #define AIRUP_EAPI 32
+#define AIRUP_EBUFTOOSMALL 64
 
 struct airup_error {
     uint32_t code;
@@ -38,6 +40,7 @@ const char *airup_build_manifest(void);
 int airup_start_service(airup_connection *connection, const char *name);
 int airup_stop_service(airup_connection *connection, const char *name);
 int airup_trigger_event(airup_connection *connection, const char *event);
+int airup_server_version(airup_connection *connection, char *buffer, size_t size);
 
 #ifdef __cplusplus
 }

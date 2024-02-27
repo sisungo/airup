@@ -4,6 +4,7 @@
 ```c
 #define AIRUP_EIO 16
 #define AIRUP_EAPI 32
+#define AIRUP_EBUFTOOSMALL 64
 
 struct airup_error {
     uint32_t code;
@@ -24,6 +25,8 @@ struct airup_error {
 
 **宏** *`AIRUP_EAPI`*：错误代码，表示该错误由从 Airupd 服务器返回的 API 错误导致。当 `code` 字段被设置为 `AIRUP_EAPI` 时，`payload` 字段的
 类型将为 `struct airup_api_error`。
+
+**宏** *`AIRUP_EBUFTOOSMALL`*：错误代码，表示该错误是因为调用者传递的缓冲区太小，不够容纳输出数据导致的。
 
 ## 结构体：`airup_api_error`
 ```c
@@ -47,7 +50,7 @@ struct airup_api_error {
 struct airup_error airup_last_error(void);
 ```
 
-**描述**：返回上一次调用 Airup SDK 函数出错时发生的错误。该函数是线程安全的，因为 Airup 错误属于线程本地存储。
+**描述**：返回上一次调用 Airup SDK 函数出错时发生的错误。该函数是线程安全的，因为 Airup 错误保存在线程本地存储中。
 
 ## 函数：`airup_connect`
 ```c
@@ -102,3 +105,34 @@ int airup_trigger_event(airup_connection *connection, const char *event);
 
 **描述**：在连接 `connection` 上调用 `system.trigger_event` 方法并传递 `event` 作为参数。如果成功，返回 `0`。如果失败，返回 `-1` 并设置当前
 线程的 Airup 错误。
+
+## 函数：`airup_server_version`
+```c
+int airup_server_version(airup_connection *connection, char *buffer, size_t size);
+```
+
+**描述**：在连接 `connection` 上调用 `info.version` 方法，将返回的字符串填充在大小为 `size` 的缓冲区 `buffer` 中。如果成功，返回 `0`。如果失
+败，返回 `-1` 并设置当前线程的 Airup 错误。
+
+**示例**：
+```c
+#include <airup.h>
+#include <stdio.h>
+
+int main(int argc, char *argv[]) {
+    char *path = airup_default_path();
+    airup_connection *conn = airup_connect(path);
+    if (conn == NULL) {
+        printf("error: failed to connect to airup daemon: %s\n", airup_last_error().message);
+        return 1;
+    }
+    char buffer[16];
+    int status = airup_server_version(conn, buffer, 16);
+    if (status == -1) {
+        printf("error: failed to get server version: %s\n", airup_last_error().message);
+        airup_disconnect(conn);
+        return 1;
+    }
+    printf("airupd v%s\n", buffer);
+}
+```
