@@ -64,9 +64,9 @@ impl DerefMut for Connection {
 
 impl crate::Connection for Connection {
     type Invoke<'a, T: 'a> =
-        Pin<Box<dyn Future<Output = Result<Result<T, ApiError>, IpcError>> + 'a>>;
+        Pin<Box<dyn Future<Output = Result<Result<T, ApiError>, IpcError>> + Send + 'a>>;
 
-    fn invoke<'a, P: Serialize + 'a, T: DeserializeOwned + 'a>(
+    fn invoke<'a, P: Serialize + Send + 'a, T: DeserializeOwned + 'a>(
         &'a mut self,
         method: &'a str,
         params: P,

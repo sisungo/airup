@@ -1,0 +1,11 @@
+# An `.airs` service definition file that describes the `airup-eventsourced` daemon.
+
+[service]
+display-name = "Airup Event Source"
+description = "A daemon that collects system events and send them to the Airup event bus"
+
+[exec]
+start = "airup-eventsourced"
+
+[retry]
+max-attempts = -1

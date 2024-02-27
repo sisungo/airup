@@ -55,7 +55,7 @@ pub trait Connection {
         Self: 'a;
 
     /// Invokes specified method with given parameters on the connection, then wait for a response.
-    fn invoke<'a, P: Serialize + 'a, T: DeserializeOwned + 'a>(
+    fn invoke<'a, P: Serialize + Send + 'a, T: DeserializeOwned + 'a>(
         &'a mut self,
         method: &'a str,
         params: P,

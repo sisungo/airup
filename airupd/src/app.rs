@@ -70,7 +70,7 @@ impl Airupd {
 /// Gets a reference to the unique, global [`Airupd`] instance.
 ///
 /// # Panics
-/// This method would panic if `Airupd::init` was not previously called.
+/// This method would panic if [`init`] was not previously called.
 pub fn airupd() -> &'static Airupd {
     AIRUPD.get().unwrap()
 }
