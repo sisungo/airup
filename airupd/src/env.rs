@@ -54,7 +54,7 @@ impl Cmdline {
             object.milestone = x.into();
         }
 
-        if let Ok(options) = airupfx::env::take_var("AIRUP_CONSOLE") {
+        if let Ok(options) = airupfx::env::take_var("AIRUP_CONOUT_POLICY") {
             for opt in options.split(',') {
                 match opt {
                     "quiet" => object.quiet = true,

@@ -7,7 +7,7 @@ use anyhow::anyhow;
 use clap::Parser;
 use console::style;
 
-/// Disable an unit
+/// Disable a service
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {

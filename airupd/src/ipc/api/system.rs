@@ -5,7 +5,7 @@ use crate::{app::airupd, ipc::SessionContext};
 use airup_sdk::{
     files::Service,
     ipc::Request,
-    system::{LogRecord, QueryService, QuerySystem},
+    system::{Event, LogRecord, QueryService, QuerySystem},
     Error,
 };
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
@@ -152,7 +152,7 @@ async fn enter_milestone(name: String) -> Result<(), Error> {
 }
 
 #[airupfx::macros::api]
-async fn trigger_event(event: String) -> Result<(), Error> {
+async fn trigger_event(event: Event) -> Result<(), Error> {
     airupd().events.trigger(event).await;
     Ok(())
 }

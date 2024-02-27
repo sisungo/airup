@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use clap::Parser;
 use std::path::PathBuf;
 
-/// Start services
+/// Start a service
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {

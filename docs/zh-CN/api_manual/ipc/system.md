@@ -81,6 +81,6 @@
 
 ## `system.trigger_event` 方法
 - **名称**：`system.trigger_event`
-- **参数**：`字符串（要触发的事件名称）`
+- **参数**：`Event` 对象
 - **返回值**：`null`
 - **描述**：触发指定事件。

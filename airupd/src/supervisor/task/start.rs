@@ -162,8 +162,8 @@ impl StartService {
                 }
                 return Err(Error::TimedOut);
             };
-            if let Ok(x) = receive {
-                if x == interest || x == interest2 {
+            if let Ok(event) = receive {
+                if [&interest, &interest2].contains(&&event.id) {
                     break Ok(());
                 }
             }

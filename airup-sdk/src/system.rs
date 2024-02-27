@@ -87,6 +87,22 @@ pub struct EnteredMilestone {
     pub finish_timestamp: i64,
 }
 
+/// Representation of an Airup event.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Event {
+    /// Identifier of the event.
+    pub id: String,
+
+    /// Payload data of the event.
+    pub payload: String,
+}
+impl Event {
+    /// Creates a new [`Event`] instance with given ID and paylaod.
+    pub fn new(id: String, payload: String) -> Self {
+        Self { id, payload }
+    }
+}
+
 /// An extension trait to provide `system.*` API invocation.
 pub trait ConnectionExt<'a>: crate::Connection {
     /// Sideloads a service.
@@ -175,7 +191,7 @@ pub trait ConnectionExt<'a>: crate::Connection {
     }
 
     /// Triggers the specific event.
-    fn trigger_event(&'a mut self, event: &'a str) -> Self::Invoke<'a, ()> {
+    fn trigger_event(&'a mut self, event: &'a Event) -> Self::Invoke<'a, ()> {
         self.invoke("system.trigger_event", event)
     }
 }

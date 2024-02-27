@@ -1,0 +1,11 @@
+[package]
+name = "airup-eventsourced"
+authors = ["sisungo <sisungo@icloud.com>"]
+version = "0.9.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+airup-sdk = { path = "../airup-sdk", features = ["_internal"] }
+tokio = { workspace = true }

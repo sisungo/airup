@@ -2,7 +2,7 @@ use airup_sdk::system::ConnectionExt as _;
 use anyhow::anyhow;
 use clap::Parser;
 
-/// Reload services
+/// Notify a service to reload its status
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {

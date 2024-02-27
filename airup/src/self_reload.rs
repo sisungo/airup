@@ -1,7 +1,7 @@
 use airup_sdk::system::ConnectionExt as _;
 use clap::Parser;
 
-/// Reload `airupd` daemon itself
+/// Reload the `airupd` daemon itself
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {

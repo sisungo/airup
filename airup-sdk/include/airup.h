@@ -39,7 +39,7 @@ const char *airup_default_path(void);
 const char *airup_build_manifest(void);
 int airup_start_service(airup_connection *connection, const char *name);
 int airup_stop_service(airup_connection *connection, const char *name);
-int airup_trigger_event(airup_connection *connection, const char *event);
+int airup_trigger_event(airup_connection *connection, const char *id, const char *payload);
 int airup_server_version(airup_connection *connection, char *buffer, size_t size);
 
 #ifdef __cplusplus

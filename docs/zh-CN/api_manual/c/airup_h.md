@@ -100,11 +100,11 @@ int airup_stop_service(airup_connection *connection, const char *name);
 
 ## 函数：`airup_trigger_event`
 ```c
-int airup_trigger_event(airup_connection *connection, const char *event);
+int airup_trigger_event(airup_connection *connection, const char *id, const char *payload);
 ```
 
-**描述**：在连接 `connection` 上调用 `system.trigger_event` 方法并传递 `event` 作为参数。如果成功，返回 `0`。如果失败，返回 `-1` 并设置当前
-线程的 Airup 错误。
+**描述**：在连接 `connection` 上调用 `system.trigger_event` 方法并以 `id` 作为 ID，`payload` 作为数据负载构造的 `Event` 对象。如果成功，
+返回 `0`。如果失败，返回 `-1` 并设置当前线程的 Airup 错误。
 
 ## 函数：`airup_server_version`
 ```c

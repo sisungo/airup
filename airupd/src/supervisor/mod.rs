@@ -7,7 +7,7 @@ use crate::app::airupd;
 use ahash::AHashMap;
 use airup_sdk::{
     files::{service::WatchdogKind, Service},
-    system::{QueryService, Status},
+    system::{Event, QueryService, Status},
     Error,
 };
 use airupfx::{ace::Child, isolator::Realm, process::Wait, time::Alarm};
@@ -252,7 +252,7 @@ struct Supervisor {
     current_task: CurrentTask,
     context: Arc<SupervisorContext>,
     timers: Box<Timers>,
-    events: async_broadcast::Receiver<String>,
+    events: async_broadcast::Receiver<Event>,
 }
 impl Supervisor {
     /// Starts the supervisor task.
@@ -326,11 +326,12 @@ impl Supervisor {
     }
 
     /// Called when an event is triggered.
-    async fn handle_event(&mut self, event: &str) {
-        if let Some(exec) = self.context.service.event_handlers.get(event) {
-            let Ok(ace) = task::ace(&self.context).await else {
+    async fn handle_event(&mut self, event: &Event) {
+        if let Some(exec) = self.context.service.event_handlers.get(&event.id) {
+            let Ok(mut ace) = task::ace(&self.context).await else {
                 return;
             };
+            ace.env.var("AIRUP_EVENT_HANDLER_PAYLOAD", &event.payload);
             ace.run(exec).await.ok();
         }
     }

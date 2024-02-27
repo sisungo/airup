@@ -82,6 +82,6 @@ with the same name will be overridden, rather than returning an error.
 
 ## Method: `system.trigger_event`
 - **Name**: `system.trigger_event`
-- **Parameters**: `string (name of event)`
+- **Parameters**: `Event` object
 - **Return Value**: `null`
 - **Description**: Triggers the specified event.

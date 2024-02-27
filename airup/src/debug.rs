@@ -2,7 +2,7 @@ use airup_sdk::prelude::*;
 use clap::Parser;
 use console::style;
 
-/// Debug Airup
+/// Debug options of Airup
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
@@ -20,9 +20,6 @@ pub struct Cmdline {
 
     #[arg(long)]
     internal_crash_handler: bool,
-
-    #[arg(long)]
-    trigger_event: Option<String>,
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
@@ -44,10 +41,6 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
 
     if cmdline.print_local_build_manifest {
         return print_local_build_manifest();
-    }
-
-    if let Some(event) = cmdline.trigger_event {
-        return trigger_event(&event);
     }
 
     Ok(())
@@ -97,11 +90,4 @@ pub fn internal_crash_handler() {
     }
 
     std::process::exit(255);
-}
-
-pub fn trigger_event(event: &str) -> anyhow::Result<()> {
-    let mut conn = super::connect()?;
-    conn.trigger_event(event)??;
-
-    Ok(())
 }

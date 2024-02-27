@@ -11,6 +11,7 @@ mod restart;
 mod self_reload;
 mod start;
 mod stop;
+mod trigger_event;
 
 use anyhow::anyhow;
 use clap::Parser;
@@ -30,22 +31,24 @@ enum Subcommand {
     Edit(edit::Cmdline),
     Enable(enable::Cmdline),
     Disable(disable::Cmdline),
+    TriggerEvent(trigger_event::Cmdline),
     Debug(debug::Cmdline),
 }
 impl Subcommand {
     fn execute(self) -> anyhow::Result<()> {
         match self {
-            Subcommand::Start(cmdline) => start::main(cmdline),
-            Subcommand::Stop(cmdline) => stop::main(cmdline),
-            Subcommand::Reload(cmdline) => reload::main(cmdline),
-            Subcommand::Restart(cmdline) => restart::main(cmdline),
-            Subcommand::Query(cmdline) => query::main(cmdline),
-            Subcommand::Reboot(cmdline) => reboot::main(cmdline),
-            Subcommand::SelfReload(cmdline) => self_reload::main(cmdline),
-            Subcommand::Edit(cmdline) => edit::main(cmdline),
-            Subcommand::Enable(cmdline) => enable::main(cmdline),
-            Subcommand::Disable(cmdline) => disable::main(cmdline),
-            Subcommand::Debug(cmdline) => debug::main(cmdline),
+            Self::Start(cmdline) => start::main(cmdline),
+            Self::Stop(cmdline) => stop::main(cmdline),
+            Self::Reload(cmdline) => reload::main(cmdline),
+            Self::Restart(cmdline) => restart::main(cmdline),
+            Self::Query(cmdline) => query::main(cmdline),
+            Self::Reboot(cmdline) => reboot::main(cmdline),
+            Self::SelfReload(cmdline) => self_reload::main(cmdline),
+            Self::Edit(cmdline) => edit::main(cmdline),
+            Self::Enable(cmdline) => enable::main(cmdline),
+            Self::Disable(cmdline) => disable::main(cmdline),
+            Self::TriggerEvent(cmdline) => trigger_event::main(cmdline),
+            Self::Debug(cmdline) => debug::main(cmdline),
         }
     }
 }

@@ -93,6 +93,7 @@ pub async fn init() {
 
 pub async fn set_manifest_at(path: Option<&Path>) {
     if let Some(path) = path {
+        std::env::set_var("AIRUP_OVERRIDE_MANIFEST_PATH", path);
         airup_sdk::build::set_manifest(
             serde_json::from_slice(
                 &tokio::fs::read(path)

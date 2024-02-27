@@ -8,7 +8,7 @@ use clap::Parser;
 use console::style;
 use std::io::Write;
 
-/// Enable an unit
+/// Enable a service
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
