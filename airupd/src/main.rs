@@ -45,7 +45,7 @@ async fn main() {
         .start();
     app::airupd().listen_signals();
 
-    if !env::cmdline().quiet {
+    if std::process::id() == 1 && !env::cmdline().quiet {
         println!(
             "Welcome to {}!\n",
             app::airupd().storage.config.system_conf.system.os_name
