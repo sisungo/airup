@@ -14,19 +14,19 @@ pub struct Timer {
 }
 impl Validate for Timer {
     fn validate(&self) -> Result<(), ReadError> {
-        let clock_normal_has_period = matches!(
+        let clock_normal_without_period = matches!(
             self.timer.clock,
             Clock::OnLoad | Clock::Persistent | Clock::SystemBoot
-        ) && self.timer.period.is_some();
-        let clock_calendar_no_period =
-            matches!(self.timer.clock, Clock::Calendar) && self.timer.period.is_none();
+        ) && self.timer.period.is_none();
+        let clock_calendar_with_period =
+            matches!(self.timer.clock, Clock::Calendar) && self.timer.period.is_some();
 
-        if !clock_normal_has_period {
+        if clock_normal_without_period {
             return Err(ReadError::from(
                 "normal clocks require a `period` to be provided, but it isn't provided",
             ));
         }
-        if !clock_calendar_no_period {
+        if clock_calendar_with_period {
             return Err(ReadError::from(
                 "`calendar` clocks require `period` to be not provided, but it's provided",
             ));
@@ -44,6 +44,7 @@ impl Named for Timer {
 #[serde(rename_all = "kebab-case")]
 pub struct Metadata {
     /// Type of clock that the timer uses.
+    #[serde(default)]
     pub clock: Clock,
 
     /// Period of the timer, in milliseconds.
