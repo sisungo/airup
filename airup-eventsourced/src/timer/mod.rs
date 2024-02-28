@@ -1,11 +1,8 @@
 //! # Airup Event Source: Timer
 
 mod app;
+mod runner;
 mod scanner;
-mod timer;
-
-use crate::app::airup_eventsourced;
-use airup_sdk::system::Event;
 
 pub fn start() {
     tokio::spawn(main());
@@ -13,12 +10,10 @@ pub fn start() {
 
 async fn main() -> anyhow::Result<()> {
     app::init().await?;
+    scanner::scan().await.ok();
 
     loop {
+        // TODO: Wait for reload signal, than call rescan
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        airup_eventsourced()
-            .trigger_event(&Event::new("".into(), "".into()))
-            .await
-            .ok();
     }
 }

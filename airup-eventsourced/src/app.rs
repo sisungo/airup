@@ -14,30 +14,19 @@ pub struct AirupEventSourced {
     exit_flag: watch::Sender<Option<i32>>,
 }
 impl AirupEventSourced {
+    pub fn run_command(&'static self, command: String) {
+        self.trigger_event(Event::new("airup-eventsourced_run-command".into(), command))
+    }
+
     /// Triggers an event in the event bus.
     ///
     /// If a network error occured, this will internally set the `exit_flag` to `Some(1)` and keep pending until the program
     /// exited.
-    pub async fn trigger_event(&self, event: &Event) -> Result<(), airup_sdk::Error> {
-        self.review_result(self.connection.lock().await.trigger_event(event).await)
-            .await
-    }
-
-    /// Triggers an `airup-eventsourced_start-service` event to start a service in the event bus.
-    ///
-    /// If a network error occured, this will internally set the `exit_flag` to `Some(1)` and keep pending until the program
-    /// exited.
-    pub async fn _start_service(&self, name: String) -> Result<(), airup_sdk::Error> {
-        let event = Event::new("airup-eventsourced_start-service".into(), name);
-        self.review_result(self.connection.lock().await.trigger_event(&event).await)
-            .await
-    }
-
-    async fn review_result<T>(&self, val: Result<T, airup_sdk::ipc::Error>) -> T {
-        match val {
-            Ok(x) => x,
-            Err(_) => self.exit(1).await,
-        }
+    pub fn trigger_event(&'static self, event: Event) {
+        tokio::spawn(async move {
+            self.review_result(self.connection.lock().await.trigger_event(&event).await)
+                .await
+        });
     }
 
     /// Notifies the program to exit by setting `exit_flag` to `Some(code)`.
@@ -55,6 +44,13 @@ impl AirupEventSourced {
             .expect("the `exit_flag` channel should never be closed")
             .expect("`Receiver::wait_for(|x| x.is_some())` should return `Some(_)`");
         code
+    }
+
+    async fn review_result<T>(&self, val: Result<T, airup_sdk::ipc::Error>) -> T {
+        match val {
+            Ok(x) => x,
+            Err(_) => self.exit(1).await,
+        }
     }
 }
 

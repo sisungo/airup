@@ -3,6 +3,7 @@ mod timer;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt::init();
     app::update_manifest()?;
     app::init().await?;
 
