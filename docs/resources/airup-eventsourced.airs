@@ -9,3 +9,6 @@ start = "airup-eventsourced"
 
 [retry]
 max-attempts = -1
+
+[event-handlers]
+airup-eventsourced_start-service = "sh.run exec airup start \"${AIRUP_EVENT_HANDLER_PAYLOAD}\""

@@ -1,4 +1,4 @@
-use airup_sdk::{blocking::files::*, files::Service, system::ConnectionExt as _};
+use airup_sdk::{blocking::files, system::ConnectionExt as _};
 use anyhow::anyhow;
 use clap::Parser;
 use std::path::PathBuf;
@@ -25,7 +25,7 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = super::connect()?;
 
     if let Some(path) = &cmdline.sideload {
-        let service = Service::read_merge(vec![path.clone()])
+        let service = files::read_merge(vec![path.clone()])
             .map_err(|e| anyhow!("failed to read service at `{}`: {}", path.display(), e))?;
         conn.sideload_service(&cmdline.service, &service, cmdline.ovrd)??;
     }

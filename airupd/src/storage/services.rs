@@ -1,7 +1,8 @@
 //! Represents to Airup's services directory.
 
 use airup_sdk::{
-    files::{ReadError, Service},
+    files::{ReadError, Service, Validate},
+    nonblocking::files,
     prelude::*,
     Error,
 };
@@ -79,7 +80,7 @@ impl Services {
             paths.push(path);
         }
 
-        Service::read_merge(paths).await
+        files::read_merge(paths).await
     }
 
     /// Lists names of all services installed on the system, including sideloaded ones and on-filesystem ones.

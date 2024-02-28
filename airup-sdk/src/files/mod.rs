@@ -12,6 +12,14 @@ pub use system_conf::SystemConf;
 use crate::prelude::*;
 use std::{borrow::Cow, sync::Arc};
 
+pub trait Validate {
+    fn validate(&self) -> Result<(), ReadError>;
+}
+
+pub trait Named {
+    fn set_name(&mut self, name: String);
+}
+
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum ReadError {
     #[error("{0}")]

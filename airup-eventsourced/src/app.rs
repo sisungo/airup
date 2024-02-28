@@ -14,25 +14,39 @@ pub struct AirupEventSourced {
     exit_flag: watch::Sender<Option<i32>>,
 }
 impl AirupEventSourced {
+    /// Triggers an event in the event bus.
+    ///
+    /// If a network error occured, this will internally set the `exit_flag` to `Some(1)` and keep pending until the program
+    /// exited.
     pub async fn trigger_event(&self, event: &Event) -> Result<(), airup_sdk::Error> {
         self.review_result(self.connection.lock().await.trigger_event(event).await)
+            .await
+    }
+
+    /// Triggers an `airup-eventsourced_start-service` event to start a service in the event bus.
+    ///
+    /// If a network error occured, this will internally set the `exit_flag` to `Some(1)` and keep pending until the program
+    /// exited.
+    pub async fn _start_service(&self, name: String) -> Result<(), airup_sdk::Error> {
+        let event = Event::new("airup-eventsourced_start-service".into(), name);
+        self.review_result(self.connection.lock().await.trigger_event(&event).await)
             .await
     }
 
     async fn review_result<T>(&self, val: Result<T, airup_sdk::ipc::Error>) -> T {
         match val {
             Ok(x) => x,
-            Err(_) => {
-                self.exit(1);
-                std::future::pending::<T>().await
-            }
+            Err(_) => self.exit(1).await,
         }
     }
 
-    pub fn exit(&self, code: i32) {
+    /// Notifies the program to exit by setting `exit_flag` to `Some(code)`.
+    pub async fn exit(&self, code: i32) -> ! {
         self.exit_flag.send(Some(code)).ok();
+        std::future::pending().await
     }
 
+    /// Waits until `exit_flag` is set to `Some(code)`. Returns the exit code.
     pub async fn wait_for_exit_request(&self) -> i32 {
         let mut exit_flag = self.exit_flag.subscribe();
         let code = exit_flag
@@ -52,7 +66,7 @@ pub fn airup_eventsourced() -> &'static AirupEventSourced {
     AIRUP_EVENTSOURCED.get().unwrap()
 }
 
-/// Initializes the Airupd app for use of [`airup_eventsourced`].
+/// Initializes the Airup EventSourced app for use of [`airup_eventsourced`].
 pub async fn init() -> anyhow::Result<()> {
     let connection = tokio::sync::Mutex::new(Connection::connect(airup_sdk::socket_path()).await?);
     let object = AirupEventSourced {
@@ -63,6 +77,7 @@ pub async fn init() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Overrides default Airup SDK Build Manifest if environment variable `AIRUP_OVERRIDE_MANIFEST_PATH` is set.
 pub fn update_manifest() -> anyhow::Result<()> {
     if let Some(path) = std::env::var_os("AIRUP_OVERRIDE_MANIFEST_PATH") {
         airup_sdk::build::set_manifest(

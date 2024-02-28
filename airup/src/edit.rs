@@ -1,4 +1,7 @@
-use airup_sdk::blocking::{files::ServiceExt, fs::DirChain};
+use airup_sdk::{
+    blocking::{files, fs::DirChain},
+    files::Service,
+};
 use anyhow::anyhow;
 use clap::Parser;
 use std::path::{Path, PathBuf};
@@ -15,13 +18,13 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
 
     if cmdline.file.strip_suffix(".airs").is_some() {
         do_edit(&editor, &find_or_create_service(&cmdline.file)?, |s| {
-            airup_sdk::files::Service::read_merge(vec![s.into()])?;
+            files::read_merge::<Service>(vec![s.into()])?;
             Ok(())
         })
     } else if let Some(x) = cmdline.file.strip_suffix(".airc") {
         let service = find_or_create_service(&format!("{x}.airs"))?;
         do_edit(&editor, &find_or_create_config(&cmdline.file)?, |s| {
-            airup_sdk::files::Service::read_merge(vec![service, s.into()])?;
+            files::read_merge::<Service>(vec![service, s.into()])?;
             Ok(())
         })
     } else {

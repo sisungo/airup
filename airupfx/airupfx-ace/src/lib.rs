@@ -28,7 +28,7 @@ impl Ace {
 
     /// Runs the given command, returning the child.
     pub async fn run(&self, cmd: &str) -> Result<Child, Error> {
-        if let Some(x) = cmd.strip_prefix("sh.exec") {
+        if let Some(x) = cmd.strip_prefix("sh.run") {
             self.run_tokenized(["sh".into(), "-c".into(), x.into()].into_iter())
                 .await
         } else {

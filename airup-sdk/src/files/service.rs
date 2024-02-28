@@ -1,7 +1,7 @@
 //! # Airup Service File Format
 //! This module contains [`Service`], the main file format of an Airup service and its combinations.
 
-use super::ReadError;
+use super::{Named, ReadError, Validate};
 use ahash::HashMap;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, time::Duration};
@@ -39,8 +39,13 @@ pub struct Service {
     pub event_handlers: HashMap<String, String>,
 }
 impl Service {
-    /// Returns `Ok(())` if the service is correct, otherwise returns `Err(ReadError::Validation(_))`.
-    pub fn validate(&self) -> Result<(), ReadError> {
+    /// Returns the name to display for this service.
+    pub fn display_name(&self) -> &str {
+        self.service.display_name.as_deref().unwrap_or(&self.name)
+    }
+}
+impl Validate for Service {
+    fn validate(&self) -> Result<(), ReadError> {
         let env_user_conflict =
             self.env.login.is_some() && (self.env.uid.is_some() || self.env.gid.is_some());
         let oneshot_pid_file =
@@ -60,10 +65,10 @@ impl Service {
 
         Ok(())
     }
-
-    /// Returns the name to display for this service.
-    pub fn display_name(&self) -> &str {
-        self.service.display_name.as_deref().unwrap_or(&self.name)
+}
+impl Named for Service {
+    fn set_name(&mut self, name: String) {
+        self.name = name;
     }
 }
 
