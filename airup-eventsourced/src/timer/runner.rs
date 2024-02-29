@@ -1,7 +1,7 @@
 use crate::app::airup_eventsourced;
 use airup_sdk::files::timer::Timer as TimerDef;
-use std::sync::Arc;
-use tokio::task::JoinHandle;
+use std::{sync::Arc, time::Duration};
+use tokio::{task::JoinHandle, time::Instant};
 
 #[derive(Debug)]
 pub struct Timer {
@@ -24,17 +24,21 @@ impl Drop for Timer {
 }
 
 struct TimerEntity {
-    _timer: Arc<TimerDef>,
+    timer: Arc<TimerDef>,
 }
 impl TimerEntity {
     fn new(timer: Arc<TimerDef>) -> Self {
-        Self { _timer: timer }
+        Self { timer: timer }
     }
 
     async fn run(self) {
+        let mut interval = tokio::time::interval_at(
+            Instant::now(),
+            Duration::from_millis(self.timer.timer.period.unwrap().get() as _),
+        );
         loop {
-            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-            airup_eventsourced().run_command("echo Test Success".into())
+            interval.tick().await;
+            airup_eventsourced().run_command(self.timer.exec.command.clone());
         }
     }
 }
