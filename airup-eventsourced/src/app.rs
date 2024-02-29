@@ -14,6 +14,9 @@ pub struct AirupEventSourced {
     exit_flag: watch::Sender<Option<i32>>,
 }
 impl AirupEventSourced {
+    /// Calls `self.trigger_event(Event::new("airup-eventsourced_run-command".into(), command))`.
+    ///
+    /// The event `airup-eventsourced_run-command` is usually registered to execute a command using system default shell.
     pub fn run_command(&'static self, command: String) {
         self.trigger_event(Event::new("airup-eventsourced_run-command".into(), command))
     }

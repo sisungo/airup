@@ -1,5 +1,5 @@
 use super::runner::Timer;
-use ahash::AHashMap;
+use ahash::HashMap;
 use airup_sdk::files::timer::Timer as TimerDef;
 use std::sync::{Mutex, OnceLock};
 use tokio::time::Instant;
@@ -10,9 +10,10 @@ static TIMER_APP: OnceLock<TimerApp> = OnceLock::new();
 pub struct TimerApp {
     pub startup_time: Instant,
     pub persistent_time: Instant,
-    timers: Mutex<AHashMap<String, Timer>>,
+    timers: Mutex<HashMap<String, Timer>>,
 }
 impl TimerApp {
+    /// Load, reload or do nothing on the specified timer description.
     pub fn feed_timer(&self, name: String, new: TimerDef) {
         let mut timers = self.timers.lock().unwrap();
         if let Some(timer) = timers.get_mut(&name) {
@@ -24,6 +25,7 @@ impl TimerApp {
         }
     }
 
+    /// Call [`HashMap::retain`] on timers.
     pub fn retain_timers(&self, f: impl Fn(&String) -> bool) {
         self.timers.lock().unwrap().retain(|key, _| f(key));
     }
@@ -37,12 +39,12 @@ pub fn timer_app() -> &'static TimerApp {
     TIMER_APP.get().unwrap()
 }
 
-/// Initializes the Timer app for use of [`timer`].
+/// Initializes the Timer app for use of [`timer_app`].
 pub async fn init() -> anyhow::Result<()> {
     let object = TimerApp {
         startup_time: Instant::now(),
         persistent_time: Instant::now(),
-        timers: AHashMap::with_capacity(16).into(),
+        timers: HashMap::with_capacity_and_hasher(16, ahash::RandomState::new()).into(),
     };
     TIMER_APP.set(object).unwrap();
     Ok(())

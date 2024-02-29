@@ -28,7 +28,7 @@ struct TimerEntity {
 }
 impl TimerEntity {
     fn new(timer: Arc<TimerDef>) -> Self {
-        Self { timer: timer }
+        Self { timer }
     }
 
     async fn run(self) {
