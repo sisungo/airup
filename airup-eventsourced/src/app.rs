@@ -4,7 +4,7 @@ use airup_sdk::{
 };
 use anyhow::anyhow;
 use std::sync::OnceLock;
-use tokio::sync::watch;
+use tokio::sync::{broadcast, watch};
 
 static AIRUP_EVENTSOURCED: OnceLock<AirupEventSourced> = OnceLock::new();
 
@@ -12,6 +12,7 @@ static AIRUP_EVENTSOURCED: OnceLock<AirupEventSourced> = OnceLock::new();
 pub struct AirupEventSourced {
     connection: tokio::sync::Mutex<Connection>,
     exit_flag: watch::Sender<Option<i32>>,
+    reload_flag: broadcast::Sender<()>,
 }
 impl AirupEventSourced {
     /// Calls `self.trigger_event(Event::new("airup-eventsourced_run-command".into(), command))`.
@@ -49,6 +50,17 @@ impl AirupEventSourced {
         code
     }
 
+    /// Waits for a reload request.
+    pub async fn wait_for_reload_request(&self) {
+        let mut receiver = self.reload_flag.subscribe();
+        while receiver.recv().await.is_err() {}
+    }
+
+    /// Sends an reload request.
+    pub fn reload(&self) {
+        self.reload_flag.send(()).ok();
+    }
+
     async fn review_result<T>(&self, val: Result<T, airup_sdk::ipc::Error>) -> T {
         match val {
             Ok(x) => x,
@@ -71,9 +83,29 @@ pub async fn init() -> anyhow::Result<()> {
     let object = AirupEventSourced {
         connection,
         exit_flag: watch::channel(None).0,
+        reload_flag: broadcast::channel(1).0,
     };
     AIRUP_EVENTSOURCED.set(object).unwrap();
+    tokio::spawn(listen_to_reload_request());
     Ok(())
+}
+
+/// Listens to a reload request.
+pub async fn listen_to_reload_request() {
+    #[cfg(target_family = "unix")]
+    async fn internal() {
+        use tokio::signal::unix::SignalKind;
+
+        let Ok(mut sighup) = tokio::signal::unix::signal(SignalKind::hangup()) else {
+            return;
+        };
+        loop {
+            sighup.recv().await;
+            airup_eventsourced().reload();
+        }
+    }
+
+    internal().await
 }
 
 /// Overrides default Airup SDK Build Manifest if environment variable `AIRUP_OVERRIDE_MANIFEST_PATH` is set.
