@@ -113,26 +113,3 @@ int airup_server_version(airup_connection *connection, char *buffer, size_t size
 
 **描述**：在连接 `connection` 上调用 `info.version` 方法，将返回的字符串填充在大小为 `size` 的缓冲区 `buffer` 中。如果成功，返回 `0`。如果失
 败，返回 `-1` 并设置当前线程的 Airup 错误。
-
-**示例**：
-```c
-#include <airup.h>
-#include <stdio.h>
-
-int main(int argc, char *argv[]) {
-    char *path = airup_default_path();
-    airup_connection *conn = airup_connect(path);
-    if (conn == NULL) {
-        printf("error: failed to connect to airup daemon: %s\n", airup_last_error().message);
-        return 1;
-    }
-    char buffer[16];
-    int status = airup_server_version(conn, buffer, 16);
-    if (status == -1) {
-        printf("error: failed to get server version: %s\n", airup_last_error().message);
-        airup_disconnect(conn);
-        return 1;
-    }
-    printf("airupd v%s\n", buffer);
-}
-```

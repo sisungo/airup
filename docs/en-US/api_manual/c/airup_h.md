@@ -117,26 +117,3 @@ int airup_server_version(airup_connection *connection, char *buffer, size_t size
 
 **Description**: Invokes `info.version` method on connection `connection`, fill the buffer `buffer` whose size is `size` with
 the returned string. On success, returns `0`. On failure, returns `-1` and current thread's Airup error is set.
-
-**Example**:
-```c
-#include <airup.h>
-#include <stdio.h>
-
-int main(int argc, char *argv[]) {
-    char *path = airup_default_path();
-    airup_connection *conn = airup_connect(path);
-    if (conn == NULL) {
-        printf("error: failed to connect to airup daemon: %s\n", airup_last_error().message);
-        return 1;
-    }
-    char buffer[16];
-    int status = airup_server_version(conn, buffer, 16);
-    if (status == -1) {
-        printf("error: failed to get server version: %s\n", airup_last_error().message);
-        airup_disconnect(conn);
-        return 1;
-    }
-    printf("airupd v%s\n", buffer);
-}
-```
