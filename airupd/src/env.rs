@@ -33,7 +33,7 @@ impl Cmdline {
     /// Parses a new [`Cmdline`] instance from the command-line arguments. This function will automatically detect the
     /// environment to detect the style of the parser.
     pub fn parse() -> Self {
-        if cfg!(target_os = "linux") || std::process::id() == 1 {
+        if cfg!(target_os = "linux") && std::process::id() == 1 {
             Self::parse_as_linux_init()
         } else {
             Self::parse_as_unix_command()
