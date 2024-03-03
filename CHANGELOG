@@ -1,3 +1,11 @@
+Changes in v0.9.0-alpha.1:
+ * \[Feature\] Refactored event system. Now it allows you to send and receive payload on events.
+ * \[Feature\] A new (optional) daemon is introduced, called `airup-eventsourced`. It is an Airup client built on the event system that automatically collects system or user-defined events and send them to the Airup event bus.
+ * \[Feature\] `airup-eventsourced` now supports user-defined scheduled tasks (a.k.a, "timers") as an event source.
+ * \[Fix\] "Welcome to ...!" is incorrectly displayed. It should only be printed when we are `pid == 1`.
+ * \[Fix\] Line Pipers are never closed
+ * \[Developer\] C SDK: Add `airup_server_version` API.
+
 Changes in v0.8.1:
  * \[Feature\] Custom build manifest overriding
  * \[Feature\] Service Event Handlers
