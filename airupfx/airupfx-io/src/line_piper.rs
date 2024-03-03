@@ -60,6 +60,9 @@ impl<R: AsyncRead + Unpin + Send + 'static> LinePiperEntity<R> {
         loop {
             let pos = loop {
                 let count = self.reader.read(&mut buf[position..]).await.ok()?;
+                if count == 0 {
+                    return None;
+                }
                 position += count;
                 if let Some(pos) = &buf[..position].iter().position(|x| b"\n\r\0".contains(x)) {
                     break *pos;
