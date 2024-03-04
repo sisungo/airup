@@ -82,20 +82,15 @@ impl Cmdline {
                 Some(arg.into())
             );
 
-            if arg == "-m" || arg == "--milestone" {
-                parsing_milestone = true;
-            } else if arg == "--build-manifest" {
-                parsing_build_manifest = true;
-            } else if arg == "--verbose" {
-                object.verbose = true;
-            } else if arg == "-q" || arg == "--quiet" {
-                object.quiet = true;
-            } else if arg == "--no-color" {
-                object.no_color = true;
-            } else if arg == "-h" || arg == "--help" {
-                Self::print_help();
-            } else if arg == "-V" || arg == "--version" {
-                Self::print_version();
+            match &arg[..] {
+                "-m" | "--milestone" => parsing_milestone = true,
+                "--build-manifest" => parsing_build_manifest = true,
+                "--verbose" => object.verbose = true,
+                "-q" | "--quiet" => object.quiet = true,
+                "--no-color" => object.no_color = true,
+                "-h" | "--help" => Self::print_help(),
+                "-V" | "--version" => Self::print_version(),
+                _ => (),
             }
         }
 
