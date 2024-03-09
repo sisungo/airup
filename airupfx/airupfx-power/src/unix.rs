@@ -2,6 +2,7 @@ use std::time::Duration;
 
 /// Sends a signal to all running processes, then wait for them to be terminated. If the timeout expired, the processes are
 /// force-killed.
+#[allow(unused)]
 pub(crate) async fn kill_all(timeout: Duration) {
     eprintln!("Sending SIGTERM to all processes");
     unsafe {
