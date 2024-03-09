@@ -59,6 +59,7 @@ impl Logger for FallbackLogger {
             for line in RevLines::new(reader).take(n) {
                 result.push(serde_json::from_str(&line?)?);
             }
+            result.reverse();
             Ok(result)
         })
         .await
