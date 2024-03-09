@@ -1,5 +1,5 @@
 cfg_if::cfg_if! {
-    if #[cfg(target_os = "linux")] {
+    if #[cfg(all(target_os = "linux", feature = "cgroups"))] {
         #[path = "linux.rs"]
         mod sys;
     } else {
