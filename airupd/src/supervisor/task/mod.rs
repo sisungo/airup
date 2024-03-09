@@ -1,13 +1,10 @@
 //! Tasks of the Airup supervisor.
 
 pub mod cleanup;
-pub mod feedback;
 pub mod health_check;
 pub mod reload;
 pub mod start;
 pub mod stop;
-
-pub use feedback::TaskFeedback;
 
 use super::SupervisorContext;
 use airup_sdk::Error;
@@ -38,6 +35,22 @@ pub trait TaskHandle: Send + Sync + 'static {
     /// This method is cancel-safe.
     fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>>;
 }
+
+macro_rules! task_feedback_from {
+    ($t:ty, $v:tt) => {
+        impl From<$t> for TaskFeedback {
+            fn from(val: $t) -> Self {
+                Self::$v(val)
+            }
+        }
+    };
+}
+
+#[derive(Debug, Clone)]
+pub enum TaskFeedback {
+    Nothing(()),
+}
+task_feedback_from!((), Nothing);
 
 /// A helper type for implementing [`TaskHandle`].
 #[derive(Debug)]
@@ -206,7 +219,7 @@ async fn ace_environment(
 pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
     let mut ace = Ace::new();
 
-    ace.realm = context.realm.clone();
+    ace.realm.clone_from(&context.realm);
     ace.env = ace_environment(&context.service)
         .await
         .map_err(|x| Error::Io {
