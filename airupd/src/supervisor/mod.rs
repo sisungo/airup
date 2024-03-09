@@ -378,7 +378,7 @@ impl Supervisor {
         QueryService {
             status: self.context.status.get(),
             status_since: Some(self.context.status.timestamp()),
-            pid: self.context.pid().await.map(|x| x as _),
+            pid: self.context.query_pid().map(|x| x as _),
             task_class: task.map(|x| x.task_class().to_owned()),
             last_error: self.context.last_error.get(),
             definition: self.context.service.clone(),
@@ -580,6 +580,11 @@ impl SupervisorContext {
     /// Returns main PID of the service supervised by the supervisor.
     pub async fn pid(&self) -> Option<i64> {
         self.child.read().await.as_ref().map(|x| x.id())
+    }
+
+    /// Returns main PID of the service supervised by the supervisor, but for querying.
+    pub fn query_pid(&self) -> Option<i64> {
+        self.child.try_read().ok()?.as_ref().map(|x| x.id())
     }
 
     /// Sets new child for the supervisor.
