@@ -187,7 +187,7 @@ impl Display for PrintedStatusKind {
             Self::Stopped => write!(f, "{}", style("stopped").bold()),
             Self::Failed => write!(f, "{}", style("failed").bold().red()),
             Self::Starting => write!(f, "{}", style("starting").bold().blue()),
-            Self::Stopping => write!(f, "{}", style("starting").bold().blue()),
+            Self::Stopping => write!(f, "{}", style("stopping").bold().blue()),
         }
     }
 }
