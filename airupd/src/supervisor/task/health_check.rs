@@ -1,5 +1,5 @@
 use super::*;
-use airupfx::prelude::*;
+use airupfx::{ace::CommandExitError, prelude::*};
 use std::{sync::Arc, time::Duration};
 
 #[derive(Debug)]
@@ -56,9 +56,14 @@ impl HealthCheck {
 
     async fn run(&mut self) -> Result<(), Error> {
         let ace = std::mem::replace(&mut self.ace, Err(Error::internal("taken ace")))?;
-        if let Some(x) = &self.command {
-            ace.run_wait_timeout(x, self.timeout).await??;
-        }
+        self.helper
+            .would_interrupt(async {
+                if let Some(x) = &self.command {
+                    ace.run_wait_timeout(x, self.timeout).await??;
+                }
+                Ok::<_, Error>(Ok::<_, CommandExitError>(()))
+            })
+            .await???;
         Ok(())
     }
 }

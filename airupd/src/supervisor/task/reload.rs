@@ -1,6 +1,6 @@
 use super::*;
 use airup_sdk::prelude::*;
-use airupfx::prelude::*;
+use airupfx::{ace::CommandExitError, prelude::*};
 use std::{sync::Arc, time::Duration};
 
 #[derive(Debug)]
@@ -62,10 +62,15 @@ impl ReloadService {
 
         let ace = std::mem::replace(&mut self.ace, Err(Error::internal("taken ace")))?;
 
-        if let Some(reload_cmd) = &self.reload_cmd {
-            ace.run_wait_timeout(reload_cmd, self.reload_timeout)
-                .await??;
-        }
+        self.helper
+            .would_interrupt(async {
+                if let Some(reload_cmd) = &self.reload_cmd {
+                    ace.run_wait_timeout(reload_cmd, self.reload_timeout)
+                        .await??;
+                }
+                Ok::<_, Error>(Ok::<_, CommandExitError>(()))
+            })
+            .await???;
 
         Ok(())
     }
