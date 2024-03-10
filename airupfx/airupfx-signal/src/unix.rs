@@ -79,10 +79,5 @@ pub fn signal<
 /// ## Errors
 /// An `Err(_)` is returned if the underlying OS function failed.
 pub fn ignore(signum: i32) -> std::io::Result<()> {
-    let ret = unsafe { libc::signal(signum, libc::SIG_IGN) };
-    if ret == libc::SIG_ERR {
-        Err(std::io::Error::last_os_error())
-    } else {
-        Ok(())
-    }
+    signal(signum, |_| async {})
 }
