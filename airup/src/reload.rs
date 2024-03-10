@@ -11,7 +11,21 @@ pub struct Cmdline {
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = super::connect()?;
+
+    if let "airupd" | "airupd.airs" = &cmdline.service[..] {
+        if let Some("& airup self-reload") = conn
+            .query_service(&cmdline.service)??
+            .definition
+            .exec
+            .reload
+            .as_deref()
+        {
+            conn.refresh()??;
+        }
+    }
+
     conn.reload_service(&cmdline.service)?
         .map_err(|e| anyhow!("failed to reload service `{}`: {}", cmdline.service, e))?;
+
     Ok(())
 }
