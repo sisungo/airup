@@ -1,7 +1,7 @@
 use super::*;
 use airup_sdk::prelude::*;
 use airupfx::prelude::*;
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 #[derive(Debug)]
 pub struct ReloadServiceHandle {
@@ -25,19 +25,27 @@ impl TaskHandle for ReloadServiceHandle {
     }
 }
 
-pub fn start(context: Arc<SupervisorContext>) -> Arc<dyn TaskHandle> {
+pub async fn start(context: &SupervisorContext) -> Arc<dyn TaskHandle> {
     let (handle, helper) = task_helper();
 
-    let reload_service = ReloadService { helper, context };
+    let reload_service = ReloadService {
+        helper,
+        ace: super::ace(context).await,
+        status: context.status.get(),
+        reload_cmd: context.service.exec.reload.clone(),
+        reload_timeout: context.service.exec.reload_timeout(),
+    };
     reload_service.start();
 
     Arc::new(ReloadServiceHandle { helper: handle })
 }
 
-#[derive(Debug)]
 struct ReloadService {
     helper: TaskHelper,
-    context: Arc<SupervisorContext>,
+    ace: Result<Ace, Error>,
+    status: Status,
+    reload_cmd: Option<String>,
+    reload_timeout: Option<Duration>,
 }
 impl ReloadService {
     fn start(mut self) {
@@ -48,16 +56,14 @@ impl ReloadService {
     }
 
     async fn run(&mut self) -> Result<(), Error> {
-        if self.context.status.get() != Status::Active {
+        if self.status != Status::Active {
             return Err(Error::UnitNotStarted);
         }
 
-        let service = &self.context.service;
+        let ace = std::mem::replace(&mut self.ace, Err(Error::internal("taken ace")))?;
 
-        let ace = super::ace(&self.context).await?;
-
-        if let Some(reload_cmd) = &service.exec.reload {
-            ace.run_wait_timeout(reload_cmd, service.exec.reload_timeout())
+        if let Some(reload_cmd) = &self.reload_cmd {
+            ace.run_wait_timeout(reload_cmd, self.reload_timeout)
                 .await??;
         }
 

@@ -466,9 +466,7 @@ impl Supervisor {
     /// Reloads the service.
     async fn reload_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
-            ._start_task(&self.context, async {
-                task::reload::start(self.context.clone())
-            })
+            ._start_task(&self.context, task::reload::start(&self.context))
             .await
     }
 

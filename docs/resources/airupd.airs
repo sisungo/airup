@@ -7,4 +7,5 @@ kind = "oneshot"
 
 [exec]
 start = "noop"
-reload = "airup self-reload"
+stop = "noop"
+reload = "& airup self-reload"
