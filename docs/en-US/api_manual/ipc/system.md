@@ -85,3 +85,9 @@ with the same name will be overridden, rather than returning an error.
 - **Parameters**: `Event` object
 - **Return Value**: `null`
 - **Description**: Triggers the specified event.
+
+## Method: `system.append_log`
+- **Name**: `system.append_log`
+- **Parameters**: `string (name of subject)`, `string (name of module)` and `string (the message)`
+- **Return Value**: `null`
+- **Description**: Appends a log record item to the logger.

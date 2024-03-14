@@ -29,6 +29,7 @@ pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
             interrupt_service_task,
             list_services,
             use_logger,
+            append_log,
             tail_logs,
             enter_milestone,
             trigger_event,
@@ -144,6 +145,17 @@ async fn tail_logs(subject: String, n: usize) -> Result<Vec<LogRecord>, Error> {
         .map_err(airup_sdk::Error::custom)?;
 
     Ok(queried)
+}
+
+#[airupfx::macros::api]
+async fn append_log(subject: String, module: String, message: String) -> Result<(), Error> {
+    airupd()
+        .logger
+        .write(&subject, &module, message.as_bytes())
+        .await
+        .map_err(airup_sdk::Error::custom)?;
+
+    Ok(())
 }
 
 #[airupfx::macros::api]

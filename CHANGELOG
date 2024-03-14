@@ -1,3 +1,13 @@
+Changes in v0.9.1:
+ * \[Fix\] Child processes would ignore some signals because the daemon ignored them, and the behavior is unexpected.
+ * \[Fix\] `airup reload airupd` hangs forever because `update_def` call tries to interrupt non-important tasks, and there are
+ no interrupt point in `reload`.
+ * \[Fix\] `fallback_logger`'s `tail` implementation returns an array of log records in reverse order.
+ * \[Fix\] Compiler warnings appears on some platforms like Android.
+ * \[Fix\] A typo in `airup query` CLI utility: `stopping` is shown as `starting`
+ * \[Fix\] Cannot query service while stopping it. This is not a perfect fix; Better fix would be committed in the future.
+ * \[Fix\] Cannot compile if `cgroups` the feature is disabled on Linux.
+
 Changes in v0.9.0-alpha.1:
  * \[Feature\] Refactored event system. Now it allows you to send and receive payload on events.
  * \[Feature\] A new (optional) daemon is introduced, called `airup-eventsourced`. It is an Airup client built on the event system that automatically collects system or user-defined events and send them to the Airup event bus.

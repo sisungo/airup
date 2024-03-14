@@ -21,6 +21,7 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
             .as_deref()
         {
             conn.refresh()??;
+            return Ok(());
         }
     }
 
