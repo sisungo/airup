@@ -552,17 +552,17 @@ impl CurrentTask {
 
 /// Context of a running supervisor.
 #[derive(Debug)]
-pub struct SupervisorContext {
-    pub service: Service,
-    pub last_error: LastErrorContext,
-    pub status: StatusContext,
-    pub realm: Option<Arc<Realm>>,
+struct SupervisorContext {
+    service: Service,
+    last_error: LastErrorContext,
+    status: StatusContext,
+    realm: Option<Arc<Realm>>,
     child: tokio::sync::RwLock<Option<Child>>,
     retry: RetryContext,
 }
 impl SupervisorContext {
     /// Creates a new [`SupervisorContext`] instance for the given [`Service`].
-    pub fn new(service: Service) -> Arc<Self> {
+    fn new(service: Service) -> Arc<Self> {
         let realm = Realm::new().ok().map(Arc::new);
         setup_realm(&realm, &service);
         Arc::new(Self {
@@ -576,34 +576,34 @@ impl SupervisorContext {
     }
 
     /// Returns main PID of the service supervised by the supervisor.
-    pub async fn pid(&self) -> Option<i64> {
+    async fn pid(&self) -> Option<i64> {
         self.child.read().await.as_ref().map(|x| x.id())
     }
 
     /// Sets new child for the supervisor.
-    pub async fn set_child<T: Into<Option<Child>>>(&self, new: T) -> Option<Child> {
+    async fn set_child<T: Into<Option<Child>>>(&self, new: T) -> Option<Child> {
         std::mem::replace(&mut *self.child.write().await, new.into())
     }
 }
 
 #[derive(Debug, Default)]
-pub struct StatusContext {
+struct StatusContext {
     data: Mutex<Status>,
     timestamp: AtomicI64,
 }
 impl StatusContext {
     /// Gets current status.
-    pub fn get(&self) -> Status {
+    fn get(&self) -> Status {
         *self.data.lock().unwrap()
     }
 
     /// Gets the timestamp of last status change.
-    pub fn timestamp(&self) -> i64 {
+    fn timestamp(&self) -> i64 {
         self.timestamp.load(atomic::Ordering::Acquire)
     }
 
     /// Changes current status updating timestamp.
-    pub fn set(&self, new: Status) -> Status {
+    fn set(&self, new: Status) -> Status {
         let mut lock = self.data.lock().unwrap();
         self.timestamp
             .store(airupfx::time::timestamp_ms(), atomic::Ordering::Release);
@@ -612,36 +612,36 @@ impl StatusContext {
 }
 
 #[derive(Debug, Default)]
-pub struct LastErrorContext {
+struct LastErrorContext {
     data: RwLock<Option<Error>>,
     auto_save: AtomicBool,
 }
 impl LastErrorContext {
-    pub fn set<E: Into<Option<Error>>>(&self, new: E) -> Option<Error> {
+    fn set<E: Into<Option<Error>>>(&self, new: E) -> Option<Error> {
         std::mem::replace(&mut self.data.write().unwrap(), new.into())
     }
 
-    pub fn get(&self) -> Option<Error> {
+    fn get(&self) -> Option<Error> {
         self.data.read().unwrap().clone()
     }
 
-    pub fn set_autosave(&self, val: bool) -> bool {
+    fn set_autosave(&self, val: bool) -> bool {
         self.auto_save.swap(val, atomic::Ordering::SeqCst)
     }
 
-    pub fn take_autosave(&self) -> bool {
+    fn take_autosave(&self) -> bool {
         self.set_autosave(false)
     }
 }
 
 #[derive(Debug, Default)]
-pub struct RetryContext {
+struct RetryContext {
     disabled: AtomicBool,
     count: AtomicI32,
 }
 impl RetryContext {
     /// Returns `true` if the service should be retried, then increases retry counter.
-    pub fn check_and_mark(&self, max: i32) -> bool {
+    fn check_and_mark(&self, max: i32) -> bool {
         if self.disabled() {
             return false;
         }
@@ -665,33 +665,33 @@ impl RetryContext {
     /// Resets the retry counter.
     ///
     /// If retrying is disabled, it will be enabled. Then the retry count is set to zero.
-    pub fn reset(&self) {
+    fn reset(&self) {
         self.enable();
         self.reset_count();
     }
 
     /// Sets the retry count to zero.
-    pub fn reset_count(&self) {
+    fn reset_count(&self) {
         self.count.store(0, atomic::Ordering::SeqCst);
     }
 
     /// Enables retrying if disabled.
-    pub fn enable(&self) {
+    fn enable(&self) {
         self.disabled.store(false, atomic::Ordering::Release);
     }
 
     /// Disables retrying if enabled.
-    pub fn disable(&self) {
+    fn disable(&self) {
         self.disabled.store(true, atomic::Ordering::Release);
     }
 
     /// Returns `true` if retrying is enabled.
-    pub fn enabled(&self) -> bool {
+    fn enabled(&self) -> bool {
         !self.disabled()
     }
 
     /// Returns `true` if retrying is disabled.
-    pub fn disabled(&self) -> bool {
+    fn disabled(&self) -> bool {
         self.disabled.load(atomic::Ordering::Acquire)
     }
 }

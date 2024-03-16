@@ -25,7 +25,7 @@ impl TaskHandle for StopServiceHandle {
     }
 }
 
-pub fn start(context: Arc<SupervisorContext>) -> Arc<dyn TaskHandle> {
+pub(in crate::supervisor) fn start(context: Arc<SupervisorContext>) -> Arc<dyn TaskHandle> {
     let (handle, helper) = task_helper();
 
     let stop_service = StopService { helper, context };

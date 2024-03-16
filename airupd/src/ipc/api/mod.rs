@@ -36,7 +36,7 @@ impl Manager {
     }
 
     /// Invokes a method by the given request.
-    pub async fn invoke(&self, context: Arc<SessionContext>, req: Request) -> Response {
+    pub(super) async fn invoke(&self, context: Arc<SessionContext>, req: Request) -> Response {
         let method = self.methods.get(&req.method[..]).copied();
         match method {
             Some(method) => Response::new(method(context, req).await),
@@ -51,7 +51,7 @@ impl Default for Manager {
 }
 
 /// Represents to an IPC method.
-pub type Method = fn(Arc<SessionContext>, Request) -> MethodFuture;
+pub(super) type Method = fn(Arc<SessionContext>, Request) -> MethodFuture;
 
 /// Represents to future type of an IPC method.
 pub type MethodFuture = BoxFuture<'static, Result<serde_json::Value, Error>>;

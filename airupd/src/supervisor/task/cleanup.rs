@@ -38,7 +38,10 @@ impl TaskHandle for CleanupServiceHandle {
     }
 }
 
-pub fn start(context: Arc<SupervisorContext>, wait: Wait) -> Arc<dyn TaskHandle> {
+pub(in crate::supervisor) fn start(
+    context: Arc<SupervisorContext>,
+    wait: Wait,
+) -> Arc<dyn TaskHandle> {
     let (handle, helper) = task_helper();
     let important: Arc<AtomicBool> = AtomicBool::new(true).into();
 

@@ -26,7 +26,7 @@ impl TaskHandle for StartServiceHandle {
     }
 }
 
-pub fn start(context: Arc<SupervisorContext>) -> Arc<dyn TaskHandle> {
+pub(in crate::supervisor) fn start(context: Arc<SupervisorContext>) -> Arc<dyn TaskHandle> {
     let (handle, helper) = task_helper();
 
     let start_service = StartService { helper, context };
@@ -165,10 +165,8 @@ impl StartService {
                 return Err(Error::TimedOut);
             };
             if let Ok(event) = receive {
-                if event.id == "notify_active" {
-                    if interests.contains(&&event.payload) {
-                        break Ok(());
-                    }
+                if event.id == "notify_active" && interests.contains(&&event.payload) {
+                    break Ok(());
                 }
             }
         }

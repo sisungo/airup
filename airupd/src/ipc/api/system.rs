@@ -10,7 +10,7 @@ use airup_sdk::{
 };
 use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
 
-pub fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
+pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     crate::ipc_methods!(
         system,
         [

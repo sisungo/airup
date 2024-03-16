@@ -216,7 +216,7 @@ async fn ace_environment(
 }
 
 /// Creates an [`Ace`] instance matching the given [`SupervisorContext`].
-pub async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
+pub(in crate::supervisor) async fn ace(context: &SupervisorContext) -> Result<Ace, Error> {
     let mut ace = Ace::new();
 
     ace.realm.clone_from(&context.realm);

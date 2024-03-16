@@ -24,7 +24,7 @@ impl TaskHandle for HealthCheckHandle {
     }
 }
 
-pub async fn start(context: &SupervisorContext) -> Arc<dyn TaskHandle> {
+pub(in crate::supervisor) async fn start(context: &SupervisorContext) -> Arc<dyn TaskHandle> {
     let (handle, helper) = task_helper();
     let command = context.service.exec.health_check.clone();
     let timeout = context.service.exec.health_check_timeout();

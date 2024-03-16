@@ -56,7 +56,7 @@ impl Server {
     }
 
     /// Runs the server in place.
-    pub async fn run(&mut self) {
+    async fn run(&mut self) {
         loop {
             if let Ok(conn) = self
                 .server
@@ -78,7 +78,7 @@ pub struct Session {
 }
 impl Session {
     /// Creates a new `Session` with the given [`airup_sdk::nonblocking::ipc::Connection`].
-    pub fn new(conn: airup_sdk::nonblocking::ipc::Connection) -> Self {
+    fn new(conn: airup_sdk::nonblocking::ipc::Connection) -> Self {
         Self {
             conn,
             context: Arc::default(),
@@ -86,7 +86,7 @@ impl Session {
     }
 
     /// Starts the session task.
-    pub fn start(mut self) {
+    fn start(mut self) {
         tokio::spawn(async move {
             if let Err(err) = self.run().await {
                 tracing::debug!("{} disconnected: {}", self.audit_name().await, err);
@@ -95,7 +95,7 @@ impl Session {
     }
 
     /// Runs the session in place.
-    pub async fn run(&mut self) -> anyhow::Result<()> {
+    async fn run(&mut self) -> anyhow::Result<()> {
         tracing::debug!("{} established", self.audit_name().await);
         loop {
             let req = self.conn.recv_req().await?;
@@ -108,7 +108,7 @@ impl Session {
     }
 
     /// Returns audit-style name of the IPC session.
-    pub async fn audit_name(&self) -> String {
+    async fn audit_name(&self) -> String {
         let cred = self.conn.as_ref().peer_cred().ok();
         let uid = cred
             .as_ref()
@@ -129,4 +129,4 @@ impl Session {
 
 /// Represents to an Airupd IPC session context.
 #[derive(Debug, Default)]
-pub struct SessionContext;
+struct SessionContext;
