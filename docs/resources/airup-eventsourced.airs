@@ -10,5 +10,3 @@ reload = "sh.run kill -SIGHUP $AIRUP_SERVICE_MAIN_PID"
 
 [retry]
 max-attempts = -1
-
-[event-handlers]

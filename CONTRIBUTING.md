@@ -28,4 +28,5 @@ Some OS features are used:
 All other platform-specific codes are wrapped by `airupfx::sys`.
 
 ## Licensing
-By contributing, you agree to license your code under the same license as existing source code of `Airup`. View [the LICENSE file](LICENSE).
+By contributing, you agree to license your code under the same license as existing source code 
+of `Airup`. See [the LICENSE file](LICENSE).

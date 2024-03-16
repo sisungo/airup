@@ -32,4 +32,14 @@ cargo build --release
 ```
 
 ## Install
+A standard Airup installation consists of the following files:
+ - `airupd`: The main Airup daemon binary.
+ - `airup`: A CLI utility to inspect or manipulate Airup components.
+ - \[`airup-eventsourced`\]: A daemon which collects system events and sends them to the Airup event bus. It also maintains some
+ optional functions like timers. This is optional.
+ - `libairup_sdk.so` OR `libairup_sdk.dylib`: The Airup SDK for C, in dynamic library.
+ - \[`docs/resources/airup-eventsourced.airs`\]: Service manifest file for the `airup-eventsourced` service.
+ - \[`docs/resources/airupd.airs`\]: Stub service manifest file for the `airupd` service.
+ - \[`docs/resources/selinux/airup.te`\]: SELinux policy for Airup.
+
 Read the [documents](docs/README.md) to learn more about installation.
