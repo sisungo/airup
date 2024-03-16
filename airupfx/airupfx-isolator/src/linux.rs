@@ -70,7 +70,7 @@ impl Realm {
 
     pub fn add(&self, pid: i64) -> std::io::Result<()> {
         self.cg
-            .add_task(CgroupPid::from(pid as u64))
+            .add_task_by_tgid(CgroupPid::from(pid as u64))
             .map_err(|x| std::io::Error::new(ErrorKind::PermissionDenied, x.to_string()))?;
 
         Ok(())
