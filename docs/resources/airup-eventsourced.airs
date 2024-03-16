@@ -12,4 +12,3 @@ reload = "sh.run kill -SIGHUP $AIRUP_SERVICE_MAIN_PID"
 max-attempts = -1
 
 [event-handlers]
-airup-eventsourced_run-command = "sh.run exec sh -c \"${AIRUP_EVENT_HANDLER_PAYLOAD}\""

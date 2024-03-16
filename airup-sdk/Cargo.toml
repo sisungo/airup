@@ -4,7 +4,7 @@ authors = ["sisungo <sisungo@icloud.com>"]
 description = "SDK library of Airup"
 documentation = "https://docs.rs/airup-sdk"
 repository = "https://github.com/sisungo/airup"
-version = "0.9.1"
+version = "0.10.0-alpha.1"
 edition = "2021"
 license = "MIT"
 

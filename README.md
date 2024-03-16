@@ -8,7 +8,7 @@ supervisor or the `init` daemon (`pid == 1`).
 
 ## Project Status
 Maintained Versions:
- - Current Mainline Version: `0.9.1`
+ - Current Mainline Version: `0.10.0-alpha.1`
  - Current Release Version: `0.9.1`
 
 ⚠️ **WARNING**: The project is not widely tested yet and should **NOT** be used in production environments. It may contain

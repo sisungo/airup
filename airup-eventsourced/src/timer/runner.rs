@@ -1,4 +1,3 @@
-use crate::app::airup_eventsourced;
 use airup_sdk::files::timer::Timer as TimerDef;
 use std::{sync::Arc, time::Duration};
 use tokio::{task::JoinHandle, time::Instant};
@@ -38,7 +37,19 @@ impl TimerEntity {
         );
         loop {
             interval.tick().await;
-            airup_eventsourced().run_command(self.timer.exec.command.clone());
+            run_command(&self.timer).await.ok();
         }
     }
+}
+
+async fn run_command(def: &TimerDef) -> anyhow::Result<()> {
+    #[cfg(target_family = "unix")]
+    let mut child = tokio::process::Command::new("sh")
+        .arg("-c")
+        .arg(&def.exec.command)
+        .spawn()?;
+
+    child.wait().await?;
+
+    Ok(())
 }

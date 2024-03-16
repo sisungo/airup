@@ -71,7 +71,7 @@ impl StopService {
                 ace.run_wait_timeout(x, countdown.left()).await??;
             }
             None => {
-                if let Some(x) = self.context.child.write().await.as_mut() {
+                if let Some(x) = self.context.child.read().await.as_ref() {
                     x.kill_timeout(SIGTERM, countdown.left()).await?;
                 } else {
                     return Err(Error::unsupported("this service cannot be stopped"));
