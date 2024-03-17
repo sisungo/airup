@@ -4,19 +4,26 @@ pub mod api;
 
 use crate::app::airupd;
 use anyhow::anyhow;
-use std::{path::Path, sync::Arc};
+use std::{path::PathBuf, sync::Arc};
+use tokio::sync::broadcast;
 
 /// An instance of the Airup IPC context.
 #[derive(Debug)]
 pub struct Context {
     api: api::Manager,
+    reload: broadcast::Sender<()>,
 }
 impl Context {
     /// Creates a new `Context` instance.
     pub fn new() -> Self {
         Self {
             api: api::Manager::new(),
+            reload: broadcast::channel(1).0,
         }
+    }
+
+    pub fn reload(&self) {
+        self.reload.send(()).ok();
     }
 }
 impl Default for Context {
@@ -28,22 +35,23 @@ impl Default for Context {
 /// Represents to an IPC server.
 #[derive(Debug)]
 pub struct Server {
+    path: PathBuf,
     server: airup_sdk::nonblocking::ipc::Server,
 }
 impl Server {
     /// Creates a new [`Server`] instance.
-    pub async fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
-        let path = path.as_ref();
-        let server = airup_sdk::nonblocking::ipc::Server::new(path)?;
-        airupfx::fs::set_permission(path, airupfx::fs::Permission::Socket).await?;
+    pub async fn new<P: Into<PathBuf>>(path: P) -> anyhow::Result<Self> {
+        let path = path.into();
+        let server = airup_sdk::nonblocking::ipc::Server::new(&path)?;
+        airupfx::fs::set_permission(&path, airupfx::fs::Permission::Socket).await?;
 
-        Ok(Self { server })
+        Ok(Self { path, server })
     }
 
     /// Forces to create a new [`Server`] instance.
-    pub async fn new_force<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
-        let path = path.as_ref();
-        tokio::fs::remove_file(path).await.ok();
+    pub async fn new_force<P: Into<PathBuf>>(path: P) -> anyhow::Result<Self> {
+        let path = path.into();
+        tokio::fs::remove_file(&path).await.ok();
 
         Self::new(path).await
     }
@@ -55,17 +63,26 @@ impl Server {
         });
     }
 
+    /// Reloads the server.
+    async fn reload(&mut self) -> anyhow::Result<()> {
+        let newer = Self::new_force(&self.path).await?;
+        *self = newer;
+        Ok(())
+    }
+
     /// Runs the server in place.
     async fn run(&mut self) {
+        let mut reload = airupd().ipc.reload.subscribe();
+
         loop {
-            if let Ok(conn) = self
-                .server
-                .accept()
-                .await
-                .inspect_err(|e| tracing::warn!("accept() failed: {}", e))
-            {
-                Session::new(conn).start();
-            }
+            tokio::select! {
+                Ok(()) = reload.recv() => {
+                    self.reload().await.ok();
+                },
+                Ok(conn) = self.server.accept() => {
+                    Session::new(conn).start();
+                },
+            };
         }
     }
 }

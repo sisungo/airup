@@ -58,10 +58,16 @@ impl Airupd {
     /// Starts tasks to listen to UNIX signals.
     pub fn listen_signals(&'static self) {
         ignore_all([
-            SIGHUP, SIGPIPE, SIGTTIN, SIGTTOU, SIGQUIT, SIGTERM, SIGUSR1, SIGUSR2,
+            SIGPIPE, SIGTTIN, SIGTTOU, SIGQUIT, SIGTERM, SIGUSR1, SIGUSR2,
         ]);
+
         signal(SIGINT, |_| async {
             self.enter_milestone("reboot".into()).await.ok();
+        })
+        .ok();
+
+        signal(SIGHUP, |_| async {
+            self.ipc.reload();
         })
         .ok();
     }

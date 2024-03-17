@@ -172,7 +172,8 @@ impl Child {
         Ok(wait.clone().unwrap())
     }
 
-    pub(crate) fn send_signal(&self, sig: i32) -> std::io::Result<()> {
+    pub(crate) async fn send_signal(&self, sig: i32) -> std::io::Result<()> {
+        let _lock = lock().await;
         if self.wait_queue.borrow().is_none() {
             kill(self.pid, sig)
         } else {
@@ -180,8 +181,8 @@ impl Child {
         }
     }
 
-    pub(crate) fn kill(&self) -> std::io::Result<()> {
-        self.send_signal(libc::SIGKILL)
+    pub(crate) async fn kill(&self) -> std::io::Result<()> {
+        self.send_signal(libc::SIGKILL).await
     }
 
     /*pub(crate) fn stdout(&self) -> Option<Arc<LinePiper>> {
@@ -231,7 +232,6 @@ impl ChildQueue {
                             break;
                         }
                     };
-                    drop(_lock);
 
                     if wait.code().is_some() || wait.signal().is_some() {
                         self.send(wait).await;
@@ -274,6 +274,7 @@ fn child_queue() -> &'static ChildQueue {
     })
 }
 
+#[must_use]
 pub async fn lock() -> impl Drop {
     child_queue().lock.lock().await
 }

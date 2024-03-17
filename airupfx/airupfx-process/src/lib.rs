@@ -124,16 +124,16 @@ impl Child {
     ///
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
-    pub fn send_signal(&self, sig: i32) -> std::io::Result<()> {
-        self.0.send_signal(sig)
+    pub async fn send_signal(&self, sig: i32) -> std::io::Result<()> {
+        self.0.send_signal(sig).await
     }
 
     /// Kills the child process.
     ///
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
-    pub fn kill(&self) -> std::io::Result<()> {
-        self.0.kill()
+    pub async fn kill(&self) -> std::io::Result<()> {
+        self.0.kill().await
     }
 }
 impl From<sys::Child> for Child {
