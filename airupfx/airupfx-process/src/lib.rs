@@ -144,6 +144,9 @@ impl From<sys::Child> for Child {
 
 #[derive(Default)]
 pub enum Stdio {
+    /// Redirects `stdio` to the null device.
+    Nulldev,
+
     /// The child inherits from the corresponding parent descriptor.
     #[default]
     Inherit,
@@ -157,6 +160,7 @@ pub enum Stdio {
 impl Clone for Stdio {
     fn clone(&self) -> Self {
         match self {
+            Self::Nulldev => Self::Nulldev,
             Self::Inherit => Self::Inherit,
             Self::Callback(c) => Self::Callback(c.clone_boxed()),
             Self::File(f) => Self::File(f.clone()),
@@ -166,6 +170,7 @@ impl Clone for Stdio {
 impl Stdio {
     pub async fn to_std(&self) -> std::io::Result<std::process::Stdio> {
         Ok(match self {
+            Self::Nulldev => std::process::Stdio::null(),
             Self::Inherit => std::process::Stdio::inherit(),
             Self::Callback(_) => std::process::Stdio::piped(),
             Self::File(path) => tokio::fs::File::options()
@@ -188,6 +193,7 @@ pub struct CommandEnv {
     pub groups: Option<Vec<u32>>,
     pub clear_vars: bool,
     pub vars: Vec<(OsString, Option<OsString>)>,
+    pub stdin: Stdio,
     pub stdout: Stdio,
     pub stderr: Stdio,
     pub working_dir: Option<PathBuf>,
@@ -264,6 +270,12 @@ impl CommandEnv {
             sys::command_login(self, x)?;
         }
         Ok(self)
+    }
+
+    #[inline]
+    pub fn stdin(&mut self, new: Stdio) -> &mut Self {
+        self.stdin = new;
+        self
     }
 
     #[inline]

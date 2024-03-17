@@ -196,6 +196,7 @@ async fn ace_environment(
     };
 
     let to_ace = |x, y| match x {
+        airup_sdk::files::service::Stdio::Nulldev => airupfx::process::Stdio::Nulldev,
         airup_sdk::files::service::Stdio::Inherit => airupfx::process::Stdio::Inherit,
         airup_sdk::files::service::Stdio::File(path) => airupfx::process::Stdio::File(path),
         airup_sdk::files::service::Stdio::Log => log(y),
@@ -205,6 +206,7 @@ async fn ace_environment(
         .login(env.login.as_deref())?
         .uid(env.uid)
         .gid(env.gid)
+        .stdin(to_ace(env.stdin.clone(), 0))
         .stdout(to_ace(env.stdout.clone(), 1))
         .stderr(to_ace(env.stderr.clone(), 2))
         .clear_vars(env.clear_vars)

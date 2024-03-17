@@ -52,15 +52,19 @@ impl Validate for Service {
             self.service.pid_file.is_some() && matches!(self.service.kind, Kind::Oneshot);
         let forking_no_pid_file =
             self.service.pid_file.is_none() && matches!(self.service.kind, Kind::Forking);
+        let stdin_log = matches!(self.env.stdin, Stdio::Log);
 
         if env_user_conflict {
             return Err("fields `env.user` conflicts with either `env.uid` or `env.gid`".into());
         }
         if oneshot_pid_file {
-            return Err("field `pid_file` must not be set with `kind=\"oneshot\"`".into());
+            return Err("field `service.pid_file` must not be set with `kind=\"oneshot\"`".into());
         }
         if forking_no_pid_file {
-            return Err("field `pid_file` must be set with `kind=\"forking\"`".into());
+            return Err("field `service.pid_file` must be set with `kind=\"forking\"`".into());
+        }
+        if stdin_log {
+            return Err("value of field `env.stdin` cannot be \"log\"".into());
         }
 
         Ok(())
@@ -88,6 +92,10 @@ pub struct Env {
     #[serde(default)]
     pub clear_vars: bool,
 
+    /// This field redirects standard input stream.
+    #[serde(default = "Env::default_stdin")]
+    pub stdin: Stdio,
+
     /// This field redirects standard output stream.
     #[serde(default)]
     pub stdout: Stdio,
@@ -107,11 +115,19 @@ pub struct Env {
     #[serde(default)]
     pub vars: HashMap<String, Option<String>>,
 }
+impl Env {
+    fn default_stdin() -> Stdio {
+        Stdio::Nulldev
+    }
+}
 
 /// Representation of Standard I/O redirection.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Stdio {
+    /// Redirects `stdio` to null device.
+    Nulldev,
+
     /// Inherits `stdio` from the parent process.
     Inherit,
 

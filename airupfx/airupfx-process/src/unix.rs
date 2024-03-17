@@ -184,14 +184,6 @@ impl Child {
     pub(crate) async fn kill(&self) -> std::io::Result<()> {
         self.send_signal(libc::SIGKILL).await
     }
-
-    /*pub(crate) fn stdout(&self) -> Option<Arc<LinePiper>> {
-        self.stdout.clone()
-    }
-
-    pub(crate) fn stderr(&self) -> Option<Arc<LinePiper>> {
-        self.stderr.clone()
-    }*/
 }
 impl Drop for Child {
     fn drop(&mut self) {
@@ -330,7 +322,8 @@ pub(crate) async fn command_to_std(
     });
     result
         .stdout(command.env.stdout.to_std().await?)
-        .stderr(command.env.stderr.to_std().await?);
+        .stderr(command.env.stderr.to_std().await?)
+        .stdin(command.stdin.to_std().await?);
     if command.env.setsid {
         result.setsid();
     }
