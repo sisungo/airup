@@ -140,20 +140,18 @@ impl Child {
 
     /// Waits until the task completed.
     #[inline]
-    pub fn wait(&self) -> BoxFuture<Result<Wait, Error>> {
-        Box::pin(async move {
-            Ok(match self {
-                Self::Async(child) => Wait::new(child.id(), ExitStatus::SUCCESS),
-                Self::AlwaysSuccess(child) => {
-                    let mut wait = child.wait().await?;
-                    wait.exit_status = ExitStatus::SUCCESS;
-                    wait
-                }
-                Self::Process(proc) => proc.wait().await?,
-                Self::Builtin(builtin) => {
-                    Wait::new(0, builtins::wait(&mut *builtin.lock().await).await)
-                }
-            })
+    pub async fn wait(&self) -> Result<Wait, Error> {
+        Ok(match self {
+            Self::Async(child) => Wait::new(child.id(), ExitStatus::SUCCESS),
+            Self::AlwaysSuccess(child) => {
+                let mut wait = Box::pin(child.wait()).await?;
+                wait.exit_status = ExitStatus::SUCCESS;
+                wait
+            }
+            Self::Process(proc) => proc.wait().await?,
+            Self::Builtin(builtin) => {
+                Wait::new(0, builtins::wait(&mut *builtin.lock().await).await)
+            }
         })
     }
 
@@ -181,32 +179,28 @@ impl Child {
 
     /// Sends a signal to the task.
     #[inline]
-    pub fn send_signal(&self, sig: i32) -> BoxFuture<Result<(), Error>> {
-        Box::pin(async move {
-            match self {
-                Self::Async(child) => child.send_signal(sig).await?,
-                Self::AlwaysSuccess(child) => child.send_signal(sig).await?,
-                Self::Process(proc) => proc.send_signal(sig).await?,
-                Self::Builtin(builtin) => builtin.lock().await.abort(),
-            };
+    pub async fn send_signal(&self, sig: i32) -> Result<(), Error> {
+        match self {
+            Self::Async(child) => Box::pin(child.send_signal(sig)).await?,
+            Self::AlwaysSuccess(child) => Box::pin(child.send_signal(sig)).await?,
+            Self::Process(proc) => proc.send_signal(sig).await?,
+            Self::Builtin(builtin) => builtin.lock().await.abort(),
+        };
 
-            Ok(())
-        })
+        Ok(())
     }
 
     /// Kills the task.
     #[inline]
-    pub fn kill(&self) -> BoxFuture<Result<(), Error>> {
-        Box::pin(async move {
-            match self {
-                Self::Async(child) => child.kill().await?,
-                Self::AlwaysSuccess(child) => child.kill().await?,
-                Self::Process(proc) => proc.kill().await?,
-                Self::Builtin(builtin) => builtin.lock().await.abort(),
-            };
+    pub async fn kill(&self) -> Result<(), Error> {
+        match self {
+            Self::Async(child) => Box::pin(child.kill()).await?,
+            Self::AlwaysSuccess(child) => Box::pin(child.kill()).await?,
+            Self::Process(proc) => proc.kill().await?,
+            Self::Builtin(builtin) => builtin.lock().await.abort(),
+        };
 
-            Ok(())
-        })
+        Ok(())
     }
 
     /// Attempts to kill the process with given signal number. If the process did not terminate in specified time, it will be

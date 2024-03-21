@@ -74,53 +74,51 @@ impl crate::app::Airupd {
     }
 }
 
-fn enter_milestone(name: String, hist: &mut AHashSet<String>) -> BoxFuture<'_, Result<(), Error>> {
-    Box::pin(async move {
-        let def = match app::airupd().storage.milestones.get(&name).await {
-            Ok(x) => x,
-            Err(err) => {
-                tracing::error!(target: "console", "Failed to enter milestone `{}`: {}", name, err);
-                return Err(err.into());
-            }
-        };
-
-        // Detects if dependency ring exists. If a dependency ring is detected, it's automatically broken, then a warning
-        // event is recorded, and the method immediately returns.
-        if !hist.insert(name.clone()) {
-            tracing::warn!(
-                target: "console",
-                "Dependency loop detected for milestone `{}`. Breaking loop.",
-                def.display_name()
-            );
-            return Ok(());
+async fn enter_milestone(name: String, hist: &mut AHashSet<String>) -> Result<(), Error> {
+    let def = match app::airupd().storage.milestones.get(&name).await {
+        Ok(x) => x,
+        Err(err) => {
+            tracing::error!(target: "console", "Failed to enter milestone `{}`: {}", name, err);
+            return Err(err.into());
         }
+    };
 
-        tracing::info!(target: "console", "Entering milestone {}", def.display_name());
-        let begin_timestamp = airupfx::time::timestamp_ms();
+    // Detects if dependency ring exists. If a dependency ring is detected, it's automatically broken, then a warning
+    // event is recorded, and the method immediately returns.
+    if !hist.insert(name.clone()) {
+        tracing::warn!(
+            target: "console",
+            "Dependency loop detected for milestone `{}`. Breaking loop.",
+            def.display_name()
+        );
+        return Ok(());
+    }
 
-        // Enters dependency milestones
-        for dep in def.manifest.milestone.dependencies.iter() {
-            enter_milestone(dep.into(), hist).await.ok();
-        }
+    tracing::info!(target: "console", "Entering milestone {}", def.display_name());
+    let begin_timestamp = airupfx::time::timestamp_ms();
 
-        // By default, Airup sets `AIRUP_MILESTONE` environment variable to indicate services which milestone is the system
-        // in as it is started.
-        std::env::set_var("AIRUP_MILESTONE", &name);
+    // Enters dependency milestones
+    for dep in def.manifest.milestone.dependencies.iter() {
+        Box::pin(enter_milestone(dep.into(), hist)).await.ok();
+    }
 
-        // Starts services
-        exec_milestone(&def).await;
+    // By default, Airup sets `AIRUP_MILESTONE` environment variable to indicate services which milestone is the system
+    // in as it is started.
+    std::env::set_var("AIRUP_MILESTONE", &name);
 
-        // Record the milestone as entered
-        let finish_timestamp = airupfx::time::timestamp_ms();
-        let record = EnteredMilestone {
-            name: name.clone(),
-            begin_timestamp,
-            finish_timestamp,
-        };
-        airupd().milestones.stack.write().unwrap().push(record);
+    // Starts services
+    exec_milestone(&def).await;
 
-        Ok(())
-    })
+    // Record the milestone as entered
+    let finish_timestamp = airupfx::time::timestamp_ms();
+    let record = EnteredMilestone {
+        name: name.clone(),
+        begin_timestamp,
+        finish_timestamp,
+    };
+    airupd().milestones.stack.write().unwrap().push(record);
+
+    Ok(())
 }
 
 async fn exec_milestone(def: &Milestone) {
