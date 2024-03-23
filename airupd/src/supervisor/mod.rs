@@ -15,12 +15,12 @@ use std::{
     cmp,
     sync::{
         atomic::{self, AtomicBool, AtomicI32, AtomicI64},
-        Arc, RwLock,
+        Arc, Mutex, RwLock,
     },
     time::Duration,
 };
 use task::{Empty, TaskHandle};
-use tokio::sync::{mpsc, oneshot, watch};
+use tokio::sync::{mpsc, oneshot};
 
 macro_rules! supervisor_req {
     ($name:ident, $ret:ty, $req:expr) => {
@@ -271,7 +271,6 @@ impl Supervisor {
                 Some(wait) = do_child(&self.context, self.current_task.has_task()) => self.handle_wait(wait).await,
                 Some(handle) = self.current_task.wait() => self.handle_wait_task(handle).await,
                 Some(_) = Timers::wait(&mut self.timers.health_check) => self.handle_health_check().await,
-                status = self.context.status.changes() => self.handle_status_change(status).await,
                 Ok(event) = self.events.recv() => self.handle_event(&event).await,
             }
         }
@@ -337,12 +336,6 @@ impl Supervisor {
         }
     }
 
-    async fn handle_status_change(&mut self, new: Status) {
-        if let Status::Stopped = new {
-            self.timers.on_stop();
-        }
-    }
-
     /// Called when the child process was terminated.
     ///
     /// This firstly sets the status of the service to `Stopped`. If retrying is enabled (`user_stop_service` is not called; even
@@ -376,6 +369,8 @@ impl Supervisor {
     async fn handle_health_check(&mut self) {
         if self.context.status.get() == Status::Active {
             self.health_check().await.ok();
+        } else if let Some(alarm) = &mut self.timers.health_check {
+            alarm.disable();
         }
     }
 
@@ -593,16 +588,15 @@ impl SupervisorContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct StatusContext {
-    sender: watch::Sender<Status>,
-    receiver: watch::Receiver<Status>,
+    data: Mutex<Status>,
     timestamp: AtomicI64,
 }
 impl StatusContext {
     /// Gets current status.
     fn get(&self) -> Status {
-        *self.receiver.borrow()
+        *self.data.lock().unwrap()
     }
 
     /// Gets the timestamp of last status change.
@@ -612,32 +606,10 @@ impl StatusContext {
 
     /// Changes current status updating timestamp.
     fn set(&self, new: Status) {
+        let mut lock = self.data.lock().unwrap();
         self.timestamp
             .store(airupfx::time::timestamp_ms(), atomic::Ordering::Release);
-        self.sender
-            .send(new)
-            .expect("the channel in `StatusContext` should never be closed");
-    }
-
-    /// Waits until the status is changed.
-    async fn changes(&self) -> Status {
-        let mut receiver = self.receiver.clone();
-        receiver
-            .changed()
-            .await
-            .expect("the channel in `StatusContext` should never be closed");
-        let x = *receiver.borrow();
-        x
-    }
-}
-impl Default for StatusContext {
-    fn default() -> Self {
-        let (sender, receiver) = watch::channel(Status::default());
-        Self {
-            sender,
-            receiver,
-            timestamp: AtomicI64::default(),
-        }
+        *lock = new;
     }
 }
 
@@ -754,12 +726,6 @@ impl Timers {
     fn on_start(&mut self) {
         if let Some(alarm) = &mut self.health_check {
             alarm.enable();
-        }
-    }
-
-    fn on_stop(&mut self) {
-        if let Some(alarm) = &mut self.health_check {
-            alarm.disable();
         }
     }
 }

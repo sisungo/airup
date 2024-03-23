@@ -77,7 +77,7 @@ impl Named for Service {
 }
 
 /// Executation environment of a service.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Env {
     /// Login user to execute for the service.
     pub login: Option<String>,
@@ -93,15 +93,15 @@ pub struct Env {
     pub clear_vars: bool,
 
     /// This field redirects standard input stream.
-    #[serde(default = "Env::default_stdin")]
+    #[serde(default = "Stdio::default_nulldev")]
     pub stdin: Stdio,
 
     /// This field redirects standard output stream.
-    #[serde(default)]
+    #[serde(default = "Stdio::default_log")]
     pub stdout: Stdio,
 
     /// This field redirects standard error stream.
-    #[serde(default)]
+    #[serde(default = "Stdio::default_log")]
     pub stderr: Stdio,
 
     /// Working directory to start the service.
@@ -115,14 +115,24 @@ pub struct Env {
     #[serde(default)]
     pub vars: HashMap<String, Option<String>>,
 }
-impl Env {
-    fn default_stdin() -> Stdio {
-        Stdio::Nulldev
+impl Default for Env {
+    fn default() -> Self {
+        Self {
+            login: None,
+            uid: None,
+            gid: None,
+            clear_vars: false,
+            stdin: Stdio::Nulldev,
+            stdout: Stdio::Log,
+            stderr: Stdio::Log,
+            working_dir: None,
+            vars: HashMap::default(),
+        }
     }
 }
 
 /// Representation of Standard I/O redirection.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Stdio {
     /// Redirects `stdio` to null device.
@@ -135,8 +145,16 @@ pub enum Stdio {
     File(PathBuf),
 
     /// Use the Airup logger to record `stdio` outputs.
-    #[default]
     Log,
+}
+impl Stdio {
+    fn default_log() -> Self {
+        Self::Log
+    }
+
+    fn default_nulldev() -> Self {
+        Self::Nulldev
+    }
 }
 
 /// Represents to `[service]` section in a service TOML file.
