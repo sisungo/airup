@@ -48,7 +48,7 @@ impl Manager {
                 .await);
         }
 
-        Err(airup_sdk::Error::UnitNotFound)
+        Err(airup_sdk::Error::NotFound)
     }
 
     /// Removes the [`Logger`] instance which was previously set.

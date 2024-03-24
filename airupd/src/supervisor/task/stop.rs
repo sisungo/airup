@@ -50,7 +50,7 @@ impl StopService {
     async fn run(&mut self) -> Result<(), Error> {
         // The task immediately fails if the service is not active
         if self.context.status.get() != Status::Active {
-            return Err(Error::UnitNotStarted);
+            return Err(Error::NotStarted);
         }
 
         // Auto saving of last error is disabled for this task

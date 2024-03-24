@@ -138,6 +138,12 @@ async fn use_logger(logger: Option<String>) -> Result<(), Error> {
 
 #[airupfx::macros::api]
 async fn tail_logs(subject: String, n: usize) -> Result<Vec<LogRecord>, Error> {
+    if n > 1024 + 512 {
+        return Err(Error::invalid_params(
+            "method `system.tail_logs(subject, n)` only accepts `n < 1024 + 512`",
+        ));
+    }
+
     let queried = airupd()
         .logger
         .tail(&subject, n)

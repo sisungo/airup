@@ -57,7 +57,7 @@ impl ReloadService {
 
     async fn run(&mut self) -> Result<(), Error> {
         if self.status != Status::Active {
-            return Err(Error::UnitNotStarted);
+            return Err(Error::NotStarted);
         }
 
         let ace = std::mem::replace(&mut self.ace, Err(Error::internal("taken ace")))?;

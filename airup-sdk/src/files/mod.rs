@@ -65,13 +65,13 @@ impl IntoApiError for ReadError {
     fn into_api_error(self) -> crate::Error {
         match self {
             Self::Io(err) => match err.kind() {
-                std::io::ErrorKind::NotFound => crate::Error::UnitNotFound,
+                std::io::ErrorKind::NotFound => crate::Error::NotFound,
                 _ => crate::Error::Io {
                     message: err.to_string(),
                 },
             },
-            Self::Parse(x) => crate::Error::BadUnit { message: x.into() },
-            Self::Validation(x) => crate::Error::BadUnit { message: x },
+            Self::Parse(x) => crate::Error::BadObject { message: x.into() },
+            Self::Validation(x) => crate::Error::BadObject { message: x },
         }
     }
 }

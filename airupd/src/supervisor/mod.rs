@@ -120,7 +120,7 @@ impl Manager {
         provided: &mut AHashMap<String, Arc<SupervisorHandle>>,
         permissive: bool,
     ) -> Result<(), Error> {
-        let handle = supervisors.get(name).ok_or(Error::UnitNotStarted)?.clone();
+        let handle = supervisors.get(name).ok_or(Error::NotStarted)?.clone();
         let queried = handle.query().await;
 
         let is_providing = |provided: &mut AHashMap<_, _>, i| {
@@ -152,7 +152,7 @@ impl Manager {
             }
             Ok(())
         } else if queried.status != Status::Stopped {
-            Err(Error::UnitStarted)
+            Err(Error::Started)
         } else if queried.task_class.is_some() {
             Err(Error::TaskExists)
         } else {
@@ -234,7 +234,7 @@ impl SupervisorHandle {
 
     pub async fn make_active(&self) -> Result<(), Error> {
         match self.make_active_raw().await?.wait().await {
-            Ok(_) | Err(Error::UnitStarted) => Ok(()),
+            Ok(_) | Err(Error::Started) => Ok(()),
             Err(err) => Err(err),
         }
     }
@@ -792,7 +792,7 @@ impl crate::app::Airupd {
             Some(supervisor) => Ok(supervisor.stop().await?),
             None => {
                 self.storage.get_service_patched(name).await?;
-                Err(Error::UnitNotStarted)
+                Err(Error::NotStarted)
             }
         }
     }
@@ -806,7 +806,7 @@ impl crate::app::Airupd {
             Some(supervisor) => Ok(supervisor.kill().await?),
             None => {
                 self.storage.get_service_patched(name).await?;
-                Err(Error::UnitNotStarted)
+                Err(Error::NotStarted)
             }
         }
     }
@@ -821,7 +821,7 @@ impl crate::app::Airupd {
             Some(supervisor) => Ok(supervisor.reload().await?),
             None => {
                 self.storage.get_service_patched(name).await?;
-                Err(Error::UnitNotStarted)
+                Err(Error::NotStarted)
             }
         }
     }
@@ -855,7 +855,7 @@ impl crate::app::Airupd {
             Some(supervisor) => Ok(supervisor.interrupt_task().await?),
             None => {
                 self.storage.get_service_patched(name).await?;
-                Err(Error::UnitNotStarted)
+                Err(Error::NotStarted)
             }
         }
     }

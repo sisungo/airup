@@ -7,6 +7,7 @@ use thiserror::Error;
 /// Represents to an API error.
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE", tag = "code")]
+#[non_exhaustive]
 pub enum ApiError {
     /// The requested method was not found.
     #[error("no such method")]
@@ -22,27 +23,30 @@ pub enum ApiError {
 
     /// The response format is not considered.
     #[error("bad response ({kind}): {message}")]
-    BadResponse { kind: String, message: String },
+    BadResponse {
+        kind: Cow<'static, str>,
+        message: String,
+    },
 
     /// The requested object already exists.
-    #[error("unit already exists")]
-    UnitExists,
+    #[error("object already exists")]
+    Exists,
 
     /// The requested object was not found.
-    #[error("unit not found")]
-    UnitNotFound,
+    #[error("object not found")]
+    NotFound,
 
     /// The requested object has not been configured yet.
-    #[error("unit not started")]
-    UnitNotStarted,
+    #[error("object not started")]
+    NotStarted,
 
     /// The requested object is already configured.
-    #[error("unit already started")]
-    UnitStarted,
+    #[error("object already started")]
+    Started,
 
     /// The requested object format is not considered.
-    #[error("unit ill formatted: {message}")]
-    BadUnit { message: Cow<'static, str> },
+    #[error("object ill formatted: {message}")]
+    BadObject { message: Cow<'static, str> },
 
     /// The requested user was not found.
     #[error("user not found")]
@@ -120,7 +124,7 @@ impl ApiError {
         }
     }
 
-    pub fn bad_response(kind: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn bad_response(kind: impl Into<Cow<'static, str>>, message: impl Into<String>) -> Self {
         Self::BadResponse {
             kind: kind.into(),
             message: message.into(),

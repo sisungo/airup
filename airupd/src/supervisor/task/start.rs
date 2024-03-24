@@ -51,7 +51,7 @@ impl StartService {
     async fn run(&mut self) -> Result<(), Error> {
         // The task immediately fails if the service is already active
         if self.context.status.get() == Status::Active {
-            return Err(Error::UnitStarted);
+            return Err(Error::Started);
         }
 
         // The task immediately fails if the service is `forking`-kinded, and supervising it is not supported on the system

@@ -97,7 +97,7 @@ fn stop_service_task(service: String) -> JoinHandle<()> {
         match airupd().stop_service(&service).await {
             Ok(x) => {
                 if let Err(err) = x.wait().await {
-                    if !matches!(err, Error::UnitNotStarted) {
+                    if !matches!(err, Error::NotStarted) {
                         error = Some(err);
                     }
                 } else {
@@ -105,7 +105,7 @@ fn stop_service_task(service: String) -> JoinHandle<()> {
                 }
             }
             Err(err) => {
-                if matches!(err, Error::UnitNotFound | Error::UnitNotStarted) {
+                if matches!(err, Error::NotFound | Error::NotStarted) {
                     return;
                 }
                 error = Some(err);

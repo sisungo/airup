@@ -214,7 +214,7 @@ async fn exec_milestone_sync(def: &Milestone) {
 
     for (name, handle) in handles {
         match handle.wait().await {
-            Ok(_) | Err(Error::UnitStarted) => {
+            Ok(_) | Err(Error::Started) => {
                 tracing::info!(target: "console", "Starting {}", display_name(&name).await)
             }
             Err(err) => {
