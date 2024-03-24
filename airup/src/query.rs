@@ -60,7 +60,7 @@ fn query_service(
         .map_err(|e| anyhow!("failed to query service `{}`: {}", service_name, e))?;
     print_query_service(&queried);
 
-    if let Ok(Ok(logs)) = conn.tail_logs(&format!("airup_service_{}", service_name), 4) {
+    if let Ok(Ok(logs)) = conn.tail_logs(&format!("airup_service_{}", service_name), n as _) {
         println!("\n{}", style("Logs:").bold().underlined());
         for log in logs {
             println!("{}", log.message);

@@ -8,8 +8,8 @@ static TIMER_APP: OnceLock<TimerApp> = OnceLock::new();
 
 #[derive(Debug)]
 pub struct TimerApp {
-    pub startup_time: Instant,
-    pub persistent_time: Instant,
+    pub _startup_time: Instant,
+    pub _persistent_time: Instant,
     timers: Mutex<HashMap<String, Timer>>,
 }
 impl TimerApp {
@@ -42,8 +42,8 @@ pub fn timer_app() -> &'static TimerApp {
 /// Initializes the Timer app for use of [`timer_app`].
 pub async fn init() -> anyhow::Result<()> {
     let object = TimerApp {
-        startup_time: Instant::now(),
-        persistent_time: Instant::now(),
+        _startup_time: Instant::now(),
+        _persistent_time: Instant::now(),
         timers: HashMap::with_capacity_and_hasher(16, ahash::RandomState::new()).into(),
     };
     TIMER_APP.set(object).unwrap();
