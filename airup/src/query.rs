@@ -16,36 +16,57 @@ pub struct Cmdline {
     #[arg(short, long, conflicts_with = "selector")]
     all: bool,
 
+    #[arg(long)]
+    fetch_log: Option<u32>,
+
     selector: Option<String>,
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     let mut conn = super::connect()?;
-    match cmdline.selector {
+    match &cmdline.selector {
         Some(x) if x.starts_with("pid=") => {
             todo!()
         }
         Some(x) if x.ends_with(".airm") => {
             todo!()
         }
-        Some(x) => {
-            let queried = conn
-                .query_service(&x)?
-                .map_err(|e| anyhow!("failed to query service `{}`: {}", x, e))?;
-            print_query_service(&queried);
+        Some(x) => query_service(&mut conn, &cmdline, x),
+        None => query_system(&mut conn, &cmdline),
+    }
+}
 
-            if let Ok(Ok(logs)) = conn.tail_logs(&format!("airup_service_{}", x), 4) {
-                println!("\n{}", style("Logs:").bold().underlined());
-                for log in logs {
-                    println!("{}", log.message);
-                }
-            }
-        }
-        None => {
-            let query_system = conn.query_system()??;
-            print_query_system(&mut conn, &query_system, &cmdline)?;
+fn query_system(conn: &mut Connection, cmdline: &Cmdline) -> anyhow::Result<()> {
+    let query_system = conn.query_system()??;
+    print_query_system(conn, &query_system, cmdline)?;
+
+    Ok(())
+}
+
+fn query_service(
+    conn: &mut Connection,
+    cmdline: &Cmdline,
+    service_name: &str,
+) -> anyhow::Result<()> {
+    let n = cmdline.fetch_log.unwrap_or(8);
+    if n > 1024 + 512 {
+        return Err(anyhow!(
+            "only fetching less than `1024 + 512` log records are allowed"
+        ));
+    }
+
+    let queried = conn
+        .query_service(service_name)?
+        .map_err(|e| anyhow!("failed to query service `{}`: {}", service_name, e))?;
+    print_query_service(&queried);
+
+    if let Ok(Ok(logs)) = conn.tail_logs(&format!("airup_service_{}", service_name), 4) {
+        println!("\n{}", style("Logs:").bold().underlined());
+        for log in logs {
+            println!("{}", log.message);
         }
     }
+
     Ok(())
 }
 
