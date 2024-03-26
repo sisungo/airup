@@ -1,6 +1,8 @@
 //! File: airup.h
 //! Description: Main header file of the Airup SDK for C
 //! License: MIT
+//!
+//! For documents of usage and API reference of the SDK, see Airup documents.
 
 #pragma once
 

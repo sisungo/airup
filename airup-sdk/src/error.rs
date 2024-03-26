@@ -10,7 +10,7 @@ use thiserror::Error;
 #[non_exhaustive]
 pub enum ApiError {
     /// The requested method was not found.
-    #[error("no such method")]
+    #[error("function not implemented")]
     NoSuchMethod,
 
     /// The requested method's parameter requirements wasn't satisfied.
