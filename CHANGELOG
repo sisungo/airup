@@ -1,3 +1,7 @@
+Changes in v0.9.3:
+ * feature: cli: customize how many log records are fetched
+ * fix: potential OOM attack
+
 Changes in v0.9.2:
  * feature: support of redirecting `stdin`
  * feature: allow re-creating the ipc socket after misdeleting by using signal SIGHUP
