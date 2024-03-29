@@ -38,7 +38,7 @@ pub fn api(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_ma
     };
 
     quote! {
-        #vis fn #ident(_: Arc<SessionContext>, req: Request) -> MethodFuture {
+        #vis fn #ident(req: Request) -> MethodFuture {
             #asyncness fn _airupfx_macro_internal_fn(#args) -> #ret #body
             Box::pin(async move {
                 let (#pat_args): (#tuple_type) = req.extract_params()?;

@@ -1,14 +1,14 @@
 //! APIs that provides system operations.
 
 use super::{Method, MethodFuture};
-use crate::{app::airupd, ipc::SessionContext};
+use crate::app::airupd;
 use airup_sdk::{
     files::Service,
     ipc::Request,
     system::{Event, LogRecord, QueryService, QuerySystem},
     Error,
 };
-use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
+use std::{collections::HashMap, hash::BuildHasher};
 
 pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     crate::ipc_methods!(

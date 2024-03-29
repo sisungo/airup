@@ -1,12 +1,12 @@
 //! APIs that provides Airup debugging utilities.
 
-use super::{Method, MethodFuture, SessionContext};
+use super::{Method, MethodFuture};
 use crate::app::airupd;
 use airup_sdk::{
     error::ApiError,
     ipc::{Request, Response},
 };
-use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
+use std::{collections::HashMap, hash::BuildHasher};
 
 pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     crate::ipc_methods!(debug, [echo_raw, dump, exit, is_forking_supervisable,])
@@ -16,7 +16,7 @@ pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H
         });
 }
 
-fn echo_raw(_: Arc<SessionContext>, x: Request) -> MethodFuture {
+fn echo_raw(x: Request) -> MethodFuture {
     Box::pin(async {
         x.extract_params::<Response>()
             .unwrap_or_else(|x| Response::Err(ApiError::invalid_params(x)))

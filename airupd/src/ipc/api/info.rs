@@ -1,9 +1,8 @@
 //! APIs that provides information about Airup and the system.
 
 use super::{Method, MethodFuture};
-use crate::ipc::SessionContext;
 use airup_sdk::{build::BuildManifest, ipc::Request, Error};
-use std::{collections::HashMap, hash::BuildHasher, sync::Arc};
+use std::{collections::HashMap, hash::BuildHasher};
 
 pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     crate::ipc_methods!(info, [version, build_manifest,])

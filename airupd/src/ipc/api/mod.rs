@@ -4,14 +4,12 @@ mod debug;
 mod info;
 mod system;
 
-use super::SessionContext;
 use ahash::AHashMap;
 use airup_sdk::{
     ipc::{Request, Response},
     Error,
 };
 use airupfx::prelude::*;
-use std::sync::Arc;
 
 /// The Airup IPC API (implementation) manager.
 #[derive(Debug)]
@@ -36,10 +34,10 @@ impl Manager {
     }
 
     /// Invokes a method by the given request.
-    pub(super) async fn invoke(&self, context: Arc<SessionContext>, req: Request) -> Response {
+    pub(super) async fn invoke(&self, req: Request) -> Response {
         let method = self.methods.get(&req.method[..]).copied();
         match method {
-            Some(method) => Response::new(method(context, req).await),
+            Some(method) => Response::new(method(req).await),
             None => Response::Err(Error::NoSuchMethod),
         }
     }
@@ -51,7 +49,7 @@ impl Default for Manager {
 }
 
 /// Represents to an IPC method.
-pub(super) type Method = fn(Arc<SessionContext>, Request) -> MethodFuture;
+pub(super) type Method = fn(Request) -> MethodFuture;
 
 /// Represents to future type of an IPC method.
 pub type MethodFuture = BoxFuture<'static, Result<serde_json::Value, Error>>;
