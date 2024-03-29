@@ -76,8 +76,9 @@ pub fn signal<
 
 /// Ignores a signal.
 ///
-/// ## Errors
+/// # Errors
 /// An `Err(_)` is returned if the underlying OS function failed.
 pub fn ignore(signum: i32) -> std::io::Result<()> {
+    // Why not using `SIG_IGN`: it is by default inherited by child processes.
     signal(signum, |_| async {})
 }

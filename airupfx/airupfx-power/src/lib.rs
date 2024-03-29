@@ -10,6 +10,9 @@ cfg_if::cfg_if! {
     } else if #[cfg(target_os = "linux")] {
         #[path = "linux.rs"]
         mod sys;
+    } else if #[cfg(target_os = "freebsd")] {
+        #[path = "freebsd.rs"]
+        mod freebsd;
     } else {
         #[path = "common.rs"]
         mod sys;

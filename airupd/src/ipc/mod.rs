@@ -5,7 +5,7 @@ pub mod api;
 use crate::app::airupd;
 use anyhow::anyhow;
 use std::{path::PathBuf, sync::Arc};
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, mpsc};
 
 /// An instance of the Airup IPC context.
 #[derive(Debug)]
@@ -80,7 +80,12 @@ impl Server {
                     self.reload().await.ok();
                 },
                 Ok(conn) = self.server.accept() => {
-                    Session::new(conn).start();
+                    let (cancel_tx, cancel_rx) = mpsc::channel(2);
+                    let context = Arc::new(SessionContext::new(cancel_tx));
+                    let session = Session {
+                        conn, context, cancel_rx,
+                    };
+                    session.start();
                 },
             };
         }
@@ -92,16 +97,9 @@ impl Server {
 pub struct Session {
     conn: airup_sdk::nonblocking::ipc::Connection,
     context: Arc<SessionContext>,
+    cancel_rx: mpsc::Receiver<()>,
 }
 impl Session {
-    /// Creates a new `Session` with the given [`airup_sdk::nonblocking::ipc::Connection`].
-    fn new(conn: airup_sdk::nonblocking::ipc::Connection) -> Self {
-        Self {
-            conn,
-            context: Arc::default(),
-        }
-    }
-
     /// Starts the session task.
     fn start(mut self) {
         tokio::spawn(async move {
@@ -115,7 +113,10 @@ impl Session {
     async fn run(&mut self) -> anyhow::Result<()> {
         tracing::debug!("{} established", self.audit_name().await);
         loop {
-            let req = self.conn.recv_req().await?;
+            let req = tokio::select! {
+                req = self.conn.recv_req() => req.map_err(anyhow::Error::from),
+                Some(()) = self.cancel_rx.recv() => Err(anyhow!("session cancelled")),
+            }?;
             if req.method == "debug.disconnect" {
                 break Err(anyhow!("invocation of `debug.disconnect`"));
             }
@@ -145,5 +146,12 @@ impl Session {
 }
 
 /// Represents to an Airupd IPC session context.
-#[derive(Debug, Default)]
-struct SessionContext;
+#[derive(Debug)]
+struct SessionContext {
+    _cancel_tx: mpsc::Sender<()>,
+}
+impl SessionContext {
+    pub fn new(_cancel_tx: mpsc::Sender<()>) -> Self {
+        Self { _cancel_tx }
+    }
+}
