@@ -7,6 +7,7 @@ license = "MIT"
 publish = false
 
 [dependencies]
+airupfx = { path = "../airupfx/airupfx" }
 ahash = "0.8"
 airup-sdk = { path = "../airup-sdk", features = ["_internal"] }
 anyhow = "1"

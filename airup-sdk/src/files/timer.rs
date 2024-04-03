@@ -9,7 +9,16 @@ use std::num::NonZeroU32;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct Timer {
+    /// Name of the timer.
+    ///
+    /// **NOTE**: This is an internal implementation detail and may subject to change in the future. This
+    /// should **never** appear in any `.airt` files.
+    #[doc(hidden)]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub name: String,
+
     pub timer: Metadata,
+
     pub exec: Exec,
 }
 impl Validate for Timer {
@@ -36,7 +45,9 @@ impl Validate for Timer {
     }
 }
 impl Named for Timer {
-    fn set_name(&mut self, _: String) {}
+    fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
 }
 
 /// Metadata of an Airup timer.

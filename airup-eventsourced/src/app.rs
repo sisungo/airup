@@ -10,7 +10,7 @@ static AIRUP_EVENTSOURCED: OnceLock<AirupEventSourced> = OnceLock::new();
 
 #[derive(Debug)]
 pub struct AirupEventSourced {
-    _connection: tokio::sync::Mutex<Connection>,
+    connection: tokio::sync::Mutex<Connection>,
     exit_flag: watch::Sender<Option<i32>>,
     reload_flag: broadcast::Sender<()>,
 }
@@ -21,13 +21,29 @@ impl AirupEventSourced {
     /// exited.
     pub fn _trigger_event(&'static self, event: Event) {
         tokio::spawn(async move {
-            self._review_result(self._connection.lock().await.trigger_event(&event).await)
+            self.review_result(self.connection.lock().await.trigger_event(&event).await)
                 .await
         });
     }
 
+    /// Appends a log to the registered Airup logger.
+    ///
+    /// If a network error occured, this will internally set the `exit_flag` to `Some(1)` and keep pending until the program
+    /// exited.
+    pub async fn append_log(&'static self, subject: &str, module: &str, message: &str) {
+        self.review_result(
+            self.connection
+                .lock()
+                .await
+                .append_log(subject, module, message)
+                .await,
+        )
+        .await
+        .ok();
+    }
+
     /// Notifies the program to exit by setting `exit_flag` to `Some(code)`.
-    pub async fn _exit(&self, code: i32) -> ! {
+    pub async fn exit(&self, code: i32) -> ! {
         self.exit_flag.send(Some(code)).ok();
         std::future::pending().await
     }
@@ -54,10 +70,10 @@ impl AirupEventSourced {
         self.reload_flag.send(()).ok();
     }
 
-    async fn _review_result<T>(&self, val: Result<T, airup_sdk::ipc::Error>) -> T {
+    async fn review_result<T>(&self, val: Result<T, airup_sdk::ipc::Error>) -> T {
         match val {
             Ok(x) => x,
-            Err(_) => self._exit(1).await,
+            Err(_) => self.exit(1).await,
         }
     }
 }
@@ -72,9 +88,9 @@ pub fn airup_eventsourced() -> &'static AirupEventSourced {
 
 /// Initializes the Airup EventSourced app for use of [`airup_eventsourced`].
 pub async fn init() -> anyhow::Result<()> {
-    let _connection = tokio::sync::Mutex::new(Connection::connect(airup_sdk::socket_path()).await?);
+    let connection = tokio::sync::Mutex::new(Connection::connect(airup_sdk::socket_path()).await?);
     let object = AirupEventSourced {
-        _connection,
+        connection,
         exit_flag: watch::channel(None).0,
         reload_flag: broadcast::channel(1).0,
     };

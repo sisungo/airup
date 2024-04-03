@@ -1,5 +1,7 @@
 use airup_sdk::files::timer::Timer as TimerDef;
-use std::{sync::Arc, time::Duration};
+use airupfx::io::line_piper::{self, Callback as LinePiperCallback};
+use anyhow::anyhow;
+use std::{future::Future, pin::Pin, sync::Arc, time::Duration};
 use tokio::{task::JoinHandle, time::Instant};
 
 #[derive(Debug)]
@@ -47,9 +49,49 @@ async fn run_command(def: &TimerDef) -> anyhow::Result<()> {
     let mut child = tokio::process::Command::new("sh")
         .arg("-c")
         .arg(&def.exec.command)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
         .spawn()?;
+
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| anyhow!("stdout not piped"))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| anyhow!("stderr not piped"))?;
+    let name = format!("airup_timer_{}", def.name);
+    line_piper::set_callback(stdout, Box::new(LogCallback::new(name.clone(), "stdout")));
+    line_piper::set_callback(stderr, Box::new(LogCallback::new(name.clone(), "stderr")));
 
     child.wait().await?;
 
     Ok(())
+}
+
+#[derive(Clone)]
+struct LogCallback {
+    name: String,
+    module: &'static str,
+}
+impl LogCallback {
+    pub fn new(name: String, module: &'static str) -> Self {
+        Self { name, module }
+    }
+}
+impl LinePiperCallback for LogCallback {
+    fn invoke<'a>(
+        &'a self,
+        msg: &'a [u8],
+    ) -> Pin<Box<dyn for<'b> Future<Output = ()> + Send + 'a>> {
+        Box::pin(async move {
+            crate::app::airup_eventsourced()
+                .append_log(&self.name, self.module, &String::from_utf8_lossy(msg))
+                .await;
+        })
+    }
+    fn clone_boxed(&self) -> Box<dyn LinePiperCallback> {
+        Box::new(self.clone())
+    }
 }
