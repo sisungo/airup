@@ -44,7 +44,9 @@ impl CommandExt for std::process::Command {
     }
 
     fn groups(&mut self, groups: &[libc::gid_t]) -> &mut Self {
-        fn setgroups(groups: &[libc::gid_t]) -> std::io::Result<()> {
+        fn setgroups(_groups: &[libc::gid_t]) -> std::io::Result<()> {
+            /*
+            This is temporarily commented, because `setuid` always runs ahead of `setgroups`, which caused this to always fail.
             unsafe {
                 let pgid = libc::setgroups(groups.len() as _, groups.as_ptr()) as _;
                 match pgid {
@@ -53,6 +55,8 @@ impl CommandExt for std::process::Command {
                     _ => unreachable!(),
                 }
             }
+            */
+            Ok(())
         }
 
         let groups = groups.to_vec();
