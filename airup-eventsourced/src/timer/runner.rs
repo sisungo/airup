@@ -1,5 +1,5 @@
 use airup_sdk::files::timer::Timer as TimerDef;
-use airupfx::io::line_piper::{self, Callback as LinePiperCallback};
+use airupfx_io::line_piper::{self, Callback as LinePiperCallback};
 use anyhow::anyhow;
 use std::{future::Future, pin::Pin, sync::Arc, time::Duration};
 use tokio::{task::JoinHandle, time::Instant};

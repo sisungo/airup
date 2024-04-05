@@ -31,6 +31,9 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         Some(x) if x.ends_with(".airm") => {
             todo!()
         }
+        Some(x) if x.ends_with(".airt") => {
+            todo!()
+        }
         Some(x) => query_service(&mut conn, &cmdline, x),
         None => query_system(&mut conn, &cmdline),
     }

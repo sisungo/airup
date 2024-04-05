@@ -297,14 +297,14 @@ pub(crate) async fn command_to_std(
     if let Some(x) = &command.arg0 {
         result.arg0(x);
     }
-    if let Some(x) = command.env.uid {
-        result.uid(x);
+    if let Some(x) = &command.env.groups {
+        result.groups(x);
     }
     if let Some(x) = command.env.gid {
         result.gid(x);
     }
-    if let Some(x) = &command.env.groups {
-        result.groups(x);
+    if let Some(x) = command.env.uid {
+        result.uid(x);
     }
     if let Some(x) = &command.env.working_dir {
         result.current_dir(x);
