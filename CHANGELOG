@@ -1,3 +1,8 @@
+Changes in v0.9.4:
+ * feature: logging in `airup-eventsourced`'s timers
+ * compatibility: add FreeBSD support
+ * fix: cannot set groups
+
 Changes in v0.9.3:
  * feature: cli: customize how many log records are fetched
  * fix: potential OOM attack
