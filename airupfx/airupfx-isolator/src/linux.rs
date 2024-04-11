@@ -84,6 +84,15 @@ impl Realm {
         Ok(())
     }
 
+    pub fn memory_usage(&self) -> std::io::Result<usize> {
+        Ok(self
+            .cg
+            .controller_of::<MemController>()
+            .ok_or_else(|| std::io::Error::from(ErrorKind::PermissionDenied))?
+            .memory_stat()
+            .usage_in_bytes as usize)
+    }
+
     fn pid_detect() -> std::io::Result<()> {
         match std::process::id() {
             1 => Ok(()),

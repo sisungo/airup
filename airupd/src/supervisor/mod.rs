@@ -381,6 +381,12 @@ impl Supervisor {
             status: self.context.status.get(),
             status_since: Some(self.context.status.timestamp()),
             pid: self.context.pid().await.map(|x| x as _),
+            memory_usage: self
+                .context
+                .realm
+                .as_ref()
+                .and_then(|x| x.memory_usage().ok())
+                .map(|x| x as u64),
             task_class: task.map(|x| x.task_class().to_owned()),
             last_error: self.context.last_error.get(),
             definition: self.context.service.clone(),

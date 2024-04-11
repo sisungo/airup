@@ -20,4 +20,8 @@ impl Realm {
     pub fn kill(&self) -> std::io::Result<()> {
         Ok(())
     }
+
+    pub fn memory_usage(&self) -> std::io::Result<usize> {
+        Ok(0)
+    }
 }

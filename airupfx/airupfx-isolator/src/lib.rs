@@ -36,4 +36,9 @@ impl Realm {
     pub fn kill(&self) -> std::io::Result<()> {
         self.0.kill()
     }
+
+    /// Returns how many bytes of memory were used in the realm.
+    pub fn memory_usage(&self) -> std::io::Result<usize> {
+        self.0.memory_usage()
+    }
 }

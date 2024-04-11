@@ -104,6 +104,10 @@ fn print_query_service(query_service: &QueryService) {
             .map(|x| x.to_string())
             .unwrap_or_else(|| format!("{}", style("(null)").dim()))
     );
+
+    if let Some(x) = &query_service.memory_usage {
+        println!("{:>14} {}", "Memory:", x);
+    }
 }
 
 /// Prints a [`QuerySystem`] to console, in human-friendly format.
