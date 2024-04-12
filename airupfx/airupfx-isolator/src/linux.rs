@@ -37,7 +37,7 @@ impl Realm {
         let ctrl = controller();
         let id = ctrl.allocate_id();
         let hier = cgroups_rs::hierarchies::auto();
-        let cg = CgroupBuilder::new(&format!("airup_{id}_cpu"))
+        let cg = CgroupBuilder::new(&format!("airup_{id}"))
             .cpu()
             .done()
             .memory()
