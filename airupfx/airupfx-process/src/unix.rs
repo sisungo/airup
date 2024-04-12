@@ -8,10 +8,10 @@
 #![allow(unstable_name_collisions)]
 
 use super::{CommandEnv, ExitStatus, Stdio, Wait};
-use ahash::AHashMap;
 use airupfx_io::line_piper;
 use std::{
     cmp,
+    collections::HashMap,
     convert::Infallible,
     os::unix::process::CommandExt as _,
     sync::{OnceLock, RwLock},
@@ -198,7 +198,7 @@ impl Drop for Child {
 /// A queue of waiting child processes.
 #[derive(Debug, Default)]
 struct ChildQueue {
-    queue: RwLock<AHashMap<Pid, watch::Sender<Option<Wait>>>>,
+    queue: RwLock<HashMap<Pid, watch::Sender<Option<Wait>>>>,
     lock: tokio::sync::Mutex<()>,
 }
 impl ChildQueue {

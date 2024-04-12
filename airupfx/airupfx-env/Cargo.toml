@@ -9,10 +9,9 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ahash = "0.8"
 cfg-if = "1"
-quick_cache = "0.4"
-sysinfo = { version = "0.30", features = ["serde"] }
+quick_cache = "0.5"
+sysinfo = "0.30"
 tokio = { workspace = true }
 
 [target.'cfg(target_family = "unix")'.dependencies]

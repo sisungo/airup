@@ -1,9 +1,8 @@
 //! The `reboot` milestone preset series.
 
 use crate::app::airupd;
-use ahash::AHashSet;
 use airup_sdk::Error;
-use std::time::Duration;
+use std::{collections::HashSet, time::Duration};
 use tokio::task::JoinHandle;
 
 pub const PRESETS: &[&str] = &["reboot", "poweroff", "halt", "userspace-reboot"];
@@ -24,7 +23,7 @@ pub async fn enter(name: &str) -> Result<(), Error> {
 
 /// Enters the `reboot` milestone.
 async fn enter_reboot() -> Result<(), Error> {
-    super::enter_milestone("reboot".into(), &mut AHashSet::with_capacity(8))
+    super::enter_milestone("reboot".into(), &mut HashSet::with_capacity(8))
         .await
         .ok();
 
@@ -37,7 +36,7 @@ async fn enter_reboot() -> Result<(), Error> {
 
 /// Enters the `poweroff` milestone.
 async fn enter_poweroff() -> Result<(), Error> {
-    super::enter_milestone("poweroff".into(), &mut AHashSet::with_capacity(8))
+    super::enter_milestone("poweroff".into(), &mut HashSet::with_capacity(8))
         .await
         .ok();
 
@@ -50,7 +49,7 @@ async fn enter_poweroff() -> Result<(), Error> {
 
 /// Enters the `halt` milestone.
 async fn enter_halt() -> Result<(), Error> {
-    super::enter_milestone("halt".into(), &mut AHashSet::with_capacity(8))
+    super::enter_milestone("halt".into(), &mut HashSet::with_capacity(8))
         .await
         .ok();
 
@@ -63,7 +62,7 @@ async fn enter_halt() -> Result<(), Error> {
 
 /// Enters the `userspace-reboot` milestone.
 async fn enter_userspace_reboot() -> Result<(), Error> {
-    super::enter_milestone("userspace-reboot".into(), &mut AHashSet::with_capacity(8))
+    super::enter_milestone("userspace-reboot".into(), &mut HashSet::with_capacity(8))
         .await
         .ok();
 

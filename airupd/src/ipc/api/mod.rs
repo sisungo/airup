@@ -4,23 +4,23 @@ mod debug;
 mod info;
 mod system;
 
-use ahash::AHashMap;
 use airup_sdk::{
     ipc::{Request, Response},
     Error,
 };
 use airupfx::prelude::*;
+use std::collections::HashMap;
 
 /// The Airup IPC API (implementation) manager.
 #[derive(Debug)]
 pub struct Manager {
-    methods: AHashMap<&'static str, Method>,
+    methods: HashMap<&'static str, Method>,
 }
 impl Manager {
     /// Creates a new `Manager` instance.
     pub fn new() -> Self {
         let mut object = Self {
-            methods: AHashMap::with_capacity(32),
+            methods: HashMap::with_capacity(32),
         };
         object.init();
         object

@@ -4,7 +4,6 @@ pub mod early_boot;
 mod reboot;
 
 use crate::app::{self, airupd};
-use ahash::AHashSet;
 use airup_sdk::{
     files::{
         milestone::{Item, Kind},
@@ -15,9 +14,12 @@ use airup_sdk::{
     Error,
 };
 use airupfx::prelude::*;
-use std::sync::{
-    atomic::{self, AtomicBool},
-    RwLock,
+use std::{
+    collections::HashSet,
+    sync::{
+        atomic::{self, AtomicBool},
+        RwLock,
+    },
 };
 
 /// The milestone manager.
@@ -44,7 +46,7 @@ impl crate::app::Airupd {
         if reboot::PRESETS.contains(&&name[..]) {
             reboot::enter(&name).await
         } else {
-            enter_milestone(name, &mut AHashSet::with_capacity(8)).await
+            enter_milestone(name, &mut HashSet::with_capacity(8)).await
         }
     }
 
@@ -74,7 +76,7 @@ impl crate::app::Airupd {
     }
 }
 
-async fn enter_milestone(name: String, hist: &mut AHashSet<String>) -> Result<(), Error> {
+async fn enter_milestone(name: String, hist: &mut HashSet<String>) -> Result<(), Error> {
     let def = match app::airupd().storage.milestones.get(&name).await {
         Ok(x) => x,
         Err(err) => {

@@ -15,7 +15,6 @@ fallback_logger = ["rev_lines"]
 selinux = ["airupfx/selinux"]
 
 [dependencies]
-ahash = "0.8"
 anyhow = "1"
 async-broadcast = "0.7"
 async-trait = "0.1"

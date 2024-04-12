@@ -1,7 +1,7 @@
 //! Information about an Airup build.
 
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, sync::OnceLock};
+use std::{collections::HashMap, path::PathBuf, sync::OnceLock};
 
 static MANIFEST: OnceLock<BuildManifest> = OnceLock::new();
 
@@ -29,7 +29,7 @@ pub struct BuildManifest {
 
     /// Table of initial environment variables.
     #[serde(default)]
-    pub env_vars: ahash::HashMap<String, Option<String>>,
+    pub env_vars: HashMap<String, Option<String>>,
 
     /// Commands executed in `early_boot` pseudo-milestone.
     #[serde(default)]

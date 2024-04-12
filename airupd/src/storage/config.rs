@@ -1,8 +1,7 @@
 //! Represents to Airup's config directory.
 
-use ahash::HashMap;
 use airup_sdk::{files::SystemConf, prelude::*};
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 /// Main navigator of Airup's config directory.
 #[derive(Debug)]

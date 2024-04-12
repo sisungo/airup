@@ -3,12 +3,11 @@
 pub mod builtins;
 pub mod parser;
 
-use ahash::AHashMap;
 use airup_sdk::error::IntoApiError;
 use airupfx_isolator::Realm;
 use airupfx_process::{CommandEnv, ExitStatus, Wait, WaitError};
 use libc::SIGTERM;
-use std::{future::Future, pin::Pin, sync::Arc, time::Duration};
+use std::{collections::HashMap, future::Future, pin::Pin, sync::Arc, time::Duration};
 use tokio::task::JoinHandle;
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
@@ -104,11 +103,11 @@ impl Ace {
 
 #[derive(Debug, Clone)]
 struct Modules {
-    builtins: AHashMap<&'static str, builtins::BuiltinModule>,
+    builtins: HashMap<&'static str, builtins::BuiltinModule>,
 }
 impl Modules {
     fn new() -> Self {
-        let mut builtins = AHashMap::with_capacity(32);
+        let mut builtins = HashMap::with_capacity(32);
         builtins::init(&mut builtins);
         Self { builtins }
     }

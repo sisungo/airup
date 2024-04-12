@@ -4,7 +4,6 @@
 pub mod task;
 
 use crate::app::airupd;
-use ahash::AHashMap;
 use airup_sdk::{
     files::{service::WatchdogKind, Service},
     system::{Event, QueryService, Status},
@@ -13,6 +12,7 @@ use airup_sdk::{
 use airupfx::{ace::Child, isolator::Realm, process::Wait, time::Alarm};
 use std::{
     cmp,
+    collections::HashMap,
     sync::{
         atomic::{self, AtomicBool, AtomicI32, AtomicI64},
         Arc, Mutex, RwLock,
@@ -35,8 +35,8 @@ macro_rules! supervisor_req {
 /// A manager of Airup supervisors.
 #[derive(Debug, Default)]
 pub struct Manager {
-    supervisors: tokio::sync::RwLock<AHashMap<String, Arc<SupervisorHandle>>>,
-    provided: tokio::sync::RwLock<AHashMap<String, Arc<SupervisorHandle>>>,
+    supervisors: tokio::sync::RwLock<HashMap<String, Arc<SupervisorHandle>>>,
+    provided: tokio::sync::RwLock<HashMap<String, Arc<SupervisorHandle>>>,
 }
 impl Manager {
     /// Creates a new, empty [`Manager`] instance.
@@ -116,14 +116,14 @@ impl Manager {
     /// the specific service.
     async fn _remove_from(
         name: &str,
-        supervisors: &mut AHashMap<String, Arc<SupervisorHandle>>,
-        provided: &mut AHashMap<String, Arc<SupervisorHandle>>,
+        supervisors: &mut HashMap<String, Arc<SupervisorHandle>>,
+        provided: &mut HashMap<String, Arc<SupervisorHandle>>,
         permissive: bool,
     ) -> Result<(), Error> {
         let handle = supervisors.get(name).ok_or(Error::NotStarted)?.clone();
         let queried = handle.query().await;
 
-        let is_providing = |provided: &mut AHashMap<_, _>, i| {
+        let is_providing = |provided: &mut HashMap<_, _>, i| {
             if let Some(provided_handle) = provided.get(i) {
                 if Arc::ptr_eq(&handle, provided_handle) {
                     return true;

@@ -1,5 +1,5 @@
-use ahash::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Representation of Airup's system config.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

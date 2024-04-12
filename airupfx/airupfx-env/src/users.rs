@@ -1,10 +1,9 @@
 //! Inspection and manipulation of the operating system's multi-user function.
 
-use quick_cache::{sync::DefaultLifecycle, UnitWeighter};
 use std::sync::{OnceLock, RwLock};
 use sysinfo::{Uid, User};
 
-type Cache = quick_cache::sync::Cache<Request, Option<usize>, UnitWeighter, ahash::RandomState>;
+type Cache = quick_cache::sync::Cache<Request, Option<usize>>;
 
 fn sysinfo_users() -> &'static RwLock<sysinfo::Users> {
     static USERS: OnceLock<RwLock<sysinfo::Users>> = OnceLock::new();
@@ -13,15 +12,7 @@ fn sysinfo_users() -> &'static RwLock<sysinfo::Users> {
 
 fn cache() -> &'static Cache {
     static CACHE: OnceLock<Cache> = OnceLock::new();
-    CACHE.get_or_init(|| {
-        quick_cache::sync::Cache::with(
-            16,
-            16,
-            UnitWeighter,
-            ahash::RandomState::new(),
-            DefaultLifecycle::default(),
-        )
-    })
+    CACHE.get_or_init(|| quick_cache::sync::Cache::new(16))
 }
 
 /// Refreshes users database.

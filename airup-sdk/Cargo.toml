@@ -21,7 +21,6 @@ ffi = ["blocking"]
 tokio-1 = ["tokio", "nonblocking"]
 
 [dependencies]
-ahash = "0.8"
 cfg-if = "1"
 libc = "0.2"
 json-patch = "1"

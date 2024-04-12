@@ -2,9 +2,8 @@
 //! This module contains [`Service`], the main file format of an Airup service and its combinations.
 
 use super::{Named, ReadError, Validate};
-use ahash::HashMap;
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, time::Duration};
+use std::{collections::HashMap, path::PathBuf, time::Duration};
 
 /// An Airup service.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
