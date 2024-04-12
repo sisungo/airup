@@ -12,6 +12,7 @@ mod self_reload;
 mod start;
 mod stop;
 mod trigger_event;
+mod util;
 
 use anyhow::anyhow;
 use clap::Parser;

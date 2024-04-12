@@ -106,7 +106,7 @@ fn print_query_service(query_service: &QueryService) {
     );
 
     if let Some(x) = &query_service.memory_usage {
-        println!("{:>14} {}", "Memory:", x);
+        println!("{:>14} {}", "Memory:", crate::util::format_size(*x));
     }
 }
 
