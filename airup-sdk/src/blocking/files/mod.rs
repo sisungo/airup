@@ -15,15 +15,15 @@ pub fn read_merge<T: DeserializeOwned + Validate + Named>(
         panic!("parameter `paths` must not be empty");
     };
     let main = std::fs::read_to_string(main_path)?;
-    let mut main: serde_json::Value = toml::from_str(&main)?;
+    let mut main = toml::from_str(&main)?;
 
     for path in &paths[1..] {
         let content = std::fs::read_to_string(path)?;
-        let patch: serde_json::Value = toml::from_str(&content)?;
-        json_patch::merge(&mut main, &patch);
+        let patch = toml::from_str(&content)?;
+        crate::files::merge(&mut main, &patch);
     }
 
-    let mut object: T = serde_json::from_value(main)?;
+    let mut object: T = T::deserialize(main)?;
 
     object.validate()?;
     object.set_name(main_path.file_stem().unwrap().to_string_lossy().into());

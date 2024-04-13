@@ -20,6 +20,29 @@ pub trait Named {
     fn set_name(&mut self, name: String);
 }
 
+pub fn merge(doc: &mut toml::Value, patch: &toml::Value) {
+    if !patch.is_table() {
+        *doc = patch.clone();
+        return;
+    }
+
+    if !doc.is_table() {
+        *doc = toml::Value::Table(toml::Table::new());
+    }
+    let map = doc.as_table_mut().unwrap();
+    for (key, value) in patch.as_table().unwrap() {
+        if value.is_table() && value.as_table().unwrap().is_empty() {
+            map.remove(key.as_str());
+        } else {
+            merge(
+                map.entry(key.as_str())
+                    .or_insert(toml::Value::Table(toml::Table::new())),
+                value,
+            );
+        }
+    }
+}
+
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum ReadError {
     #[error("{0}")]
@@ -39,11 +62,6 @@ impl From<std::io::Error> for ReadError {
 impl From<toml::de::Error> for ReadError {
     fn from(value: toml::de::Error) -> Self {
         Self::Parse(value.message().to_owned())
-    }
-}
-impl From<serde_json::Error> for ReadError {
-    fn from(value: serde_json::Error) -> Self {
-        Self::Parse(value.to_string())
     }
 }
 impl From<&'static str> for ReadError {

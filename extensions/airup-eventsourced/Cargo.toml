@@ -7,9 +7,9 @@ license = "MIT"
 publish = false
 
 [dependencies]
-airupfx-io = { path = "../airupfx/airupfx-io" }
+airupfx-io = { path = "../../airupfx/airupfx-io" }
 ahash = "0.8"
-airup-sdk = { path = "../airup-sdk", features = ["_internal"] }
+airup-sdk = { path = "../../airup-sdk", features = ["_internal"] }
 anyhow = "1"
 serde_json = "1"
 tokio = { workspace = true }

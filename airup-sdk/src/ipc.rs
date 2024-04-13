@@ -35,24 +35,23 @@ pub struct Request {
     pub method: String,
 
     #[serde(alias = "param")]
-    pub params: Option<serde_json::Value>,
+    pub params: Option<ciborium::Value>,
 }
 impl Request {
     /// Creates a new [`Request`] with given method name and parameters.
-    pub fn new<M: Into<String>, C: Serialize, P: Into<Option<C>>>(
-        method: M,
-        params: P,
-    ) -> serde_json::Result<Self> {
+    pub fn new<M: Into<String>, C: Serialize, P: Into<Option<C>>>(method: M, params: P) -> Self {
         let method = method.into();
-        let params = params.into().map(|x| serde_json::to_value(x).unwrap());
+        let params = params
+            .into()
+            .map(|x| ciborium::Value::serialized(&x).unwrap());
 
-        Ok(Self { method, params })
+        Self { method, params }
     }
 
     /// Extracts parameters from the request.
     pub fn extract_params<T: DeserializeOwned>(self) -> Result<T, ApiError> {
-        let value: serde_json::Value = self.params.into();
-        serde_json::from_value(value).map_err(ApiError::invalid_params)
+        let value = self.params.unwrap_or(ciborium::Value::Null);
+        value.deserialized().map_err(ApiError::invalid_params)
     }
 }
 
@@ -73,7 +72,7 @@ impl Request {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", tag = "status", content = "payload")]
 pub enum Response {
-    Ok(serde_json::Value),
+    Ok(ciborium::Value),
     Err(ApiError),
 }
 impl Response {
@@ -84,7 +83,7 @@ impl Response {
     /// JSON object.
     pub fn new<T: Serialize>(result: Result<T, ApiError>) -> Self {
         match result {
-            Ok(val) => Self::Ok(serde_json::to_value(&val).unwrap()),
+            Ok(val) => Self::Ok(ciborium::Value::serialized(&val).unwrap()),
             Err(err) => Self::Err(err),
         }
     }
@@ -92,7 +91,8 @@ impl Response {
     /// Converts from `Response` to a `Result`.
     pub fn into_result<T: DeserializeOwned>(self) -> Result<T, ApiError> {
         match self {
-            Self::Ok(val) => Ok(serde_json::from_value(val)
+            Self::Ok(val) => Ok(val
+                .deserialized()
                 .map_err(|err| ApiError::bad_response("TypeError", format!("{:?}", err)))?),
             Self::Err(err) => Err(err),
         }
@@ -145,7 +145,10 @@ pub enum Error {
     Io(std::io::Error),
 
     #[error("{0}")]
-    Json(serde_json::Error),
+    CborSer(ciborium::ser::Error<std::io::Error>),
+
+    #[error("{0}")]
+    CborDe(ciborium::de::Error<std::io::Error>),
 
     #[error("message too long: {0} bytes")]
     MessageTooLong(usize),
@@ -155,8 +158,13 @@ impl From<std::io::Error> for Error {
         Self::Io(value)
     }
 }
-impl From<serde_json::Error> for Error {
-    fn from(value: serde_json::Error) -> Self {
-        Self::Json(value)
+impl From<ciborium::de::Error<std::io::Error>> for Error {
+    fn from(value: ciborium::de::Error<std::io::Error>) -> Self {
+        Self::CborDe(value)
+    }
+}
+impl From<ciborium::ser::Error<std::io::Error>> for Error {
+    fn from(value: ciborium::ser::Error<std::io::Error>) -> Self {
+        Self::CborSer(value)
     }
 }

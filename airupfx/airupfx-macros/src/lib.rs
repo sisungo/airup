@@ -45,7 +45,7 @@ pub fn api(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_ma
                 _airupfx_macro_internal_fn(#pat_args)
                     .await
                     .map(|x| {
-                        serde_json::to_value(x).expect("IPC methods should return a value that can be serialized into JSON")
+                        ciborium::Value::serialized(&x).expect("IPC methods should return a value that can be serialized into JSON")
                     })
             })
         }

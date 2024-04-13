@@ -44,7 +44,7 @@ impl Connection {
         method: &str,
         params: P,
     ) -> Result<Result<T, ApiError>, IpcError> {
-        let req = Request::new(method, params).unwrap();
+        let req = Request::new(method, params);
         self.underlying.send(&req).await?;
         Ok(self.underlying.recv_resp().await?.into_result())
     }

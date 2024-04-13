@@ -5,6 +5,7 @@ use crate::{
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     future::Future,
+    io::Cursor,
     ops::{Deref, DerefMut},
     path::Path,
 };
@@ -26,18 +27,18 @@ impl Connection {
 
     /// Receives a datagram and deserializes it from JSON to `T`.
     pub async fn recv<T: DeserializeOwned>(&mut self) -> Result<T, IpcError> {
-        Ok(serde_json::from_slice(&self.0.recv().await?)?)
+        Ok(ciborium::from_reader(Cursor::new(self.0.recv().await?))?)
     }
 
     /// Receives a request from the underlying protocol.
     pub async fn recv_req(&mut self) -> Result<Request, IpcError> {
-        let req: Request = serde_json::from_slice(&self.0.recv().await?).unwrap_or_else(|err| {
-            Request::new(
-                "debug.echo_raw",
-                Response::Err(ApiError::bad_request("InvalidJson", err.to_string())),
-            )
-            .unwrap()
-        });
+        let req: Request =
+            ciborium::from_reader(Cursor::new(self.0.recv().await?)).unwrap_or_else(|err| {
+                Request::new(
+                    "debug.echo_raw",
+                    Response::Err(ApiError::bad_request("InvalidJson", err.to_string())),
+                )
+            });
         Ok(req)
     }
 
@@ -46,9 +47,11 @@ impl Connection {
         self.recv().await
     }
 
-    /// Sends a datagram with JSON-serialized given object.
+    /// Sends a datagram with CBOR-serialized given object.
     pub async fn send<T: Serialize>(&mut self, obj: &T) -> Result<(), IpcError> {
-        self.0.send(serde_json::to_string(obj)?.as_bytes()).await
+        let mut buffer = Cursor::new(Vec::with_capacity(128));
+        ciborium::into_writer(obj, &mut buffer)?;
+        self.0.send(&buffer.into_inner()).await
     }
 }
 impl Deref for Connection {

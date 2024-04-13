@@ -23,17 +23,16 @@ impl Connection {
 
     /// Receives a datagram and deserializes it from JSON to `T`.
     pub fn recv<T: DeserializeOwned>(&mut self) -> Result<T, IpcError> {
-        Ok(serde_json::from_slice(&self.0.recv()?)?)
+        Ok(ciborium::from_reader(&self.0.recv()?[..])?)
     }
 
     /// Receives a request from the underlying protocol.
     pub fn recv_req(&mut self) -> Result<Request, IpcError> {
-        let req: Request = serde_json::from_slice(&self.0.recv()?).unwrap_or_else(|err| {
+        let req: Request = ciborium::from_reader(&self.0.recv()?[..]).unwrap_or_else(|err| {
             Request::new(
                 "debug.echo_raw",
                 Response::Err(ApiError::bad_request("InvalidJson", err.to_string())),
             )
-            .unwrap()
         });
         Ok(req)
     }
@@ -43,9 +42,11 @@ impl Connection {
         self.recv()
     }
 
-    /// Sends a datagram with JSON-serialized given object.
+    /// Sends a datagram with CBOR-serialized given object.
     pub fn send<T: Serialize>(&mut self, obj: &T) -> Result<(), IpcError> {
-        self.0.send(serde_json::to_string(obj)?.as_bytes())
+        let mut buffer = Vec::with_capacity(128);
+        ciborium::into_writer(obj, &mut buffer)?;
+        self.0.send(&buffer)
     }
 }
 impl Deref for Connection {

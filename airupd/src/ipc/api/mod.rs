@@ -52,7 +52,7 @@ impl Default for Manager {
 pub(super) type Method = fn(Request) -> MethodFuture;
 
 /// Represents to future type of an IPC method.
-pub type MethodFuture = BoxFuture<'static, Result<serde_json::Value, Error>>;
+pub type MethodFuture = BoxFuture<'static, Result<ciborium::Value, Error>>;
 
 #[macro_export]
 macro_rules! ipc_methods {
