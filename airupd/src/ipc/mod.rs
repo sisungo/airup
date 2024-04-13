@@ -3,6 +3,7 @@
 pub mod api;
 
 use crate::app::airupd;
+use airup_sdk::ipc::Request;
 use anyhow::anyhow;
 use std::path::PathBuf;
 use tokio::sync::broadcast;
@@ -115,7 +116,15 @@ impl Session {
             if req.method == "debug.disconnect" {
                 break Err(anyhow!("invocation of `debug.disconnect`"));
             }
-            let resp = airupd().ipc.api.invoke(req).await;
+            let resp = match req.method.strip_prefix("extapi.") {
+                Some(method) => {
+                    airupd()
+                        .extensions
+                        .rpc_invoke(Request::new::<&str, ciborium::Value, _>(method, req.params))
+                        .await
+                }
+                None => airupd().ipc.api.invoke(req).await,
+            };
             self.conn.send(&resp).await?;
         }
     }

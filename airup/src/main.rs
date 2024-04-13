@@ -1,5 +1,6 @@
 //! # Airup CLI
 
+mod daemon;
 mod debug;
 mod disable;
 mod edit;
@@ -33,6 +34,7 @@ enum Subcommand {
     Enable(enable::Cmdline),
     Disable(disable::Cmdline),
     TriggerEvent(trigger_event::Cmdline),
+    Daemon(daemon::Cmdline),
     Debug(debug::Cmdline),
 }
 impl Subcommand {
@@ -49,6 +51,7 @@ impl Subcommand {
             Self::Enable(cmdline) => enable::main(cmdline),
             Self::Disable(cmdline) => disable::main(cmdline),
             Self::TriggerEvent(cmdline) => trigger_event::main(cmdline),
+            Self::Daemon(cmdline) => daemon::main(cmdline),
             Self::Debug(cmdline) => debug::main(cmdline),
         }
     }

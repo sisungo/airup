@@ -1,5 +1,5 @@
 [package]
-name = "airup-eventsourced"
+name = "fallback-logger"
 authors = ["sisungo <sisungo@icloud.com>"]
 version = "0.10.0-alpha.3"
 edition = "2021"
@@ -7,11 +7,10 @@ license = "MIT"
 publish = false
 
 [dependencies]
-airupfx-io = { path = "../../airupfx/airupfx-io" }
-ahash = "0.8"
+airupfx = { path = "../../airupfx/airupfx" }
 airup-sdk = { path = "../../airup-sdk", features = ["_internal"] }
 anyhow = "1"
+ciborium = "0.2"
+rev_lines = "0.3"
 serde_json = "1"
 tokio = { workspace = true }
-tracing = "0.1"
-tracing-subscriber = "0.3"

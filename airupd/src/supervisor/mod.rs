@@ -217,11 +217,6 @@ impl SupervisorHandle {
     supervisor_req!(kill, Result<(), Error>, Request::Kill);
     supervisor_req!(reload, Result<Arc<dyn TaskHandle>, Error>, Request::Reload);
     supervisor_req!(
-        get_task,
-        Result<Arc<dyn TaskHandle>, Error>,
-        Request::GetTaskHandle
-    );
-    supervisor_req!(
         interrupt_task,
         Result<Arc<dyn TaskHandle>, Error>,
         Request::InterruptTask
@@ -300,10 +295,6 @@ impl Supervisor {
             }
             Request::UpdateDef(new, chan) => {
                 chan.send(self.update_def(*new).await).ok();
-            }
-            Request::GetTaskHandle(chan) => {
-                chan.send(self.current_task.0.clone().ok_or(Error::TaskNotFound))
-                    .ok();
             }
             Request::InterruptTask(chan) => {
                 let handle = self.current_task.interrupt();
@@ -875,7 +866,6 @@ enum Request {
     Kill(oneshot::Sender<Result<(), Error>>),
     Reload(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     UpdateDef(Box<Service>, oneshot::Sender<Result<Service, Error>>),
-    GetTaskHandle(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     InterruptTask(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     MakeActive(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
 }

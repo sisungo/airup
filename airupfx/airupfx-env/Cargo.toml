@@ -10,7 +10,6 @@ publish = false
 
 [dependencies]
 cfg-if = "1"
-quick_cache = "0.5"
 sysinfo = "0.30"
 tokio = { workspace = true }
 

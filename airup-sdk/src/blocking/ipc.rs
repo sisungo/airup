@@ -21,7 +21,7 @@ impl Connection {
         )))
     }
 
-    /// Receives a datagram and deserializes it from JSON to `T`.
+    /// Receives a datagram and deserializes it from CBOR to `T`.
     pub fn recv<T: DeserializeOwned>(&mut self) -> Result<T, IpcError> {
         Ok(ciborium::from_reader(&self.0.recv()?[..])?)
     }

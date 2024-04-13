@@ -15,6 +15,7 @@ members = [
     "airupfx/airupfx-macros",
     "airupfx/airupfx-isolator",
     "extensions/airup-eventsourced",
+    "extensions/fallback-logger",
 ]
 resolver = "2"
 

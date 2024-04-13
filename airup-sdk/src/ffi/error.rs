@@ -115,16 +115,20 @@ impl ApiError {
 }
 impl From<crate::Error> for ApiError {
     fn from(value: crate::Error) -> Self {
-        let json = serde_json::to_value(&value)
-            .expect("ApiError should always be able to serialize to JSON");
+        let cbor = ciborium::Value::serialized(&value)
+            .expect("ApiError should always be able to serialize to CBOR");
         let code = alloc_c_string(
-            json.get("code")
-                .expect("ApiError JSON should always contain `code` field")
-                .as_str()
-                .expect("`code` field of ApiError JSON should always be a string"),
+            cbor.into_map()
+                .unwrap()
+                .iter()
+                .find(|x| x.0 == ciborium::Value::Text(String::from("code")))
+                .map(|x| &x.1)
+                .expect("ApiError CBOR should always contain `code` field")
+                .as_text()
+                .expect("`code` field of ApiError CBOR should always be a string"),
         );
         let message = alloc_c_string(&value.to_string());
-        let json = alloc_c_string(&json.to_string());
+        let json = alloc_c_string(&String::new());
 
         Self {
             code,

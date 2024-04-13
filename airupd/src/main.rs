@@ -1,14 +1,15 @@
 //! # airupd
 
-pub mod app;
-pub mod env;
-pub mod events;
-pub mod ipc;
-pub mod lifetime;
-pub mod logger;
-pub mod milestones;
-pub mod storage;
-pub mod supervisor;
+mod app;
+mod env;
+mod events;
+mod extension;
+mod ipc;
+mod lifetime;
+mod logger;
+mod milestones;
+mod storage;
+mod supervisor;
 
 use airupfx::prelude::*;
 

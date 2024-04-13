@@ -72,5 +72,6 @@ pub fn set_manifest(manifest: BuildManifest) {
 #[doc(hidden)]
 #[cfg(feature = "_internal")]
 fn embedded_manifest() -> BuildManifest {
-    serde_json::from_str(include_str!("../../build_manifest.json")).expect("bad airup build")
+    ciborium::from_reader(&include_bytes!(concat!(env!("OUT_DIR"), "/build_manifest.cbor"))[..])
+        .expect("bad airup build")
 }

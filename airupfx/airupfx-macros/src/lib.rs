@@ -38,14 +38,14 @@ pub fn api(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_ma
     };
 
     quote! {
-        #vis fn #ident(req: Request) -> MethodFuture {
+        #vis fn #ident(req: ::airup_sdk::ipc::Request) -> MethodFuture {
             #asyncness fn _airupfx_macro_internal_fn(#args) -> #ret #body
             Box::pin(async move {
                 let (#pat_args): (#tuple_type) = req.extract_params()?;
                 _airupfx_macro_internal_fn(#pat_args)
                     .await
                     .map(|x| {
-                        ciborium::Value::serialized(&x).expect("IPC methods should return a value that can be serialized into JSON")
+                        ::ciborium::Value::serialized(&x).expect("IPC methods should return a value that can be serialized into CBOR")
                     })
             })
         }

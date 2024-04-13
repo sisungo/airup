@@ -1,5 +1,6 @@
 use crate::{files::Service, Error};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 /// Result of querying a service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -177,11 +178,6 @@ pub trait ConnectionExt<'a>: crate::Connection {
         self.invoke("system.gc", ())
     }
 
-    /// Indicates `airupd` to register the specified logger.
-    fn use_logger(&'a mut self, name: Option<&'a str>) -> Self::Invoke<'a, ()> {
-        self.invoke("system.use_logger", name)
-    }
-
     /// Queries latest `n` log records from the logger.
     fn tail_logs(&'a mut self, subject: &'a str, n: usize) -> Self::Invoke<'a, Vec<LogRecord>> {
         self.invoke("system.tail_logs", (subject, n))
@@ -205,6 +201,16 @@ pub trait ConnectionExt<'a>: crate::Connection {
     /// Triggers the specific event.
     fn trigger_event(&'a mut self, event: &'a Event) -> Self::Invoke<'a, ()> {
         self.invoke("system.trigger_event", event)
+    }
+
+    /// Loads an extension.
+    fn load_extension(
+        &'a mut self,
+        name: &'a str,
+        cmdline: &'a [String],
+        methods: HashSet<String>,
+    ) -> Self::Invoke<'a, ()> {
+        self.invoke("system.load_extension", (name, cmdline, methods))
     }
 }
 impl<'a, T> ConnectionExt<'a> for T where T: crate::Connection {}

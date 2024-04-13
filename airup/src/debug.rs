@@ -1,14 +1,12 @@
+use std::collections::HashSet;
+
 use airup_sdk::prelude::*;
 use clap::Parser;
-use console::style;
 
 /// Debug options of Airup
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
-    #[arg(short, long)]
-    raw: Option<String>,
-
     #[arg(long)]
     use_logger: Option<String>,
 
@@ -17,20 +15,9 @@ pub struct Cmdline {
 
     #[arg(long)]
     print_local_build_manifest: bool,
-
-    #[arg(long)]
-    internal_crash_handler: bool,
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    if cmdline.internal_crash_handler {
-        internal_crash_handler();
-    }
-
-    if let Some(raw) = cmdline.raw {
-        return send_raw(&raw);
-    }
-
     if let Some(logger) = cmdline.use_logger {
         return use_logger(&logger);
     }
@@ -46,21 +33,12 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn send_raw(raw: &str) -> anyhow::Result<()> {
-    let mut conn = super::connect()?;
-    conn.send_raw(raw.as_bytes())?;
-    println!("{}", String::from_utf8_lossy(&conn.recv_raw()?));
-
-    Ok(())
-}
-
 pub fn use_logger(logger: &str) -> anyhow::Result<()> {
     let mut conn = super::connect()?;
-    if logger.is_empty() || logger == "null" {
-        conn.use_logger(None)??;
-    } else {
-        conn.use_logger(Some(logger))??;
-    }
+    let mut logger_methods = HashSet::with_capacity(2);
+    logger_methods.insert("logger.append".into());
+    logger_methods.insert("logger.tail".into());
+    conn.load_extension("logger", &[logger.into()], logger_methods)??;
 
     Ok(())
 }
@@ -78,16 +56,4 @@ pub fn print_local_build_manifest() -> anyhow::Result<()> {
     println!("{}", build_manifest);
 
     Ok(())
-}
-
-pub fn internal_crash_handler() {
-    eprintln!(" {} airupd: crashed", style("ERROR").red());
-
-    if std::process::id() == 1 {
-        loop {
-            std::hint::spin_loop();
-        }
-    }
-
-    std::process::exit(255);
 }

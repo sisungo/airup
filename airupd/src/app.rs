@@ -15,6 +15,9 @@ pub struct Airupd {
     /// The storage manager.
     pub storage: storage::Storage,
 
+    /// The extension manager.
+    pub extensions: extension::Extensions,
+
     /// The IPC context.
     pub ipc: ipc::Context,
 
@@ -26,9 +29,6 @@ pub struct Airupd {
 
     /// The supervisor manager.
     pub supervisors: supervisor::Manager,
-
-    /// The logger.
-    pub logger: logger::Manager,
 
     /// Timestamp generated on creation of the struct.
     pub boot_timestamp: i64,
@@ -85,11 +85,11 @@ pub fn airupd() -> &'static Airupd {
 pub async fn init() {
     let object = Airupd {
         storage: storage::Storage::new().await,
+        extensions: extension::Extensions::default(),
         ipc: ipc::Context::new(),
         lifetime: lifetime::System::new(),
         milestones: milestones::Manager::new(),
         supervisors: supervisor::Manager::new(),
-        logger: logger::Manager::new(),
         boot_timestamp: airupfx::time::timestamp_ms(),
         events: events::Bus::new(),
     };
@@ -101,11 +101,11 @@ pub async fn set_manifest_at(path: Option<&Path>) {
     if let Some(path) = path {
         std::env::set_var("AIRUP_OVERRIDE_MANIFEST_PATH", path);
         airup_sdk::build::set_manifest(
-            serde_json::from_slice(
+            ciborium::from_reader(
                 &tokio::fs::read(path)
                     .await
                     .unwrap_log("failed to read overridden build manifest")
-                    .await,
+                    .await[..],
             )
             .unwrap_log("failed to parse overridden build manifest")
             .await,

@@ -4,11 +4,13 @@ use super::{Method, MethodFuture};
 use crate::app::airupd;
 use airup_sdk::{
     files::Service,
-    ipc::Request,
     system::{Event, LogRecord, QueryService, QuerySystem},
     Error,
 };
-use std::{collections::HashMap, hash::BuildHasher};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::BuildHasher,
+};
 
 pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     crate::ipc_methods!(
@@ -28,11 +30,11 @@ pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H
             uncache_service,
             interrupt_service_task,
             list_services,
-            use_logger,
             append_log,
             tail_logs,
             enter_milestone,
             trigger_event,
+            load_extension,
         ]
     )
     .iter()
@@ -124,19 +126,6 @@ async fn list_services() -> Result<Vec<String>, Error> {
 }
 
 #[airupfx::macros::api]
-async fn use_logger(logger: Option<String>) -> Result<(), Error> {
-    match logger {
-        Some(name) => {
-            airupd().logger.set_logger_by_name(&name).await?;
-        }
-        None => {
-            airupd().logger.remove_logger().await;
-        }
-    }
-    Ok(())
-}
-
-#[airupfx::macros::api]
 async fn tail_logs(subject: String, n: usize) -> Result<Vec<LogRecord>, Error> {
     if n > 1024 + 512 {
         return Err(Error::invalid_params(
@@ -144,9 +133,7 @@ async fn tail_logs(subject: String, n: usize) -> Result<Vec<LogRecord>, Error> {
         ));
     }
 
-    let queried = airupd()
-        .logger
-        .tail(&subject, n)
+    let queried = crate::logger::tail(&subject, n)
         .await
         .map_err(airup_sdk::Error::custom)?;
 
@@ -155,9 +142,7 @@ async fn tail_logs(subject: String, n: usize) -> Result<Vec<LogRecord>, Error> {
 
 #[airupfx::macros::api]
 async fn append_log(subject: String, module: String, message: String) -> Result<(), Error> {
-    airupd()
-        .logger
-        .write(&subject, &module, message.as_bytes())
+    crate::logger::write(&subject, &module, message.as_bytes())
         .await
         .map_err(airup_sdk::Error::custom)?;
 
@@ -173,4 +158,13 @@ async fn enter_milestone(name: String) -> Result<(), Error> {
 async fn trigger_event(event: Event) -> Result<(), Error> {
     airupd().events.trigger(event).await;
     Ok(())
+}
+
+#[airupfx::macros::api]
+async fn load_extension(
+    name: String,
+    cmdline: Vec<String>,
+    methods: HashSet<String>,
+) -> Result<(), Error> {
+    airupd().extensions.load(name, cmdline, methods)
 }

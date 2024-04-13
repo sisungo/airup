@@ -103,14 +103,6 @@ impl TaskHelper {
         }
     }
 
-    /// If this task is interrupted, returns `Err(Error::TaskInterrupted)`, otherwise returns `Ok(_)`.
-    pub fn interruptable_point(&self) -> Result<(), Error> {
-        match *self.interrupt_flag.borrow() {
-            true => Err(Error::TaskInterrupted),
-            false => Ok(()),
-        }
-    }
-
     /// Mark the task done and returns a value.
     pub fn finish<T: Into<TaskFeedback>>(&self, val: Result<T, Error>) {
         self.done.send(Some(val.map(|x| x.into()))).ok();
@@ -167,9 +159,7 @@ impl LinePiperCallback for LogCallback {
         msg: &'a [u8],
     ) -> Pin<Box<dyn for<'b> Future<Output = ()> + Send + 'a>> {
         Box::pin(async move {
-            crate::app::airupd()
-                .logger
-                .write(&self.name, self.module, msg)
+            crate::logger::write(&self.name, self.module, msg)
                 .await
                 .ok();
         })

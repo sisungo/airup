@@ -4,6 +4,7 @@
 pub mod build;
 pub mod debug;
 pub mod error;
+pub mod extension;
 pub mod files;
 pub mod info;
 pub mod ipc;

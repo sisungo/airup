@@ -18,7 +18,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 /// A request object in the Airup IPC protocol.
 ///
-/// Interpreted as JSON, a serialized request object looks like:
+/// Interpreted as CBOR, a serialized request object looks like (converted to human-readable JSON):
 ///
 /// ```json
 /// {
@@ -57,7 +57,7 @@ impl Request {
 
 /// A response object in the Airup IPC protocol.
 ///
-/// Interpreted as JSON, a serialized response object looks like:
+/// Interpreted as CBOR, a serialized response object looks like (converted to human-readable JSON):
 ///
 /// ```json
 /// {
@@ -79,8 +79,8 @@ impl Response {
     /// Creates a new `Response` from given `Result`.
     ///
     /// # Panics
-    /// Panics when `serde_json::to_value` fails. This always assumes that the passed value is always interpreted as a value
-    /// JSON object.
+    /// Panics when CBOR serialization fails. This always assumes that the passed value is always interpreted as a value
+    /// CBOR object.
     pub fn new<T: Serialize>(result: Result<T, ApiError>) -> Self {
         match result {
             Ok(val) => Self::Ok(ciborium::Value::serialized(&val).unwrap()),
