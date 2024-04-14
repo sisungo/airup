@@ -1,5 +1,6 @@
 use std::path::Path;
 
+#[cfg(feature = "_internal")]
 fn main() {
     println!("cargo::rerun-if-changed=../build_manifest.json");
     let out_dir = std::env::var("OUT_DIR").unwrap();
@@ -14,3 +15,6 @@ fn main() {
 
     ciborium::into_writer(&build_manifest, &mut file).unwrap();
 }
+
+#[cfg(not(feature = "_internal"))]
+fn main() {}
