@@ -37,6 +37,8 @@ A standard Airup installation consists of the following files:
  - `airup`: A CLI utility to inspect or manipulate Airup components.
  - \[`airup-eventsourced`\]: A daemon which collects system events and sends them to the Airup event bus. It also maintains some
  optional functions like timers. This is optional.
+ - \[`fallback-logger`\]: An Airup extension that implements a simple logger for the Airup Logger Interface for fallback use.
+ This is not subject to be executed directly by the user and is usually placed at `/usr/libexec/airup/fallback-logger`.
  - `libairup_sdk.so` OR `libairup_sdk.dylib`: The Airup SDK for C, in dynamic library.
  - \[`docs/resources/airup-eventsourced.airs`\]: Service manifest file for the `airup-eventsourced` service.
  - \[`docs/resources/airupd.airs`\]: Stub service manifest file for the `airupd` service.

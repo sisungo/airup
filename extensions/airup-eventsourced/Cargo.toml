@@ -1,7 +1,7 @@
 [package]
 name = "airup-eventsourced"
 authors = ["sisungo <sisungo@icloud.com>"]
-version = "0.10.0-alpha.3"
+version = "0.10.0-rc.1"
 edition = "2021"
 license = "MIT"
 publish = false
