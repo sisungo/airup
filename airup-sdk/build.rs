@@ -1,7 +1,7 @@
-use std::path::Path;
-
 #[cfg(feature = "_internal")]
 fn main() {
+    use std::path::Path;
+
     println!("cargo::rerun-if-changed=../build_manifest.json");
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let build_manifest: ciborium::Value =

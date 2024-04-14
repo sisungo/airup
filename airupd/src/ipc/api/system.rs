@@ -4,7 +4,7 @@ use super::{Method, MethodFuture};
 use crate::app::airupd;
 use airup_sdk::{
     files::Service,
-    system::{Event, LogRecord, QueryService, QuerySystem},
+    system::{Event, QueryService, QuerySystem},
     Error,
 };
 use std::{
@@ -30,8 +30,6 @@ pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H
             uncache_service,
             interrupt_service_task,
             list_services,
-            append_log,
-            tail_logs,
             enter_milestone,
             trigger_event,
             load_extension,
@@ -124,30 +122,6 @@ async fn uncache_service(service: String) -> Result<(), Error> {
 #[airupfx::macros::api]
 async fn list_services() -> Result<Vec<String>, Error> {
     Ok(airupd().storage.services.list().await)
-}
-
-#[airupfx::macros::api]
-async fn tail_logs(subject: String, n: usize) -> Result<Vec<LogRecord>, Error> {
-    if n > 1024 + 512 {
-        return Err(Error::invalid_params(
-            "method `system.tail_logs(subject, n)` only accepts `n < 1024 + 512`",
-        ));
-    }
-
-    let queried = crate::logger::tail(&subject, n)
-        .await
-        .map_err(airup_sdk::Error::custom)?;
-
-    Ok(queried)
-}
-
-#[airupfx::macros::api]
-async fn append_log(subject: String, module: String, message: String) -> Result<(), Error> {
-    crate::logger::write(&subject, &module, message.as_bytes())
-        .await
-        .map_err(airup_sdk::Error::custom)?;
-
-    Ok(())
 }
 
 #[airupfx::macros::api]

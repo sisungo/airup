@@ -86,12 +86,6 @@ with the same name will be overridden, rather than returning an error.
 - **Return Value**: `null`
 - **Description**: Triggers the specified event.
 
-## Method: `system.append_log`
-- **Name**: `system.append_log`
-- **Parameters**: `string (name of subject)`, `string (name of module)` and `string (the message)`
-- **Return Value**: `null`
-- **Description**: Appends a log record item to the logger.
-
 ## Method: `system.load_extension`
  - **Name**: `system.load_extension`
  - **Parameters**: `string (name of extension)`, `string (path of the extension's socket)`
