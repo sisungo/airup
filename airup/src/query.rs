@@ -1,5 +1,6 @@
 use airup_sdk::{
     blocking::Connection,
+    extapi::ConnectionExt,
     system::{ConnectionExt as _, QueryService, QuerySystem, Status},
 };
 use anyhow::anyhow;

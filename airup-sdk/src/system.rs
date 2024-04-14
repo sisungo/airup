@@ -178,21 +178,6 @@ pub trait ConnectionExt<'a>: crate::Connection {
         self.invoke("system.gc", ())
     }
 
-    /// Queries latest `n` log records from the logger.
-    fn tail_logs(&'a mut self, subject: &'a str, n: usize) -> Self::Invoke<'a, Vec<LogRecord>> {
-        self.invoke("system.tail_logs", (subject, n))
-    }
-
-    /// Appends a log item to the logger.
-    fn append_log(
-        &'a mut self,
-        subject: &'a str,
-        module: &'a str,
-        message: &'a str,
-    ) -> Self::Invoke<'a, ()> {
-        self.invoke("system.append_log", (subject, module, message))
-    }
-
     /// Enters the specific milestone.
     fn enter_milestone(&'a mut self, name: &'a str) -> Self::Invoke<'a, ()> {
         self.invoke("system.enter_milestone", name)

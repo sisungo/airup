@@ -4,6 +4,7 @@
 pub mod build;
 pub mod debug;
 pub mod error;
+pub mod extapi;
 pub mod extension;
 pub mod files;
 pub mod info;

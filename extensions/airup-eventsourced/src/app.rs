@@ -1,4 +1,5 @@
 use airup_sdk::{
+    extapi::ConnectionExt,
     nonblocking::Connection,
     system::{ConnectionExt as _, Event},
 };
@@ -30,7 +31,7 @@ impl AirupEventSourced {
     ///
     /// If a network error occured, this will internally set the `exit_flag` to `Some(1)` and keep pending until the program
     /// exited.
-    pub async fn append_log(&'static self, subject: &str, module: &str, message: &str) {
+    pub async fn append_log(&'static self, subject: &str, module: &str, message: &[u8]) {
         self.review_result(
             self.connection
                 .lock()

@@ -28,8 +28,10 @@ impl Extensions {
         methods: HashSet<String>,
     ) -> Result<(), airup_sdk::Error> {
         let mut lock = self.0.write().await;
-        if lock.contains_key(&name) {
-            return Err(airup_sdk::Error::Exists);
+        for (key, val) in lock.iter() {
+            if key == &name || !val.methods.is_disjoint(&methods) {
+                return Err(airup_sdk::Error::Exists);
+            }
         }
         lock.insert(
             name.clone(),
