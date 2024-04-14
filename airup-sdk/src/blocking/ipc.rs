@@ -62,14 +62,15 @@ impl DerefMut for Connection {
     }
 }
 
-pub trait MessageProtoExt {
+pub trait MessageProtoRecvExt {
     /// Receives a message from the stream.
     fn recv(&mut self) -> Result<Vec<u8>, IpcError>;
-
+}
+pub trait MessageProtoSendExt {
     /// Sends a message to the stream
     fn send(&mut self, blob: &[u8]) -> Result<(), IpcError>;
 }
-impl<T: Read + Write> MessageProtoExt for MessageProto<T> {
+impl<T: Read> MessageProtoRecvExt for MessageProto<T> {
     fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
         let mut len = [0u8; 8];
         self.inner.read_exact(&mut len)?;
@@ -82,7 +83,8 @@ impl<T: Read + Write> MessageProtoExt for MessageProto<T> {
 
         Ok(blob)
     }
-
+}
+impl<T: Write> MessageProtoSendExt for MessageProto<T> {
     fn send(&mut self, blob: &[u8]) -> Result<(), IpcError> {
         self.inner.write_all(&u64::to_le_bytes(blob.len() as _))?;
         self.inner.write_all(blob)?;

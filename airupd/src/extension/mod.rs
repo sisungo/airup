@@ -1,36 +1,43 @@
-use airup_sdk::extension::{Request, Response};
+use airup_sdk::{
+    extension::{Request, Response},
+    ipc::MessageProto,
+    nonblocking::ipc::{MessageProtoRecvExt, MessageProtoSendExt},
+};
 use std::{
     collections::{HashMap, HashSet},
-    process::Stdio,
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, Mutex},
 };
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
+    net::UnixStream,
     sync::{mpsc, oneshot},
 };
 
 use crate::app::airupd;
 
 #[derive(Debug, Default)]
-pub struct Extensions(RwLock<HashMap<String, Arc<Extension>>>);
+pub struct Extensions(tokio::sync::RwLock<HashMap<String, Arc<Extension>>>);
 impl Extensions {
-    pub fn load(
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub async fn load(
         &self,
         name: String,
-        cmdline: Vec<String>,
+        path: &str,
         methods: HashSet<String>,
     ) -> Result<(), airup_sdk::Error> {
-        let mut lock = self.0.write().unwrap();
+        let mut lock = self.0.write().await;
         if lock.contains_key(&name) {
             return Err(airup_sdk::Error::Exists);
         }
         lock.insert(
             name.clone(),
-            Arc::new(
-                Extension::new(name, cmdline, methods).map_err(|x| airup_sdk::Error::Io {
+            Arc::new(Extension::new(name, path, methods).await.map_err(|x| {
+                airup_sdk::Error::Io {
                     message: x.to_string(),
-                })?,
-            ),
+                }
+            })?),
         );
         Ok(())
     }
@@ -39,7 +46,7 @@ impl Extensions {
         let Some(ext) = self
             .0
             .read()
-            .unwrap()
+            .await
             .iter()
             .find(|(_, v)| v.methods.contains(&req.method))
             .map(|x| x.1)
@@ -54,6 +61,15 @@ impl Extensions {
             }))
         })
     }
+
+    pub async fn unload(&self, name: &str) -> Result<(), airup_sdk::Error> {
+        self.0
+            .write()
+            .await
+            .remove(name)
+            .ok_or(airup_sdk::Error::NotFound)
+            .map(|_| ())
+    }
 }
 
 #[derive(Debug)]
@@ -62,33 +78,12 @@ pub struct Extension {
     gate: mpsc::Sender<(Request, oneshot::Sender<ciborium::Value>)>,
 }
 impl Extension {
-    pub fn new(
-        name: String,
-        cmdline: Vec<String>,
-        methods: HashSet<String>,
-    ) -> std::io::Result<Self> {
-        let cmd = cmdline.first().ok_or_else(|| {
-            std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "`cmdline` cannot be empty",
-            )
-        })?;
-        let mut child = std::process::Command::new(cmd)
-            .args(&cmdline[1..])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()?;
-        let stdout = child.stdout.take().ok_or_else(|| {
-            std::io::Error::new(std::io::ErrorKind::BrokenPipe, "pipe not created")
-        })?;
-        let stdin = child.stdin.take().ok_or_else(|| {
-            std::io::Error::new(std::io::ErrorKind::BrokenPipe, "pipe not created")
-        })?;
+    pub async fn new(name: String, path: &str, methods: HashSet<String>) -> std::io::Result<Self> {
         let (tx, rx) = mpsc::channel(8);
+        let connection = UnixStream::connect(path).await?;
         ExtensionHost {
             name,
-            stdin: tokio::process::ChildStdin::from_std(stdin)?,
-            stdout: tokio::process::ChildStdout::from_std(stdout)?,
+            connection,
             reqs: HashMap::with_capacity(8),
             gate: rx,
         }
@@ -114,14 +109,17 @@ impl Extension {
 
 struct ExtensionHost {
     name: String,
-    stdin: tokio::process::ChildStdin,
-    stdout: tokio::process::ChildStdout,
+    connection: UnixStream,
     reqs: HashMap<u64, oneshot::Sender<ciborium::Value>>,
     gate: mpsc::Receiver<(Request, oneshot::Sender<ciborium::Value>)>,
 }
 impl ExtensionHost {
     fn run_on_the_fly(mut self) {
         let reqs = Arc::new(Mutex::new(self.reqs));
+
+        let (rx, tx) = self.connection.into_split();
+        let mut rx = MessageProto::new(rx, 6 * 1024 * 1024);
+        let mut tx = MessageProto::new(tx, 6 * 1024 * 1024);
 
         // accepting requests
         let mut acceptor = {
@@ -135,13 +133,7 @@ impl ExtensionHost {
                     let mut buf = Vec::with_capacity(128);
                     ciborium::into_writer(&req, &mut buf)
                         .expect("writing to `Vec<u8>` should never fail");
-                    let Ok(_) = self.stdin.write_u64_le(buf.len() as u64).await else {
-                        return;
-                    };
-                    let Ok(_) = self.stdin.write_all(&buf).await else {
-                        return;
-                    };
-                    let Ok(_) = self.stdin.flush().await else {
+                    if tx.send(&buf).await.is_err() {
                         return;
                     };
                 }
@@ -153,14 +145,7 @@ impl ExtensionHost {
             let reqs = reqs.clone();
             tokio::spawn(async move {
                 loop {
-                    let Ok(len) = self.stdout.read_u64_le().await else {
-                        return;
-                    };
-                    if len > 6 * 1024 * 1024 {
-                        return;
-                    }
-                    let mut buf = vec![0u8; len as usize];
-                    let Ok(_) = self.stdout.read_exact(&mut buf).await else {
+                    let Ok(buf) = rx.recv().await else {
                         return;
                     };
                     let Ok(resp) = ciborium::from_reader::<Response, _>(&buf[..]) else {
@@ -185,7 +170,7 @@ impl ExtensionHost {
                 },
             };
 
-            airupd().extensions.0.write().unwrap().remove(&self.name);
+            airupd().extensions.0.write().await.remove(&self.name);
         });
     }
 }

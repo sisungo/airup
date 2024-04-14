@@ -2,7 +2,7 @@
 pub struct Realm;
 impl Realm {
     pub fn new() -> std::io::Result<Self> {
-        Ok(Self)
+        Err(std::io::ErrorKind::Unsupported.into())
     }
 
     pub fn set_cpu_limit(&self, _: u64) -> std::io::Result<()> {

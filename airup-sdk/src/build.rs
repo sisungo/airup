@@ -65,6 +65,14 @@ pub fn set_manifest(manifest: BuildManifest) {
     MANIFEST.set(manifest).unwrap();
 }
 
+/// Sets the build manifest to the specific value.
+///
+/// # Panics
+/// Panics if the manifest is already set, which may be done by any call of [`manifest`] or [`set_manifest`].
+pub fn try_set_manifest(manifest: BuildManifest) -> Option<()> {
+    MANIFEST.set(manifest).ok()
+}
+
 /// Returns the embedded [`BuildManifest`] instance.
 ///
 /// # Panics

@@ -82,14 +82,15 @@ impl Server {
     }
 }
 
-pub trait MessageProtoExt {
+pub trait MessageProtoRecvExt {
     /// Receives a message from the stream.
     fn recv(&mut self) -> impl Future<Output = Result<Vec<u8>, IpcError>>;
-
+}
+pub trait MessageProtoSendExt {
     /// Sends a message to the stream.
     fn send(&mut self, blob: &[u8]) -> impl Future<Output = Result<(), IpcError>>;
 }
-impl<T: AsyncRead + AsyncWrite + Unpin> MessageProtoExt for MessageProto<T> {
+impl<T: AsyncRead + Unpin> MessageProtoRecvExt for MessageProto<T> {
     async fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
         let len = self.inner.read_u64_le().await? as usize;
         if len > self.size_limit {
@@ -100,7 +101,8 @@ impl<T: AsyncRead + AsyncWrite + Unpin> MessageProtoExt for MessageProto<T> {
 
         Ok(blob)
     }
-
+}
+impl<T: AsyncWrite + Unpin> MessageProtoSendExt for MessageProto<T> {
     async fn send(&mut self, blob: &[u8]) -> Result<(), IpcError> {
         self.inner.write_u64_le(blob.len() as _).await?;
         self.inner.write_all(blob).await?;

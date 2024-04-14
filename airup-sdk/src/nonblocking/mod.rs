@@ -6,7 +6,7 @@ use crate::{
     ipc::{Error as IpcError, Request},
     Error as ApiError,
 };
-use ipc::MessageProtoExt;
+use ipc::{MessageProtoRecvExt, MessageProtoSendExt};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     future::Future,

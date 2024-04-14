@@ -207,10 +207,10 @@ pub trait ConnectionExt<'a>: crate::Connection {
     fn load_extension(
         &'a mut self,
         name: &'a str,
-        cmdline: &'a [String],
+        path: &'a str,
         methods: HashSet<String>,
     ) -> Self::Invoke<'a, ()> {
-        self.invoke("system.load_extension", (name, cmdline, methods))
+        self.invoke("system.load_extension", (name, path, methods))
     }
 }
 impl<'a, T> ConnectionExt<'a> for T where T: crate::Connection {}

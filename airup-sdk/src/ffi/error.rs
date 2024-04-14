@@ -128,7 +128,7 @@ impl From<crate::Error> for ApiError {
                 .expect("`code` field of ApiError CBOR should always be a string"),
         );
         let message = alloc_c_string(&value.to_string());
-        let json = alloc_c_string(&String::new());
+        let json = alloc_c_string("");
 
         Self {
             code,

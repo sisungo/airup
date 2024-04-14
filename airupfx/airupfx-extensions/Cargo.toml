@@ -1,0 +1,10 @@
+[package]
+name = "airupfx-extensions"
+authors = ["sisungo <sisungo@icloud.com>"]
+version = "0.10.0-alpha.3"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+airup-sdk = { path = "../../airup-sdk" }

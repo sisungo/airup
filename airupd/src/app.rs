@@ -85,7 +85,7 @@ pub fn airupd() -> &'static Airupd {
 pub async fn init() {
     let object = Airupd {
         storage: storage::Storage::new().await,
-        extensions: extension::Extensions::default(),
+        extensions: extension::Extensions::new(),
         ipc: ipc::Context::new(),
         lifetime: lifetime::System::new(),
         milestones: milestones::Manager::new(),
