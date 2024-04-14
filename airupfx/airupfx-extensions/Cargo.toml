@@ -7,4 +7,8 @@ license = "MIT"
 publish = false
 
 [dependencies]
+anyhow = "1"
 airup-sdk = { path = "../../airup-sdk" }
+airupfx-fs = { path = "../airupfx-fs" }
+ciborium = "0.2"
+tokio = { workspace = true }

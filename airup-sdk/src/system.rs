@@ -197,5 +197,10 @@ pub trait ConnectionExt<'a>: crate::Connection {
     ) -> Self::Invoke<'a, ()> {
         self.invoke("system.load_extension", (name, path, methods))
     }
+
+    /// Unloads an extension.
+    fn unload_extension(&'a mut self, name: &'a str) -> Self::Invoke<'a, ()> {
+        self.invoke("system.load_extension", name)
+    }
 }
 impl<'a, T> ConnectionExt<'a> for T where T: crate::Connection {}

@@ -10,6 +10,9 @@ pub struct Cmdline {
 
     #[arg(long)]
     print_local_build_manifest: bool,
+
+    #[arg(long)]
+    unload_extension: Option<String>,
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
@@ -20,6 +23,17 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     if cmdline.print_local_build_manifest {
         return print_local_build_manifest();
     }
+
+    if let Some(name) = cmdline.unload_extension {
+        return unload_extension(&name);
+    }
+
+    Ok(())
+}
+
+pub fn unload_extension(name: &str) -> anyhow::Result<()> {
+    let mut conn = super::connect()?;
+    conn.unload_extension(name)??;
 
     Ok(())
 }
