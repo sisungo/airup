@@ -57,8 +57,9 @@ impl Server {
         })
     }
 
-    pub fn mount(&mut self, s: impl Into<String>, m: Method) {
+    pub fn mount(mut self, s: impl Into<String>, m: Method) -> Self {
         self.rpc_methods.insert(s.into(), m);
+        self
     }
 
     pub async fn run(self) -> ! {

@@ -4,3 +4,7 @@ description = "An Airup extension that provides a simple logger interface for fa
 
 [exec]
 start = "/usr/libexec/airup/fallback-logger"
+
+[env]
+stdout = "inherit"
+stderr = "inherit"
