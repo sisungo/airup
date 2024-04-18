@@ -10,10 +10,10 @@ use std::io::Write;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
-    Server::new()
+    Server::new("logger")
         .await?
-        .mount("logger.append", append)
-        .mount("logger.tail", tail)
+        .mount("append", append)
+        .mount("tail", tail)
         .run()
         .await
 }

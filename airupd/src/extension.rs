@@ -44,18 +44,16 @@ impl Extensions {
         Ok(())
     }
 
-    pub async fn rpc_invoke(&self, req: airup_sdk::ipc::Request) -> airup_sdk::ipc::Response {
-        let Some(ext) = self
-            .0
-            .read()
-            .await
-            .iter()
-            .find(|(_, v)| v.methods.contains(&req.method))
-            .map(|x| x.1)
-            .cloned()
-        else {
+    pub async fn rpc_invoke(&self, mut req: airup_sdk::ipc::Request) -> airup_sdk::ipc::Response {
+        let mut method_splited = req.method.splitn(2, '.');
+        let extension = method_splited.next().unwrap();
+        let Some(ext_method) = method_splited.next() else {
             return airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NoSuchMethod));
         };
+        let Some(ext) = self.0.read().await.get(extension).cloned() else {
+            return airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NoSuchMethod));
+        };
+        req.method = ext_method.into();
 
         ext.rpc_invoke(req).await.unwrap_or_else(|| {
             airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::Io {

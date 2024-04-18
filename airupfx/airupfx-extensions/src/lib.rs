@@ -20,12 +20,12 @@ use tokio::net::{
 #[derive(Debug)]
 pub struct Server {
     listener: UnixListener,
-    service_name: String,
     path: String,
+    extension_name: String,
     rpc_methods: HashMap<String, Method>,
 }
 impl Server {
-    pub async fn new() -> anyhow::Result<Self> {
+    pub async fn new(extension_name: impl Into<String>) -> anyhow::Result<Self> {
         let mut airup_rpc_conn =
             airup_sdk::nonblocking::Connection::connect(airup_sdk::socket_path()).await?;
         let build_manifest = airup_rpc_conn.build_manifest().await??;
@@ -39,11 +39,11 @@ impl Server {
             .to_string();
         std::fs::remove_file(&extension_socket_path).ok();
 
-        Ok(Self::with_config(service_name, extension_socket_path).await?)
+        Ok(Self::with_config(extension_name, extension_socket_path).await?)
     }
 
     pub async fn with_config<P: AsRef<Path>>(
-        service_name: String,
+        extension_name: impl Into<String>,
         path: P,
     ) -> std::io::Result<Self> {
         let listener = UnixListener::bind(path.as_ref())?;
@@ -51,8 +51,8 @@ impl Server {
 
         Ok(Self {
             listener,
-            service_name,
             path: path.as_ref().display().to_string(),
+            extension_name: extension_name.into(),
             rpc_methods: HashMap::with_capacity(16),
         })
     }
@@ -64,7 +64,7 @@ impl Server {
 
     pub async fn run(self) -> ! {
         let rpc_methods = Arc::new(self.rpc_methods);
-        let service_name = self.service_name;
+        let extension_name = self.extension_name;
         let path = self.path;
         let method_set: HashSet<_> = rpc_methods.keys().cloned().collect();
         tokio::spawn(async move {
@@ -72,7 +72,7 @@ impl Server {
                 airup_sdk::nonblocking::Connection::connect(airup_sdk::socket_path()).await?;
 
             match airup_rpc_conn
-                .load_extension(&service_name, &path, method_set)
+                .load_extension(&extension_name, &path, method_set)
                 .await
             {
                 Ok(Ok(())) => (),
