@@ -2,8 +2,9 @@ use airup_sdk::{
     info::ConnectionExt,
     ipc::MessageProto,
     nonblocking::ipc::{MessageProtoRecvExt, MessageProtoSendExt},
-    system::ConnectionExt as _,
+    system::{ConnectionExt as _, Event},
 };
+use airupfx_signal::SIGTERM;
 use ciborium::cbor;
 use std::{
     collections::{HashMap, HashSet},
@@ -22,6 +23,7 @@ pub struct Server {
     listener: UnixListener,
     path: String,
     extension_name: String,
+    service_name: String,
     rpc_methods: HashMap<String, Method>,
 }
 impl Server {
@@ -39,11 +41,12 @@ impl Server {
             .to_string();
         std::fs::remove_file(&extension_socket_path).ok();
 
-        Ok(Self::with_config(extension_name, extension_socket_path).await?)
+        Ok(Self::with_config(extension_name, service_name, extension_socket_path).await?)
     }
 
     pub async fn with_config<P: AsRef<Path>>(
         extension_name: impl Into<String>,
+        service_name: impl Into<String>,
         path: P,
     ) -> std::io::Result<Self> {
         let listener = UnixListener::bind(path.as_ref())?;
@@ -53,6 +56,7 @@ impl Server {
             listener,
             path: path.as_ref().display().to_string(),
             extension_name: extension_name.into(),
+            service_name: service_name.into(),
             rpc_methods: HashMap::with_capacity(16),
         })
     }
@@ -64,15 +68,15 @@ impl Server {
 
     pub async fn run(self) -> ! {
         let rpc_methods = Arc::new(self.rpc_methods);
-        let extension_name = self.extension_name;
-        let path = self.path;
         let method_set: HashSet<_> = rpc_methods.keys().cloned().collect();
+
+        let extension_name = self.extension_name.clone();
         tokio::spawn(async move {
             let mut airup_rpc_conn =
                 airup_sdk::nonblocking::Connection::connect(airup_sdk::socket_path()).await?;
 
             match airup_rpc_conn
-                .load_extension(&extension_name, &path, method_set)
+                .load_extension(&extension_name, &self.path, method_set)
                 .await
             {
                 Ok(Ok(())) => (),
@@ -86,8 +90,25 @@ impl Server {
                 }
             }
 
+            airup_rpc_conn
+                .trigger_event(&Event::new("notify_active".into(), self.service_name))
+                .await
+                .ok();
+
             Ok::<(), anyhow::Error>(())
         });
+
+        let extension_name = self.extension_name.clone();
+        airupfx_signal::signal(SIGTERM, |_| async move {
+            let Ok(mut airup_rpc_conn) =
+                airup_sdk::nonblocking::Connection::connect(airup_sdk::socket_path()).await
+            else {
+                return;
+            };
+
+            airup_rpc_conn.unload_extension(&extension_name).await.ok();
+        })
+        .ok();
 
         loop {
             let Ok((stream, _)) = self.listener.accept().await else {

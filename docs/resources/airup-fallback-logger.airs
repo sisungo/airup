@@ -1,6 +1,7 @@
 [service]
 display-name = "Airup Fallback Logger"
 description = "An Airup extension that provides a simple logger interface for fallback use."
+kind = "notify"
 
 [exec]
 start = "/usr/libexec/airup/fallback-logger"

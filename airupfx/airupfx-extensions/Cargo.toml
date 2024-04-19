@@ -10,5 +10,6 @@ publish = false
 anyhow = "1"
 airup-sdk = { path = "../../airup-sdk" }
 airupfx-fs = { path = "../airupfx-fs" }
+airupfx-signal = { path = "../airupfx-signal" }
 ciborium = "0.2"
 tokio = { workspace = true }

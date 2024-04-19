@@ -57,17 +57,17 @@ pub const SIGFPE: i32 = libc::SIGFPE;
 /// # Errors
 /// An `Err(_)` is returned if the underlying OS function failed.
 pub fn signal<
-    F: FnMut(i32) -> T + Send + Sync + 'static,
+    F: FnOnce(i32) -> T + Clone + Send + Sync + 'static,
     T: Future<Output = ()> + Send + 'static,
 >(
     signum: i32,
-    mut op: F,
+    op: F,
 ) -> std::io::Result<()> {
     let mut signal = tokio::signal::unix::signal(SignalKind::from_raw(signum))?;
     tokio::spawn(async move {
         loop {
             signal.recv().await;
-            op(signum).await;
+            op.clone()(signum).await;
         }
     });
 
