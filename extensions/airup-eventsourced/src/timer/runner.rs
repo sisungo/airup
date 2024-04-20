@@ -87,7 +87,7 @@ impl LinePiperCallback for LogCallback {
     ) -> Pin<Box<dyn for<'b> Future<Output = ()> + Send + 'a>> {
         Box::pin(async move {
             crate::app::airup_eventsourced()
-                .append_log(&self.name, self.module, &msg)
+                .append_log(&self.name, self.module, msg)
                 .await;
         })
     }

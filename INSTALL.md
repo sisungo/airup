@@ -41,6 +41,7 @@ A standard Airup installation consists of the following files:
  This is not subject to be executed directly by the user and is usually placed at `/usr/libexec/airup/fallback-logger`.
  - `libairup_sdk.so` OR `libairup_sdk.dylib`: The Airup SDK for C, in dynamic library.
  - \[`docs/resources/airup-eventsourced.airs`\]: Service manifest file for the `airup-eventsourced` service.
+ - \[`docs/resources/airup-fallback-logger.airs`\]: Service manifest file for the `fallback-logger` service.
  - \[`docs/resources/airupd.airs`\]: Stub service manifest file for the `airupd` service.
  - \[`docs/resources/selinux/airup.te`\]: SELinux policy for Airup.
 

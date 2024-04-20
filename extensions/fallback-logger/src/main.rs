@@ -70,7 +70,7 @@ fn dir_chain_logs() -> DirChain<'static> {
 }
 
 fn open_subject_append(subject: &str) -> std::io::Result<std::fs::File> {
-    let path = dir_chain_logs().find_or_create(&format!("{subject}.fallback_logger.json"))?;
+    let path = dir_chain_logs().find_or_create(format!("{subject}.fallback_logger.json"))?;
 
     std::fs::File::options()
         .append(true)
@@ -80,7 +80,7 @@ fn open_subject_append(subject: &str) -> std::io::Result<std::fs::File> {
 
 fn open_subject_read(subject: &str) -> std::io::Result<std::fs::File> {
     let path = dir_chain_logs()
-        .find(&format!("{subject}.fallback_logger.json"))
+        .find(format!("{subject}.fallback_logger.json"))
         .ok_or_else(|| std::io::Error::from(std::io::ErrorKind::NotFound))?;
 
     std::fs::File::open(path)
