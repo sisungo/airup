@@ -45,6 +45,12 @@ pub trait PowerManager: Send + Sync {
     /// # Errors
     /// An `Err(_)` is returned if the underlying OS function failed.
     async fn halt(&self) -> std::io::Result<Infallible>;
+
+    /// Performs an userspace reboot.
+    ///
+    /// # Errors
+    /// An `Err(_)` is returned if it failed to perform an userspace reboot.
+    async fn userspace(&self) -> std::io::Result<Infallible>;
 }
 
 /// A fallback implementation of `AirupFX` power management.
@@ -64,6 +70,10 @@ impl PowerManager for Fallback {
     }
 
     async fn halt(&self) -> std::io::Result<Infallible> {
+        Self::halt_process();
+    }
+
+    async fn userspace(&self) -> std::io::Result<Infallible> {
         Self::halt_process();
     }
 }

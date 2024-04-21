@@ -9,36 +9,33 @@ extern "C" {
 }
 
 use crate::PowerManager;
-use std::{convert::Infallible, time::Duration};
+use std::convert::Infallible;
 
 const RB_AUTOBOOT: libc::c_int = 0;
 const RB_HALT: libc::c_int = 0x08;
 
 #[derive(Default)]
 pub struct Power;
-impl Power {
-    async fn prepare(&self) {
-        crate::unix::kill_all(Duration::from_millis(5000)).await;
-        unsafe {
-            libc::sync();
-        }
-    }
-}
 #[async_trait::async_trait]
 impl PowerManager for Power {
     async fn poweroff(&self) -> std::io::Result<Infallible> {
-        self.prepare().await;
+        crate::unix::prepare().await;
         system_reboot(RB_HALT)
     }
 
     async fn reboot(&self) -> std::io::Result<Infallible> {
-        self.prepare().await;
+        crate::unix::prepare().await;
         system_reboot(RB_AUTOBOOT)
     }
 
     async fn halt(&self) -> std::io::Result<Infallible> {
-        self.prepare().await;
+        crate::unix::prepare().await;
         system_reboot(RB_HALT)
+    }
+
+    async fn userspace(&self) -> std::io::Result<Infallible> {
+        crate::unix::prepare().await;
+        airupfx_process::reload_image()
     }
 }
 

@@ -37,6 +37,11 @@ impl System {
         self.send(Event::Halt);
     }
 
+    /// Reboots the system's userspace.
+    pub fn userspace_reboot(&self) {
+        self.send(Event::UserspaceReboot);
+    }
+
     /// Sends an process-wide lifetime event.
     fn send(&self, event: Event) {
         self.0.send(event).ok();
@@ -62,6 +67,9 @@ pub enum Event {
 
     /// Halts the device.
     Halt,
+
+    /// Reboots the system's userspace.
+    UserspaceReboot,
 }
 impl Event {
     /// Handles the event.
@@ -71,6 +79,7 @@ impl Event {
             Self::Poweroff => power_manager().poweroff().await.ok(),
             Self::Reboot => power_manager().reboot().await.ok(),
             Self::Halt => power_manager().halt().await.ok(),
+            Self::UserspaceReboot => power_manager().userspace().await.ok(),
         };
 
         std::process::exit(1);

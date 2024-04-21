@@ -68,7 +68,7 @@ async fn enter_userspace_reboot() -> Result<(), Error> {
 
     let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
     stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
-    airupd().bootstrap_milestone(crate::env::cmdline().milestone.to_string());
+    airupd().lifetime.userspace_reboot();
 
     Ok(())
 }
