@@ -107,6 +107,8 @@ impl Server {
             };
 
             airup_rpc_conn.unload_extension(&extension_name).await.ok();
+
+            std::process::exit(0);
         })
         .ok();
 
