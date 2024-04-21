@@ -1,7 +1,7 @@
 //! FreeBSD power management.
 
 use crate::PowerManager;
-use std::{convert::Infallible, time::Duration};
+use std::convert::Infallible;
 
 #[derive(Default)]
 pub struct Power;

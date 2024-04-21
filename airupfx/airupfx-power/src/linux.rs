@@ -5,7 +5,7 @@ use libc::{
     c_void, syscall, SYS_reboot, LINUX_REBOOT_CMD_HALT, LINUX_REBOOT_CMD_POWER_OFF,
     LINUX_REBOOT_CMD_RESTART, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
 };
-use std::{convert::Infallible, ptr::NonNull, time::Duration};
+use std::{convert::Infallible, ptr::NonNull};
 
 #[derive(Default)]
 pub struct Power;
