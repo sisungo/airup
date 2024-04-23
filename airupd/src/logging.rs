@@ -1,5 +1,5 @@
-//! # The Airup Logger
-//! AirupFX-flavored presets for the [`tracing`] framework.
+//! # The Airupd Logger
+//! Airupd-flavored presets for the [`tracing`] framework.
 
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{filter::filter_fn, prelude::*};
@@ -77,7 +77,7 @@ impl Builder {
 impl Default for Builder {
     fn default() -> Self {
         Self {
-            name: "airupfx".into(),
+            name: "airupd".into(),
             quiet: false,
             verbose: false,
             color: true,

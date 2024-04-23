@@ -22,6 +22,9 @@ impl Extensions {
 
     pub async fn load(&self, name: String, path: &str) -> Result<(), airup_sdk::Error> {
         let mut lock = self.0.write().await;
+        if lock.contains_key(&name) {
+            return Err(airup_sdk::Error::Exists);
+        }
         lock.insert(
             name.clone(),
             Arc::new(

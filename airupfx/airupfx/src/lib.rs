@@ -4,7 +4,6 @@
 //!
 //! Since Airup v0.5.0, AirupFX version is no longer synced with other components.
 
-pub mod log;
 pub mod prelude;
 pub mod util;
 

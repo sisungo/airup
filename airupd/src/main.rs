@@ -7,6 +7,7 @@ mod extension;
 mod ipc;
 mod lifetime;
 mod logger;
+mod logging;
 mod milestones;
 mod storage;
 mod supervisor;
@@ -17,7 +18,7 @@ use airupfx::prelude::*;
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     let cmdline = self::env::cmdline();
-    airupfx::log::Builder::new()
+    logging::Builder::new()
         .name("airupd")
         .quiet(cmdline.quiet)
         .color(!cmdline.no_color)

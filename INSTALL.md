@@ -39,6 +39,9 @@ A standard Airup installation consists of the following files:
  optional functions like timers. This is optional.
  - \[`fallback-logger`\]: An Airup extension that implements a simple logger for the Airup Logger Interface for fallback use.
  This is not subject to be executed directly by the user and is usually placed at `/usr/libexec/airup/fallback-logger`.
+ - \[`airup-debug`\]: A CLI utility for debugging Airup.
+ - \[`airup-init`\]: A CLI utility that emulates classic Unix init commands like `init`, `reboot`, etc. This is NOT subject to
+ and CANNOT be spawned as `pid == 1`.
  - `libairup_sdk.so` OR `libairup_sdk.dylib`: The Airup SDK for C, in dynamic library.
  - \[`docs/resources/airup-eventsourced.airs`\]: Service manifest file for the `airup-eventsourced` service.
  - \[`docs/resources/airup-fallback-logger.airs`\]: Service manifest file for the `fallback-logger` service.
