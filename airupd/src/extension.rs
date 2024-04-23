@@ -1,3 +1,4 @@
+use crate::app::airupd;
 use airup_sdk::{
     extension::{Request, Response},
     ipc::MessageProto,
@@ -11,8 +12,6 @@ use tokio::{
     net::UnixStream,
     sync::{mpsc, oneshot},
 };
-
-use crate::app::airupd;
 
 #[derive(Debug, Default)]
 pub struct Extensions(tokio::sync::RwLock<HashMap<String, Arc<Extension>>>);

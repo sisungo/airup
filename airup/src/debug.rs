@@ -5,12 +5,15 @@ use clap::Parser;
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
+    /// Prints build manifest acquired from Airup daemon
     #[arg(long)]
     print_remote_build_manifest: bool,
 
+    /// Prints build manifest from this utility
     #[arg(long)]
     print_local_build_manifest: bool,
 
+    /// Unloads an Airup extension
     #[arg(long)]
     unload_extension: Option<String>,
 }
