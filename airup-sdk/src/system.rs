@@ -1,6 +1,5 @@
 use crate::{files::Service, Error};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 
 /// Result of querying a service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -189,13 +188,8 @@ pub trait ConnectionExt<'a>: crate::Connection {
     }
 
     /// Loads an extension.
-    fn load_extension(
-        &'a mut self,
-        name: &'a str,
-        path: &'a str,
-        methods: HashSet<String>,
-    ) -> Self::Invoke<'a, ()> {
-        self.invoke("system.load_extension", (name, path, methods))
+    fn load_extension(&'a mut self, name: &'a str, path: &'a str) -> Self::Invoke<'a, ()> {
+        self.invoke("system.load_extension", (name, path))
     }
 
     /// Unloads an extension.

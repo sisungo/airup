@@ -6,13 +6,7 @@ use airup_sdk::{
 };
 use airupfx_signal::SIGTERM;
 use ciborium::cbor;
-use std::{
-    collections::{HashMap, HashSet},
-    future::Future,
-    path::Path,
-    pin::Pin,
-    sync::Arc,
-};
+use std::{collections::HashMap, future::Future, path::Path, pin::Pin, sync::Arc};
 use tokio::net::{
     unix::{OwnedReadHalf, OwnedWriteHalf},
     UnixListener,
@@ -68,7 +62,6 @@ impl Server {
 
     pub async fn run(self) -> ! {
         let rpc_methods = Arc::new(self.rpc_methods);
-        let method_set: HashSet<_> = rpc_methods.keys().cloned().collect();
 
         let extension_name = self.extension_name.clone();
         tokio::spawn(async move {
@@ -76,7 +69,7 @@ impl Server {
                 airup_sdk::nonblocking::Connection::connect(airup_sdk::socket_path()).await?;
 
             match airup_rpc_conn
-                .load_extension(&extension_name, &self.path, method_set)
+                .load_extension(&extension_name, &self.path)
                 .await
             {
                 Ok(Ok(())) => (),

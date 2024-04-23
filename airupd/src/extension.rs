@@ -5,7 +5,7 @@ use airup_sdk::{
     nonblocking::ipc::{MessageProtoRecvExt, MessageProtoSendExt},
 };
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     sync::{Arc, Mutex},
 };
 use tokio::{
@@ -20,25 +20,17 @@ impl Extensions {
         Self::default()
     }
 
-    pub async fn load(
-        &self,
-        name: String,
-        path: &str,
-        methods: HashSet<String>,
-    ) -> Result<(), airup_sdk::Error> {
+    pub async fn load(&self, name: String, path: &str) -> Result<(), airup_sdk::Error> {
         let mut lock = self.0.write().await;
-        for (key, val) in lock.iter() {
-            if key == &name || !val.methods.is_disjoint(&methods) {
-                return Err(airup_sdk::Error::Exists);
-            }
-        }
         lock.insert(
             name.clone(),
-            Arc::new(Extension::new(name, path, methods).await.map_err(|x| {
-                airup_sdk::Error::Io {
-                    message: x.to_string(),
-                }
-            })?),
+            Arc::new(
+                Extension::new(name, path)
+                    .await
+                    .map_err(|x| airup_sdk::Error::Io {
+                        message: x.to_string(),
+                    })?,
+            ),
         );
         Ok(())
     }
@@ -73,11 +65,10 @@ impl Extensions {
 
 #[derive(Debug)]
 pub struct Extension {
-    methods: HashSet<String>,
     gate: mpsc::Sender<(Request, oneshot::Sender<ciborium::Value>)>,
 }
 impl Extension {
-    pub async fn new(name: String, path: &str, methods: HashSet<String>) -> std::io::Result<Self> {
+    pub async fn new(name: String, path: &str) -> std::io::Result<Self> {
         let (tx, rx) = mpsc::channel(8);
         let connection = UnixStream::connect(path).await?;
         ExtensionHost {
@@ -88,7 +79,7 @@ impl Extension {
         }
         .run_on_the_fly();
 
-        Ok(Self { methods, gate: tx })
+        Ok(Self { gate: tx })
     }
 
     pub async fn rpc_invoke(

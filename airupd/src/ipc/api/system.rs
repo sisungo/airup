@@ -7,10 +7,7 @@ use airup_sdk::{
     system::{Event, QueryService, QuerySystem},
     Error,
 };
-use std::{
-    collections::{HashMap, HashSet},
-    hash::BuildHasher,
-};
+use std::{collections::HashMap, hash::BuildHasher};
 
 pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
     crate::ipc_methods!(
@@ -136,8 +133,8 @@ async fn trigger_event(event: Event) -> Result<(), Error> {
 }
 
 #[airupfx::macros::api]
-async fn load_extension(name: String, path: String, methods: HashSet<String>) -> Result<(), Error> {
-    airupd().extensions.load(name, &path, methods).await
+async fn load_extension(name: String, path: String) -> Result<(), Error> {
+    airupd().extensions.load(name, &path).await
 }
 
 #[airupfx::macros::api]
