@@ -60,7 +60,7 @@ pub fn tokenize(s: &str) -> Result<Vec<String>, Error> {
                     _ => this.push(b),
                 }
             }
-        } else if b"\" ,".contains(&b) {
+        } else if b"\" ".contains(&b) {
             if !this.is_empty() {
                 tokens.push(String::from_utf8(this.clone()).map_err(|_| Error::CorruptUnicode)?);
                 this.clear();
