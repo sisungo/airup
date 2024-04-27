@@ -1,8 +1,9 @@
 //! # The `CleanupService` Task
 
 use super::*;
+use crate::ace::CommandExitError;
 use airup_sdk::files::Service;
-use airupfx::{ace::CommandExitError, prelude::*, process::Wait};
+use airupfx::{prelude::*, process::Wait};
 use std::{
     sync::{
         atomic::{self, AtomicBool},

@@ -121,11 +121,12 @@ impl StartService {
                 .parse()
                 .map_err(Error::pid_file)?;
 
-        let child = airupfx::ace::Child::Process(airupfx::process::Child::from_pid(pid).map_err(
-            |err| Error::Io {
-                message: err.to_string(),
-            },
-        )?);
+        let child =
+            crate::ace::Child::Process(airupfx::process::Child::from_pid(pid).map_err(|err| {
+                Error::Io {
+                    message: err.to_string(),
+                }
+            })?);
 
         self.context.set_child(child).await;
 

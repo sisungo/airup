@@ -1,6 +1,7 @@
 use super::*;
+use crate::ace::CommandExitError;
 use airup_sdk::prelude::*;
-use airupfx::{ace::CommandExitError, prelude::*};
+use airupfx::prelude::*;
 use std::{sync::Arc, time::Duration};
 
 #[derive(Debug)]

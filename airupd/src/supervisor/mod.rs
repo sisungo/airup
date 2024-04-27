@@ -3,13 +3,13 @@
 
 pub mod task;
 
-use crate::app::airupd;
+use crate::{ace::Child, app::airupd};
 use airup_sdk::{
     files::{service::WatchdogKind, Service},
     system::{Event, QueryService, Status},
     Error,
 };
-use airupfx::{ace::Child, isolator::Realm, process::Wait, time::Alarm};
+use airupfx::{isolator::Realm, process::Wait, time::Alarm};
 use std::{
     cmp,
     collections::HashMap,

@@ -1,5 +1,6 @@
 //! The `early_boot` pseudo-milestone.
 
+use crate::ace::Ace;
 use airupfx::prelude::*;
 
 /// Enters the `early_boot` pseudo-milestone.

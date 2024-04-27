@@ -1,5 +1,6 @@
 //! # airupd
 
+mod ace;
 mod app;
 mod env;
 mod events;

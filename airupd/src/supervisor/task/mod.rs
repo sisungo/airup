@@ -7,6 +7,7 @@ pub mod start;
 pub mod stop;
 
 use super::SupervisorContext;
+use crate::ace::Ace;
 use airup_sdk::Error;
 use airupfx::{io::line_piper::Callback as LinePiperCallback, prelude::*};
 use std::{future::Future, path::PathBuf, pin::Pin};

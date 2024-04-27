@@ -4,8 +4,8 @@ pub mod builtins;
 pub mod parser;
 
 use airup_sdk::error::IntoApiError;
-use airupfx_isolator::Realm;
-use airupfx_process::{CommandEnv, ExitStatus, Wait, WaitError};
+use airupfx::isolator::Realm;
+use airupfx::process::{CommandEnv, ExitStatus, Wait, WaitError};
 use libc::SIGTERM;
 use std::{collections::HashMap, future::Future, pin::Pin, sync::Arc, time::Duration};
 use tokio::task::JoinHandle;
@@ -17,7 +17,7 @@ pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 pub struct Ace {
     pub env: CommandEnv,
     pub realm: Option<Arc<Realm>>,
-    modules: Modules,
+    pub modules: Modules,
 }
 impl Ace {
     /// Creates a new [`Ace`] instance with default settings.
@@ -31,7 +31,7 @@ impl Ace {
             self.run_tokenized(["sh".into(), "-c".into(), x.into()].into_iter())
                 .await
         } else {
-            self.run_tokenized(shlex::split(cmd).ok_or(Error::ParseError)?.into_iter())
+            self.run_tokenized(parser::tokenize(cmd).map_err(|_| Error::Parse)?.into_iter())
                 .await
         }
     }
@@ -88,7 +88,7 @@ impl Ace {
     }
 
     async fn run_bin_command(&self, cmd: &parser::Command) -> Result<Child, Error> {
-        let mut command = airupfx_process::Command::new(&cmd.module);
+        let mut command = airupfx::process::Command::new(&cmd.module);
         cmd.args.iter().for_each(|x| {
             command.arg(x);
         });
@@ -102,7 +102,7 @@ impl Ace {
 }
 
 #[derive(Debug, Clone)]
-struct Modules {
+pub struct Modules {
     builtins: HashMap<&'static str, builtins::BuiltinModule>,
 }
 impl Modules {
@@ -123,7 +123,7 @@ impl Default for Modules {
 pub enum Child {
     Async(Box<Self>),
     AlwaysSuccess(Box<Self>),
-    Process(airupfx_process::Child),
+    Process(airupfx::process::Child),
     Builtin(tokio::sync::Mutex<JoinHandle<i32>>),
 }
 impl Child {
@@ -215,8 +215,8 @@ impl Child {
         }
     }
 }
-impl From<airupfx_process::Child> for Child {
-    fn from(value: airupfx_process::Child) -> Self {
+impl From<airupfx::process::Child> for Child {
+    fn from(value: airupfx::process::Child) -> Self {
         Self::Process(value)
     }
 }
@@ -225,7 +225,7 @@ impl From<airupfx_process::Child> for Child {
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum Error {
     #[error("parse error")]
-    ParseError,
+    Parse,
 
     #[error("wait() failed: {0}")]
     Wait(WaitError),
@@ -249,7 +249,7 @@ impl From<WaitError> for Error {
 impl IntoApiError for Error {
     fn into_api_error(self) -> airup_sdk::Error {
         match self {
-            Self::ParseError => airup_sdk::Error::AceParseError,
+            Self::Parse => airup_sdk::Error::AceParseError,
             Self::Wait(err) => airup_sdk::Error::internal(err.to_string()),
             Self::Io(message) => airup_sdk::Error::Io { message },
             Self::TimedOut => airup_sdk::Error::TimedOut,

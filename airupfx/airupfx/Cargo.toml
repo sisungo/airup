@@ -12,7 +12,6 @@ publish = false
 cgroups = ["airupfx-isolator/cgroups"]
 
 [dependencies]
-airupfx-ace = { path = "../airupfx-ace" }
 airupfx-env = { path = "../airupfx-env" }
 airupfx-fs = { path = "../airupfx-fs" }
 airupfx-isolator = { path = "../airupfx-isolator" }

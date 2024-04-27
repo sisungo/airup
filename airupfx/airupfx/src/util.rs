@@ -19,9 +19,8 @@ where
             Err(err) => {
                 tracing::error!(target: "console", "{}: {}", why, err);
                 if std::process::id() == 1 {
-                    let ace = crate::ace::Ace::default();
                     loop {
-                        if let Err(err) = ace.run_wait("/bin/sh").await {
+                        if let Err(err) = shell().await {
                             tracing::error!(target: "console", "Failed to start `/bin/sh`: {err}");
                         }
                         if let Err(err) = crate::process::reload_image() {
@@ -34,4 +33,12 @@ where
             }
         }
     }
+}
+
+async fn shell() -> std::io::Result<()> {
+    let cmd = crate::process::Command::new("/bin/sh").spawn().await?;
+    cmd.wait()
+        .await
+        .map_err(|_| std::io::Error::from(std::io::ErrorKind::PermissionDenied))?;
+    Ok(())
 }

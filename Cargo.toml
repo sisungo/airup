@@ -9,7 +9,6 @@ members = [
     "airupfx/airupfx-fs",
     "airupfx/airupfx-process",
     "airupfx/airupfx-power",
-    "airupfx/airupfx-ace",
     "airupfx/airupfx-signal",
     "airupfx/airupfx-time",
     "airupfx/airupfx-macros",
@@ -17,8 +16,6 @@ members = [
     "airupfx/airupfx-extensions",
     "extensions/airup-eventsourced",
     "extensions/fallback-logger",
-    "tools/airup-debug",
-    "tools/airup-init",
 ]
 resolver = "2"
 
