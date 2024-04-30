@@ -7,7 +7,6 @@ mod events;
 mod extension;
 mod ipc;
 mod lifetime;
-mod logger;
 mod logging;
 mod milestones;
 mod storage;

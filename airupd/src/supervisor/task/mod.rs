@@ -8,7 +8,7 @@ pub mod stop;
 
 use super::SupervisorContext;
 use crate::ace::Ace;
-use airup_sdk::Error;
+use airup_sdk::{ipc::Request, Error};
 use airupfx::{io::line_piper::Callback as LinePiperCallback, prelude::*};
 use std::{future::Future, path::PathBuf, pin::Pin};
 use tokio::sync::watch;
@@ -160,9 +160,13 @@ impl LinePiperCallback for LogCallback {
         msg: &'a [u8],
     ) -> Pin<Box<dyn for<'b> Future<Output = ()> + Send + 'a>> {
         Box::pin(async move {
-            crate::logger::write(&self.name, self.module, msg)
-                .await
-                .ok();
+            crate::app::airupd()
+                .extensions
+                .rpc_invoke(Request::new(
+                    "logger.append",
+                    (&self.name, self.module, msg),
+                ))
+                .await;
         })
     }
     fn clone_boxed(&self) -> Box<dyn LinePiperCallback> {

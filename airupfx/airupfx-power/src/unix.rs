@@ -2,11 +2,13 @@
 
 use std::time::Duration;
 
+const TIMEOUT: Duration = Duration::from_millis(5000);
+
 /// Prepares for system reboot, including killing all processes, syncing disks and unmounting filesystems.
 pub(crate) async fn prepare() {
-    kill_all(Duration::from_millis(5000)).await;
+    kill_all(TIMEOUT).await;
     sync_disks();
-    umount_all_filesystems();
+    _ = umount_all_filesystems().await;
 }
 
 /// Sends a signal to all running processes, then wait for them to be terminated. If the timeout expired, the processes are
