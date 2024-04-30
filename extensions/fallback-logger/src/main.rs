@@ -6,7 +6,7 @@
 use airup_sdk::{blocking::fs::DirChain, system::LogRecord, Error};
 use airupfx::extensions::*;
 use rev_lines::RevLines;
-use std::io::Write;
+use std::{io::Write, path::PathBuf, sync::OnceLock};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
@@ -66,7 +66,15 @@ async fn tail(subject: String, n: usize) -> Result<Vec<LogRecord>, Error> {
 }
 
 fn dir_chain_logs() -> DirChain<'static> {
-    DirChain::new(&airup_sdk::build::manifest().log_dir)
+    static PATH: OnceLock<PathBuf> = OnceLock::new();
+
+    DirChain::new(PATH.get_or_init(|| {
+        let Ok(path) = std::env::var("AFL_LOGPATH") else {
+            eprintln!("airup-fallback-logger: error: environment `AFL_LOGPATH` was not set.");
+            std::process::exit(1);
+        };
+        path.into()
+    }))
 }
 
 fn open_subject_append(subject: &str) -> std::io::Result<std::fs::File> {

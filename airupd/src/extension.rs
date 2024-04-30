@@ -107,12 +107,14 @@ struct ExtensionHost {
     gate: mpsc::Receiver<(Request, oneshot::Sender<ciborium::Value>)>,
 }
 impl ExtensionHost {
+    const SIZE_LIMIT: usize = 8 * 1024 * 1024;
+
     fn run_on_the_fly(mut self) {
         let reqs = Arc::new(Mutex::new(self.reqs));
 
         let (rx, tx) = self.connection.into_split();
-        let mut rx = MessageProto::new(rx, 6 * 1024 * 1024);
-        let mut tx = MessageProto::new(tx, 6 * 1024 * 1024);
+        let mut rx = MessageProto::new(rx, Self::SIZE_LIMIT);
+        let mut tx = MessageProto::new(tx, Self::SIZE_LIMIT);
 
         // accepting requests
         let mut acceptor = {

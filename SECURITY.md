@@ -2,7 +2,7 @@
 
 ## Supported Versions
 The `HEAD` and the latest release are supported by the Airup developers. The maintained versions are:
- - Mainline: `0.10.0-rc.3`
+ - Mainline: `0.10.0-rc.4`
  - Stable: `0.9.4`
 
 ## Reporting a Vulnerability

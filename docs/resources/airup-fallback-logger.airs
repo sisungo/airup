@@ -9,3 +9,6 @@ start = "/usr/libexec/airup/fallback-logger"
 [env]
 stdout = "inherit"
 stderr = "inherit"
+
+[env.vars]
+AFL_LOGPATH = "/var/log/airup"
