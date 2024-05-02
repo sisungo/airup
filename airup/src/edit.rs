@@ -1,6 +1,6 @@
 use airup_sdk::{
     blocking::{files, fs::DirChain},
-    files::{timer::Timer, Service},
+    files::Service,
 };
 use anyhow::anyhow;
 use clap::Parser;
@@ -25,11 +25,6 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         let service = find_or_create_service(&format!("{x}.airs"))?;
         do_edit(&editor, &find_or_create_config(&cmdline.file)?, |s| {
             files::read_merge::<Service>(vec![service, s.into()])?;
-            Ok(())
-        })
-    } else if cmdline.file.strip_suffix(".airt").is_some() {
-        do_edit(&editor, &find_or_create_service(&cmdline.file)?, |s| {
-            files::read_merge::<Timer>(vec![s.into()])?;
             Ok(())
         })
     } else {

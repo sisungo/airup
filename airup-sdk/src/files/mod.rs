@@ -3,7 +3,6 @@
 pub mod milestone;
 pub mod service;
 pub mod system_conf;
-pub mod timer;
 
 pub use milestone::Milestone;
 pub use service::Service;
