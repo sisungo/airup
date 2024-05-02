@@ -1,3 +1,15 @@
+Changes in v0.10.0:
+ * feature: separate log extensions and `fallback-logger` from `airupd` to independent processes
+ * feature: an extension system based on RPC
+ * BREAKING: feature: `log_dir` is removed from `build_manifest.json`
+ * fix: cannot correctly perform userspace reboot because `AIRUP_MILESTONE` is set to `userspace-reboot` and a loop happens
+ * BREAKING: feature: logger apis under `system.*` are no longer available
+ * BREAKING: cli: `airup reboot`'s usage is refactored
+ * BREAKING: rpc protocol: the serialization is migrated from JSON to CBOR
+ * fix: cgroup name is misunderstanding
+ * feature: memory statistics when using realms
+ * note: `airup-eventsourced` is removed and its functionability about to be moved to another repository
+
 Changes in v0.9.4:
  * feature: logging in `airup-eventsourced`'s timers
  * compatibility: add FreeBSD support

@@ -118,7 +118,7 @@ impl ExtensionHost {
 
         // accepting requests
         let mut acceptor = {
-            let reqs = reqs.clone();
+            let reqs = Arc::clone(&reqs);
             tokio::spawn(async move {
                 let mut req_id = 1;
                 while let Some((mut req, sender)) = self.gate.recv().await {
@@ -137,7 +137,7 @@ impl ExtensionHost {
 
         // handling responses
         let mut handler = {
-            let reqs = reqs.clone();
+            let reqs = Arc::clone(&reqs);
             tokio::spawn(async move {
                 loop {
                     let Ok(buf) = rx.recv().await else {

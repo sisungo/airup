@@ -36,6 +36,7 @@ impl Manager {
         Self::default()
     }
 
+    /// Returns a stack structure that contains all milestones which were entered in the system.
     pub fn stack(&self) -> Vec<EnteredMilestone> {
         self.stack.read().unwrap().clone()
     }

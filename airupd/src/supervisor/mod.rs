@@ -56,11 +56,11 @@ impl Manager {
 
         let provided = service.service.provides.clone();
         let handle = SupervisorHandle::new(service);
-        lock.insert(name, handle.clone());
+        lock.insert(name, Arc::clone(&handle));
 
         let mut lock = self.provided.write().await;
         for i in provided {
-            lock.insert(i, handle.clone());
+            lock.insert(i, Arc::clone(&handle));
         }
 
         handle
@@ -120,7 +120,7 @@ impl Manager {
         provided: &mut HashMap<String, Arc<SupervisorHandle>>,
         permissive: bool,
     ) -> Result<(), Error> {
-        let handle = supervisors.get(name).ok_or(Error::NotStarted)?.clone();
+        let handle = Arc::clone(supervisors.get(name).ok_or(Error::NotStarted)?);
         let queried = handle.query().await;
 
         let is_providing = |provided: &mut HashMap<_, _>, i| {
@@ -304,7 +304,7 @@ impl Supervisor {
             Request::MakeActive(chan) => {
                 match &self.current_task.0 {
                     Some(task) => match task.task_class() {
-                        "StartService" => chan.send(Ok(task.clone())).ok(),
+                        "StartService" => chan.send(Ok(Arc::clone(task))).ok(),
                         _ => chan.send(Err(Error::TaskExists)).ok(),
                     },
                     None => match self.user_start_service().await {
@@ -428,7 +428,7 @@ impl Supervisor {
         self.timers.on_start();
         self.current_task
             ._start_task(&self.context, async {
-                task::start::start(self.context.clone())
+                task::start::start(Arc::clone(&self.context))
             })
             .await
     }
@@ -437,7 +437,7 @@ impl Supervisor {
     async fn stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
             ._start_task(&self.context, async {
-                task::stop::start(self.context.clone())
+                task::stop::start(Arc::clone(&self.context))
             })
             .await
     }
@@ -473,7 +473,7 @@ impl Supervisor {
     async fn cleanup_service(&mut self, wait: Wait) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
             ._start_task(&self.context, async {
-                task::cleanup::start(self.context.clone(), wait)
+                task::cleanup::start(Arc::clone(&self.context), wait)
             })
             .await
     }
