@@ -43,15 +43,6 @@ pub const SIGWINCH: i32 = libc::SIGWINCH;
 /// Kills the process.
 pub const SIGKILL: i32 = libc::SIGKILL;
 
-/// Segmentation fault.
-pub const SIGSEGV: i32 = libc::SIGSEGV;
-
-/// Aborted.
-pub const SIGABRT: i32 = libc::SIGABRT;
-
-/// Float-point exception.
-pub const SIGFPE: i32 = libc::SIGFPE;
-
 /// Registers a signal handler.
 ///
 /// # Errors
@@ -81,4 +72,49 @@ pub fn signal<
 pub fn ignore(signum: i32) -> std::io::Result<()> {
     // Why not using `SIG_IGN`: it is by default inherited by child processes.
     signal(signum, |_| async {})
+}
+
+/// Initializes necessary primitives.
+pub fn init() {
+    if std::process::id() == 1 {
+        for signum in [
+            libc::SIGSEGV,
+            libc::SIGBUS,
+            libc::SIGILL,
+            libc::SIGFPE,
+            libc::SIGABRT,
+        ] {
+            unsafe {
+                libc::signal(signum, fatal_error_handler as *const u8 as usize);
+            }
+        }
+    }
+}
+
+/// A signal handler that handles fatal errors, like `SIGSEGV`, `SIGABRT`, etc.
+///
+/// This signal handler is only registered when we are `pid == 1`. It will firstly set `SIGCHLD` to `SIG_IGN`, so the kernel
+/// would reap child processes, then print an error message to stderr. After that, this will hang the process forever.
+extern "C" fn fatal_error_handler(signum: libc::c_int) {
+    let begin = b"airupd[1]: caught ";
+    let signal = match signum {
+        libc::SIGSEGV => &b"SIGSEGV"[..],
+        libc::SIGBUS => &b"SIGBUS"[..],
+        libc::SIGILL => &b"SIGILL"[..],
+        libc::SIGFPE => &b"SIGFPE"[..],
+        libc::SIGABRT => &b"SIGABRT"[..],
+        _ => &b"unknown signal"[..],
+    };
+    let end = b", this is a fatal error.\n";
+
+    unsafe {
+        libc::signal(SIGCHLD, libc::SIG_IGN);
+        libc::write(2, begin.as_ptr() as *const _, begin.len());
+        libc::write(2, signal.as_ptr() as *const _, signal.len());
+        libc::write(2, end.as_ptr() as *const _, end.len());
+    }
+
+    loop {
+        std::hint::spin_loop();
+    }
 }

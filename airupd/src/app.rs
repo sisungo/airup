@@ -2,7 +2,9 @@
 
 use crate::*;
 use airup_sdk::system::{QuerySystem, Status};
-use airupfx::signal::*;
+use airupfx::signal::{
+    self, SIGHUP, SIGINT, SIGPIPE, SIGQUIT, SIGTERM, SIGTTIN, SIGTTOU, SIGUSR1, SIGUSR2,
+};
 use std::{path::Path, sync::OnceLock};
 
 static AIRUPD: OnceLock<Airupd> = OnceLock::new();
@@ -57,16 +59,18 @@ impl Airupd {
 
     /// Starts tasks to listen to UNIX signals.
     pub fn listen_signals(&'static self) {
-        ignore_all([
+        signal::init();
+
+        signal::ignore_all([
             SIGPIPE, SIGTTIN, SIGTTOU, SIGQUIT, SIGTERM, SIGUSR1, SIGUSR2,
         ]);
 
-        signal(SIGINT, |_| async {
+        signal::signal(SIGINT, |_| async {
             self.enter_milestone("reboot".into()).await.ok();
         })
         .ok();
 
-        signal(SIGHUP, |_| async {
+        signal::signal(SIGHUP, |_| async {
             self.ipc.reload();
         })
         .ok();
