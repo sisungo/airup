@@ -18,8 +18,8 @@ use airupfx::prelude::*;
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     airupfx::init().await;
+    let cmdline = self::env::Cmdline::parse();
 
-    let cmdline = self::env::cmdline();
     logging::Builder::new()
         .name("airupd")
         .quiet(cmdline.quiet)
@@ -49,14 +49,14 @@ async fn main() {
         .start();
     app::airupd().listen_signals();
 
-    if std::process::id() == 1 && !env::cmdline().quiet {
+    if std::process::id() == 1 && !cmdline.quiet {
         println!(
             "Welcome to {}!\n",
             app::airupd().storage.config.system_conf.system.os_name
         );
     }
 
-    app::airupd().bootstrap_milestone(env::cmdline().milestone.to_string());
+    app::airupd().bootstrap_milestone(cmdline.milestone.to_string());
 
     let mut lifetime = app::airupd().lifetime.subscribe();
     if let Ok(event) = lifetime.recv().await {

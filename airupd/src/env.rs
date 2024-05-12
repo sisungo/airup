@@ -1,6 +1,6 @@
 //! Inspection and manipulation of `airupd`’s environment.
 
-use std::{borrow::Cow, path::PathBuf, sync::OnceLock};
+use std::{borrow::Cow, path::PathBuf};
 
 macro_rules! feed_parser {
     ($flag:ident, $storage:expr, $arg:expr) => {
@@ -126,11 +126,4 @@ impl Default for Cmdline {
             build_manifest: None,
         }
     }
-}
-
-/// Returns a reference to the unique [`Cmdline`] instance.
-pub fn cmdline() -> &'static Cmdline {
-    static CMDLINE: OnceLock<Cmdline> = OnceLock::new();
-
-    CMDLINE.get_or_init(Cmdline::parse)
 }
