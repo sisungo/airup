@@ -17,7 +17,9 @@ use airupfx::prelude::*;
 /// Entrypoint of the program.
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
+    airupfx::init().await;
     let cmdline = self::env::Cmdline::parse();
+
     logging::Builder::new()
         .name("airupd")
         .quiet(cmdline.quiet)

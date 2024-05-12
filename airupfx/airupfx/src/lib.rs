@@ -17,3 +17,14 @@ pub use airupfx_power as power;
 pub use airupfx_process as process;
 pub use airupfx_signal as signal;
 pub use airupfx_time as time;
+
+pub async fn init() {
+    #[cfg(feature = "selinux")]
+    {
+        if std::process::id() == 1 && env::take_var("AIRUP_TEMP_SELINUX_INITIALIZED").is_err() {
+            _ = selinux::policy::load_initial();
+            std::env::set_var("AIRUP_TEMP_SELINUX_INITIALIZED", "1");
+            _ = process::reload_image();
+        }
+    }
+}
