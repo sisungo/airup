@@ -79,4 +79,3 @@ mod tests {
         assert!(crate::timestamp_ms() > 0);
     }
 }
-

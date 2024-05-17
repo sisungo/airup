@@ -265,7 +265,7 @@ impl ChildQueue {
 fn child_queue() -> &'static ChildQueue {
     CHILD_QUEUE.get_or_init(|| {
         let child_queue = Box::leak(Box::new(ChildQueue::new()));
-        child_queue.start().ok();
+        _ = child_queue.start();
         child_queue
     })
 }

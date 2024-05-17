@@ -12,6 +12,7 @@ publish = false
 cgroups = ["cgroups-rs"]
 
 [dependencies]
+airupfx-time = { path = "../airupfx-time" }
 cfg-if = "1"
 
 [target.'cfg(target_os = "linux")'.dependencies]

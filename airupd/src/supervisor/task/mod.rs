@@ -69,7 +69,7 @@ impl TaskHandle for TaskHelperHandle {
     }
 
     fn send_interrupt(&self) {
-        self.interrupt_flag.send(true).ok();
+        _ = self.interrupt_flag.send(true);
     }
 
     fn wait(&self) -> BoxFuture<Result<TaskFeedback, Error>> {

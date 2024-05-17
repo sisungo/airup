@@ -60,7 +60,7 @@ impl crate::app::Airupd {
                 .is_booting
                 .store(true, atomic::Ordering::Relaxed);
 
-            self.enter_milestone(name).await.ok();
+            _ = self.enter_milestone(name).await;
 
             self.milestones
                 .is_booting
@@ -104,7 +104,7 @@ async fn enter_milestone(name: String, hist: &mut HashSet<String>) -> Result<(),
 
     // Enters dependency milestones
     for dep in def.manifest.milestone.dependencies.iter() {
-        Box::pin(enter_milestone(dep.into(), hist)).await.ok();
+        _ = Box::pin(enter_milestone(dep.into(), hist)).await;
     }
 
     // By default, Airup sets `AIRUP_MILESTONE` environment variable to indicate services which milestone is the system

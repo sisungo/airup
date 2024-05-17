@@ -12,83 +12,34 @@ pub const PRESETS: &[&str] = &["reboot", "poweroff", "halt", "userspace-reboot"]
 /// # Panics
 /// This function would panic if `name` is not contained in [`PRESETS`].
 pub async fn enter(name: &str) -> Result<(), Error> {
+    _ = super::enter_milestone(name.into(), &mut HashSet::with_capacity(8)).await;
+    let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
+    stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
+
     match name {
-        "reboot" => enter_reboot().await,
-        "poweroff" => enter_poweroff().await,
-        "halt" => enter_halt().await,
-        "userspace-reboot" => enter_userspace_reboot().await,
-        _ => panic!("Unexpected milestone `{name}`"),
+        "reboot" => airupd().lifetime.reboot(),
+        "poweroff" => airupd().lifetime.poweroff(),
+        "halt" => airupd().lifetime.halt(),
+        "userspace-reboot" => airupd().lifetime.userspace_reboot(),
+        _ => unreachable!(),
     }
-}
-
-/// Enters the `reboot` milestone.
-async fn enter_reboot() -> Result<(), Error> {
-    super::enter_milestone("reboot".into(), &mut HashSet::with_capacity(8))
-        .await
-        .ok();
-
-    let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
-    stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
-    airupd().lifetime.reboot();
-
-    Ok(())
-}
-
-/// Enters the `poweroff` milestone.
-async fn enter_poweroff() -> Result<(), Error> {
-    super::enter_milestone("poweroff".into(), &mut HashSet::with_capacity(8))
-        .await
-        .ok();
-
-    let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
-    stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
-    airupd().lifetime.poweroff();
-
-    Ok(())
-}
-
-/// Enters the `halt` milestone.
-async fn enter_halt() -> Result<(), Error> {
-    super::enter_milestone("halt".into(), &mut HashSet::with_capacity(8))
-        .await
-        .ok();
-
-    let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
-    stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
-    airupd().lifetime.halt();
-
-    Ok(())
-}
-
-/// Enters the `userspace-reboot` milestone.
-async fn enter_userspace_reboot() -> Result<(), Error> {
-    super::enter_milestone("userspace-reboot".into(), &mut HashSet::with_capacity(8))
-        .await
-        .ok();
-
-    std::env::set_var("AIRUP_MILESTONE", "default");
-
-    let reboot_timeout = airupd().storage.config.system_conf.system.reboot_timeout;
-    stop_all_services(Duration::from_millis(reboot_timeout as _)).await;
-    airupd().lifetime.userspace_reboot();
 
     Ok(())
 }
 
 /// Stops all running services.
 async fn stop_all_services(timeout: Duration) {
-    tokio::time::timeout(timeout, async {
+    _ = tokio::time::timeout(timeout, async {
         let services = airupd().supervisors.list().await;
         let mut join_handles = Vec::with_capacity(services.len());
         for service in services {
             join_handles.push(stop_service_task(service));
         }
         for join_handle in join_handles {
-            join_handle.await.ok();
+            _ = join_handle.await;
         }
     })
-    .await
-    .ok();
+    .await;
 }
 
 /// Spawns a task to interactively stop a service.
@@ -119,8 +70,8 @@ fn stop_service_task(service: String) -> JoinHandle<()> {
                 super::display_name(&service).await,
                 err
             );
-            airupd().kill_service(&service).await.ok();
+            _ = airupd().kill_service(&service).await;
         }
-        airupd().uncache_service(&service).await.ok();
+        _ = airupd().uncache_service(&service).await;
     })
 }

@@ -381,4 +381,3 @@ mod tests {
         assert!(wait.is_success());
     }
 }
-

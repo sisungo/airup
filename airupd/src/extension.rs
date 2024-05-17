@@ -149,7 +149,7 @@ impl ExtensionHost {
                     let Some(req_chan) = reqs.lock().unwrap().remove(&resp.id) else {
                         return;
                     };
-                    req_chan.send(resp.data).ok();
+                    _ = req_chan.send(resp.data);
                 }
             })
         };

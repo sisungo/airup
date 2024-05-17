@@ -23,7 +23,10 @@ impl Bus {
 
     /// Triggers an event in the bus.
     pub async fn trigger(&self, event: Event) {
-        self.sender.broadcast(event).await.ok();
+        self.sender
+            .broadcast(event)
+            .await
+            .expect("the bus should be never closed");
     }
 }
 impl Default for Bus {

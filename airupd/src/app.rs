@@ -65,15 +65,13 @@ impl Airupd {
             SIGPIPE, SIGTTIN, SIGTTOU, SIGQUIT, SIGTERM, SIGUSR1, SIGUSR2,
         ]);
 
-        signal::signal(SIGINT, |_| async {
-            self.enter_milestone("reboot".into()).await.ok();
-        })
-        .ok();
+        _ = signal::signal(SIGINT, |_| async {
+            _ = self.enter_milestone("reboot".into()).await;
+        });
 
-        signal::signal(SIGHUP, |_| async {
+        _ = signal::signal(SIGHUP, |_| async {
             self.ipc.reload();
-        })
-        .ok();
+        });
     }
 }
 

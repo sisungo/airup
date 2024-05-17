@@ -13,6 +13,7 @@ static CONTROLLER: OnceLock<RealmController> = OnceLock::new();
 
 #[derive(Debug)]
 struct RealmController {
+    prefix: i64,
     id: AtomicU64,
 }
 impl RealmController {
@@ -23,6 +24,7 @@ impl RealmController {
 
 fn controller() -> &'static RealmController {
     CONTROLLER.get_or_init(|| RealmController {
+        prefix: airupfx_time::timestamp_ms(),
         id: AtomicU64::new(1),
     })
 }
@@ -37,7 +39,7 @@ impl Realm {
         let ctrl = controller();
         let id = ctrl.allocate_id();
         let hier = cgroups_rs::hierarchies::auto();
-        let cg = CgroupBuilder::new(&format!("airup_{id}"))
+        let cg = CgroupBuilder::new(&format!("airup_{}_{id}", ctrl.prefix))
             .cpu()
             .done()
             .memory()
@@ -102,6 +104,6 @@ impl Realm {
 }
 impl Drop for Realm {
     fn drop(&mut self) {
-        self.cg.delete().ok();
+        _ = self.cg.delete();
     }
 }

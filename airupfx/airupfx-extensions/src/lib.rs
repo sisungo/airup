@@ -33,7 +33,7 @@ impl Server {
             .join(&extension_socket_name)
             .display()
             .to_string();
-        std::fs::remove_file(&extension_socket_path).ok();
+        _ = std::fs::remove_file(&extension_socket_path);
 
         Ok(Self::with_config(extension_name, service_name, extension_socket_path).await?)
     }
@@ -83,27 +83,25 @@ impl Server {
                 }
             }
 
-            airup_rpc_conn
+            _ = airup_rpc_conn
                 .trigger_event(&Event::new("notify_active".into(), self.service_name))
-                .await
-                .ok();
+                .await;
 
             Ok::<(), anyhow::Error>(())
         });
 
         let extension_name = self.extension_name.clone();
-        airupfx_signal::signal(SIGTERM, |_| async move {
+        _ = airupfx_signal::signal(SIGTERM, |_| async move {
             let Ok(mut airup_rpc_conn) =
                 airup_sdk::nonblocking::Connection::connect(airup_sdk::socket_path()).await
             else {
                 return;
             };
 
-            airup_rpc_conn.unload_extension(&extension_name).await.ok();
+            _ = airup_rpc_conn.unload_extension(&extension_name).await;
 
             std::process::exit(0);
-        })
-        .ok();
+        });
 
         loop {
             let Ok((stream, _)) = self.listener.accept().await else {

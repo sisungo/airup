@@ -74,12 +74,12 @@ pub enum Event {
 impl Event {
     /// Handles the event.
     pub async fn handle(&self) -> ! {
-        match self {
+        _ = match self {
             Self::Exit(code) => std::process::exit(*code),
-            Self::Poweroff => power_manager().poweroff().await.ok(),
-            Self::Reboot => power_manager().reboot().await.ok(),
-            Self::Halt => power_manager().halt().await.ok(),
-            Self::UserspaceReboot => power_manager().userspace().await.ok(),
+            Self::Poweroff => power_manager().poweroff().await,
+            Self::Reboot => power_manager().reboot().await,
+            Self::Halt => power_manager().halt().await,
+            Self::UserspaceReboot => power_manager().userspace().await,
         };
 
         std::process::exit(1);

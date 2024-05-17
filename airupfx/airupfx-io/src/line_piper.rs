@@ -94,7 +94,7 @@ impl Callback for ChannelCallback {
 
     fn invoke<'a>(&'a self, a: &'a [u8]) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
         Box::pin(async {
-            self.tx.send(a.to_vec()).await.ok();
+            _ = self.tx.send(a.to_vec()).await;
         })
     }
 }

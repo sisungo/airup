@@ -17,7 +17,7 @@ pub fn main(mut cmdline: Cmdline) -> anyhow::Result<()> {
         cmdline.mode = "userspace-reboot".into();
     }
 
-    conn.enter_milestone(&cmdline.mode)?.ok();
+    _ = conn.enter_milestone(&cmdline.mode)?;
 
     Ok(())
 }

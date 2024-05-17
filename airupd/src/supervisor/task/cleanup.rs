@@ -87,13 +87,12 @@ impl CleanupService {
     async fn run(&mut self) -> Result<(), Error> {
         let ace = super::ace(&self.context).await?;
 
-        cleanup_service(
+        _ = cleanup_service(
             &ace,
             &self.context.service,
             &airupfx::time::countdown(self.context.service.exec.stop_timeout()),
         )
-        .await
-        .ok();
+        .await;
 
         self.important.store(false, atomic::Ordering::SeqCst);
         self.helper
@@ -127,7 +126,7 @@ pub async fn cleanup_service(
     countdown: &airupfx::time::Countdown,
 ) -> Result<(), Error> {
     if let Some(x) = &service.service.pid_file {
-        tokio::fs::remove_file(x).await.ok();
+        _ = tokio::fs::remove_file(x).await;
     }
 
     if let Some(x) = &service.exec.post_stop {

@@ -51,7 +51,7 @@ impl Lock {
         holder
             .write_all(std::process::id().to_string().as_bytes())
             .await?;
-        set_permission(&path, Permission::Lock).await.ok();
+        _ = set_permission(&path, Permission::Lock).await;
 
         Ok(Self {
             holder: Some(holder.into_std().await),
@@ -62,7 +62,7 @@ impl Lock {
 impl Drop for Lock {
     fn drop(&mut self) {
         drop(self.holder.take());
-        std::fs::remove_file(&self.path).ok();
+        _ = std::fs::remove_file(&self.path);
     }
 }
 

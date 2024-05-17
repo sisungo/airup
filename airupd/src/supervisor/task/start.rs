@@ -98,9 +98,7 @@ impl StartService {
 
         if let Some(x) = &self.context.service.exec.post_start {
             for line in x.lines() {
-                ace.run_wait_timeout(line.trim(), countdown.left())
-                    .await
-                    .ok();
+                _ = ace.run_wait_timeout(line.trim(), countdown.left()).await;
             }
         }
 
@@ -139,9 +137,7 @@ impl StartService {
             .await;
 
         if let Some(pid_file) = &self.context.service.service.pid_file {
-            tokio::fs::write(pid_file, self.context.pid().await.unwrap().to_string())
-                .await
-                .ok();
+            _ = tokio::fs::write(pid_file, self.context.pid().await.unwrap().to_string()).await;
         }
         Ok(())
     }
@@ -161,7 +157,7 @@ impl StartService {
             };
             let Ok(receive) = receive else {
                 if let Some(child) = self.context.set_child(None).await {
-                    child.kill().await.ok();
+                    _ = child.kill().await;
                 }
                 return Err(Error::TimedOut);
             };

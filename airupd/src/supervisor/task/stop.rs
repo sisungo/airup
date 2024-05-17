@@ -81,9 +81,7 @@ impl StopService {
 
         self.context.status.set(Status::Stopped);
 
-        super::cleanup::cleanup_service(&ace, &self.context.service, &countdown)
-            .await
-            .ok();
+        _ = super::cleanup::cleanup_service(&ace, &self.context.service, &countdown).await;
 
         Ok(())
     }

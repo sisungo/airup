@@ -24,7 +24,7 @@ impl Context {
     }
 
     pub fn reload(&self) {
-        self.reload.send(()).ok();
+        _ = self.reload.send(());
     }
 }
 impl Default for Context {
@@ -52,7 +52,7 @@ impl Server {
     /// Forces to create a new [`Server`] instance.
     pub async fn new_force<P: Into<PathBuf>>(path: P) -> anyhow::Result<Self> {
         let path = path.into();
-        tokio::fs::remove_file(&path).await.ok();
+        _ = tokio::fs::remove_file(&path).await;
 
         Self::new(path).await
     }
@@ -78,7 +78,7 @@ impl Server {
         loop {
             tokio::select! {
                 Ok(()) = reload.recv() => {
-                    self.reload().await.ok();
+                    _ = self.reload().await;
                 },
                 Ok(conn) = self.server.accept() => {
                     Session::new(conn).start();

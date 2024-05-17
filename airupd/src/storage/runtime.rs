@@ -13,7 +13,7 @@ impl Runtime {
     /// Creates a new [`Runtime`] instance.
     pub async fn new() -> Self {
         let base_dir = airup_sdk::build::manifest().runtime_dir.clone();
-        tokio::fs::create_dir_all(&base_dir).await.ok();
+        _ = tokio::fs::create_dir_all(&base_dir).await;
 
         Self { base_dir }
     }

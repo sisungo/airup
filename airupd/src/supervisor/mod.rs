@@ -103,9 +103,7 @@ impl Manager {
         // [`Manager::_remove_from`] fails if the specific supervisor cannot be removed, so we can iterate over all supervisors
         // to "try to remove".
         for k in all {
-            Self::_remove_from(&k, &mut supervisors, &mut provided, false)
-                .await
-                .ok();
+            _ = Self::_remove_from(&k, &mut supervisors, &mut provided, false).await;
         }
     }
 
@@ -278,38 +276,37 @@ impl Supervisor {
     async fn handle_req(&mut self, req: Request) {
         match req {
             Request::Query(chan) => {
-                chan.send(self.query().await).ok();
+                _ = chan.send(self.query().await);
             }
             Request::Start(chan) => {
-                chan.send(self.user_start_service().await).ok();
+                _ = chan.send(self.user_start_service().await);
             }
             Request::Stop(chan) => {
-                chan.send(self.user_stop_service(false).await).ok();
+                _ = chan.send(self.user_stop_service(false).await);
             }
             Request::Kill(chan) => {
-                chan.send(self.user_stop_service(true).await.map(|_| ()))
-                    .ok();
+                _ = chan.send(self.user_stop_service(true).await.map(|_| ()));
             }
             Request::Reload(chan) => {
-                chan.send(self.reload_service().await).ok();
+                _ = chan.send(self.reload_service().await);
             }
             Request::UpdateDef(new, chan) => {
-                chan.send(self.update_def(*new).await).ok();
+                _ = chan.send(self.update_def(*new).await);
             }
             Request::InterruptTask(chan) => {
                 let handle = self.current_task.interrupt();
                 self.context.last_error.set_autosave(false);
-                chan.send(handle).ok();
+                _ = chan.send(handle);
             }
             Request::MakeActive(chan) => {
-                match &self.current_task.0 {
+                _ = match &self.current_task.0 {
                     Some(task) => match task.task_class() {
-                        "StartService" => chan.send(Ok(Arc::clone(task))).ok(),
-                        _ => chan.send(Err(Error::TaskExists)).ok(),
+                        "StartService" => chan.send(Ok(Arc::clone(task))),
+                        _ => chan.send(Err(Error::TaskExists)),
                     },
                     None => match self.user_start_service().await {
-                        Ok(handle) => chan.send(Ok(handle)).ok(),
-                        Err(err) => chan.send(Err(err)).ok(),
+                        Ok(handle) => chan.send(Ok(handle)),
+                        Err(err) => chan.send(Err(err)),
                     },
                 };
             }
@@ -323,7 +320,7 @@ impl Supervisor {
                 return;
             };
             ace.env.var("AIRUP_EVENT_HANDLER_PAYLOAD", &event.payload);
-            ace.run(exec).await.ok();
+            _ = ace.run(exec).await;
         }
     }
 
@@ -336,7 +333,7 @@ impl Supervisor {
         self.context.status.set(Status::Stopped);
         self.context.set_child(None).await;
         if self.context.retry.enabled() {
-            self.cleanup_service(wait).await.ok();
+            _ = self.cleanup_service(wait).await;
         }
     }
 
@@ -349,7 +346,7 @@ impl Supervisor {
         };
         if handle.task_class() == "HealthCheck" {
             self.context.last_error.set(Error::Watchdog);
-            self.stop_service().await.ok();
+            _ = self.stop_service().await;
         }
         if self.context.last_error.take_autosave() {
             self.context.last_error.set(error);
@@ -359,7 +356,7 @@ impl Supervisor {
     /// Called when the health check timer goes off.
     async fn handle_health_check(&mut self) {
         if self.context.status.get() == Status::Active {
-            self.health_check().await.ok();
+            _ = self.health_check().await;
         } else if let Some(alarm) = &mut self.timers.health_check {
             alarm.disable();
         }
@@ -500,7 +497,7 @@ impl CurrentTask {
     /// Waits until the task running in the container to be finished. When the operation completed, a `Some(_)` is returned
     /// and the container is set empty. If the container is already empty, `None` is returned.
     async fn wait(&mut self) -> Option<Arc<dyn TaskHandle>> {
-        self.0.as_deref()?.wait().await.ok();
+        _ = self.0.as_deref()?.wait().await;
         self.0.take()
     }
 
@@ -514,7 +511,7 @@ impl CurrentTask {
         if would_interrupt {
             let task = self.0.take().unwrap();
             task.send_interrupt();
-            task.wait().await.ok();
+            _ = task.wait().await;
         }
 
         would_interrupt
@@ -890,11 +887,11 @@ async fn wait(lock: &mut Option<Child>) -> Option<Wait> {
 fn setup_realm(realm: &Option<Arc<Realm>>, service: &Service) {
     if let Some(realm) = &realm {
         if let Some(x) = service.reslimit.cpu {
-            realm.set_cpu_limit(x).ok();
+            _ = realm.set_cpu_limit(x);
         }
 
         if let Some(x) = service.reslimit.memory {
-            realm.set_mem_limit(x as usize).ok();
+            _ = realm.set_mem_limit(x as usize);
         }
     }
 }
