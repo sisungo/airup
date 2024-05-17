@@ -365,3 +365,20 @@ impl From<sys::WaitError> for WaitError {
         Self(value.to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn spawn_and_wait() {
+        let wait = crate::Command::new("true")
+            .spawn()
+            .await
+            .unwrap()
+            .wait()
+            .await
+            .unwrap();
+
+        assert!(wait.is_success());
+    }
+}
+

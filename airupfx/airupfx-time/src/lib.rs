@@ -71,3 +71,12 @@ pub fn timestamp_ms() -> i64 {
         Err(err) => -(err.duration().as_millis() as i64),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn timestamp() {
+        assert!(crate::timestamp_ms() > 0);
+    }
+}
+

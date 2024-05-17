@@ -65,3 +65,19 @@ impl Drop for Lock {
         std::fs::remove_file(&self.path).ok();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn lock() {
+        let path = std::path::Path::new("/tmp/.airupfx-fs.test.lock");
+        _ = tokio::fs::remove_file(path).await;
+        let lock = crate::Lock::new(path.into()).await.unwrap();
+        assert_eq!(
+            tokio::fs::read_to_string(path).await.unwrap(),
+            std::process::id().to_string()
+        );
+        drop(lock);
+        assert!(!path.exists());
+    }
+}
