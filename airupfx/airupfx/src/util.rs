@@ -18,7 +18,7 @@ where
             Ok(val) => val,
             Err(err) => {
                 tracing::error!(target: "console", "{}: {}", why, err);
-                if std::process::id() == 1 {
+                if crate::process::as_pid1() {
                     loop {
                         if let Err(err) = shell().await {
                             tracing::error!(target: "console", "Failed to start `/bin/sh`: {err}");

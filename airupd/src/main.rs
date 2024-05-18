@@ -49,7 +49,7 @@ async fn main() {
         .start();
     app::airupd().listen_signals();
 
-    if std::process::id() == 1 && !cmdline.quiet {
+    if airupfx::process::as_pid1() && !cmdline.quiet {
         println!(
             "Welcome to {}!\n",
             app::airupd().storage.config.system_conf.system.os_name

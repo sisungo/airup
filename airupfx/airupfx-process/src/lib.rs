@@ -22,6 +22,11 @@ pub fn is_forking_supervisable() -> bool {
     sys::is_forking_supervisable()
 }
 
+/// Returns `true` if the supervisor should run as it was running as `pid = 1` on Unix.
+pub fn as_pid1() -> bool {
+    std::process::id() == 1
+}
+
 /// Called when using an alternative process manager.
 pub async fn lock() -> impl Drop {
     sys::lock().await

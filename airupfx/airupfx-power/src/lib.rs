@@ -80,7 +80,7 @@ impl PowerManager for Fallback {
 impl Fallback {
     /// Prints "It's now safe to turn off the device." to standard error stream and parks current thread.
     fn halt_process() -> ! {
-        if std::process::id() == 1 {
+        if airupfx_process::as_pid1() {
             eprintln!("It's now safe to turn off the device.");
             loop {
                 std::thread::park();
@@ -97,7 +97,7 @@ impl Fallback {
 /// always returned.
 #[must_use]
 pub fn power_manager() -> &'static dyn PowerManager {
-    if std::process::id() == 1 {
+    if airupfx_process::as_pid1() {
         sys::power_manager()
     } else {
         &Fallback
