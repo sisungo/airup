@@ -1,3 +1,6 @@
+//! # AirupFX Extension Framework
+//! This crate provides a high-level framework for writing Airup extensions in Rust.
+
 use airup_sdk::{
     info::ConnectionExt,
     ipc::MessageProto,
@@ -69,7 +72,7 @@ impl Server {
                 airup_sdk::nonblocking::Connection::connect(airup_sdk::socket_path()).await?;
 
             match airup_rpc_conn
-                .load_extension(&extension_name, &self.path)
+                .register_extension(&extension_name, &self.path)
                 .await
             {
                 Ok(Ok(())) => (),
@@ -98,7 +101,7 @@ impl Server {
                 return;
             };
 
-            _ = airup_rpc_conn.unload_extension(&extension_name).await;
+            _ = airup_rpc_conn.unregister_extension(&extension_name).await;
 
             std::process::exit(0);
         });

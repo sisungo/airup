@@ -20,7 +20,8 @@ impl Extensions {
         Self::default()
     }
 
-    pub async fn load(&self, name: String, path: &str) -> Result<(), airup_sdk::Error> {
+    /// Registers an extension.
+    pub async fn register(&self, name: String, path: &str) -> Result<(), airup_sdk::Error> {
         let mut lock = self.0.write().await;
         if lock.contains_key(&name) {
             return Err(airup_sdk::Error::Exists);
@@ -38,6 +39,7 @@ impl Extensions {
         Ok(())
     }
 
+    /// Invokes an RPC invokation to an extension.
     pub async fn rpc_invoke(&self, mut req: airup_sdk::ipc::Request) -> airup_sdk::ipc::Response {
         let mut method_splited = req.method.splitn(2, '.');
         let extension = method_splited.next().unwrap();
@@ -56,7 +58,8 @@ impl Extensions {
         })
     }
 
-    pub async fn unload(&self, name: &str) -> Result<(), airup_sdk::Error> {
+    /// Unregisters an extension.
+    pub async fn unregister(&self, name: &str) -> Result<(), airup_sdk::Error> {
         self.0
             .write()
             .await
@@ -107,6 +110,7 @@ struct ExtensionHost {
     gate: mpsc::Receiver<(Request, oneshot::Sender<ciborium::Value>)>,
 }
 impl ExtensionHost {
+    /// Maximum size of received message from an extension, in bytes.
     const SIZE_LIMIT: usize = 8 * 1024 * 1024;
 
     fn run_on_the_fly(mut self) {

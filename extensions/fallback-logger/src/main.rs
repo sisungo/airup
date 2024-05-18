@@ -1,6 +1,6 @@
-//! A simple logger.
+//! A simple logger for fallback use.
 //!
-//! This has some limitations and has bad performance. Being designed as an "fallback choice", the implementation aims to be
+//! This has some limitations and has poor performance. Being designed as an "fallback choice", the implementation aims to be
 //! small.
 
 use airup_sdk::{blocking::fs::DirChain, system::LogRecord, Error};
@@ -46,6 +46,10 @@ async fn append(subject: String, module: String, msg: Vec<u8>) -> Result<(), Err
 
 #[airupfx::macros::api]
 async fn tail(subject: String, n: usize) -> Result<Vec<LogRecord>, Error> {
+    if n > 1536 {
+        return Err(Error::TimedOut);
+    }
+
     let reader = open_subject_read(&subject).map_err(|x| Error::Io {
         message: x.to_string(),
     })?;

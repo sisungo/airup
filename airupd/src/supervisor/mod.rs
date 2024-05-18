@@ -622,7 +622,7 @@ impl LastErrorContext {
     }
 
     fn set_autosave(&self, val: bool) -> bool {
-        self.auto_save.swap(val, atomic::Ordering::SeqCst)
+        self.auto_save.swap(val, atomic::Ordering::AcqRel)
     }
 
     fn take_autosave(&self) -> bool {
@@ -668,7 +668,7 @@ impl RetryContext {
 
     /// Sets the retry count to zero.
     fn reset_count(&self) {
-        self.count.store(0, atomic::Ordering::SeqCst);
+        self.count.store(0, atomic::Ordering::Release);
     }
 
     /// Enables retrying if disabled.

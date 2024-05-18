@@ -31,4 +31,6 @@ Module `debug` provides methods that are used for Airup debugging.
 **Return Value**: Content of the parameter.
 
 **Description**: Returns the `Response` object provided by the parameter.
+
+**NOTE**: This is an API exposed as an Airup internal implementation detail and is subject to change.
  

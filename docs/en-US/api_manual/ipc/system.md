@@ -172,4 +172,5 @@ with the same name will be overridden, rather than returning an error.
 **Description**: Unloads an Airup extension.
 
 **Possible Errors**:
+
  - `NOT_FOUND`: The specified extension was not installed yet.

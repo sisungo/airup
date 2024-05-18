@@ -29,8 +29,8 @@ pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H
             list_services,
             enter_milestone,
             trigger_event,
-            load_extension,
-            unload_extension,
+            register_extension,
+            unregister_extension,
         ]
     )
     .iter()
@@ -133,11 +133,11 @@ async fn trigger_event(event: Event) -> Result<(), Error> {
 }
 
 #[airupfx::macros::api]
-async fn load_extension(name: String, path: String) -> Result<(), Error> {
-    airupd().extensions.load(name, &path).await
+async fn register_extension(name: String, path: String) -> Result<(), Error> {
+    airupd().extensions.register(name, &path).await
 }
 
 #[airupfx::macros::api]
-async fn unload_extension(name: String) -> Result<(), Error> {
-    airupd().extensions.unload(&name).await
+async fn unregister_extension(name: String) -> Result<(), Error> {
+    airupd().extensions.unregister(&name).await
 }

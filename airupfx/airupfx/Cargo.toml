@@ -10,6 +10,7 @@ publish = false
 
 [features]
 cgroups = ["airupfx-isolator/cgroups"]
+selinux = ["dep:selinux"]
 
 [dependencies]
 airupfx-env = { path = "../airupfx-env" }

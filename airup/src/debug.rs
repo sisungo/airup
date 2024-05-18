@@ -13,9 +13,9 @@ pub struct Cmdline {
     #[arg(long)]
     print_local_build_manifest: bool,
 
-    /// Unloads an Airup extension
+    /// Unregisters an Airup extension
     #[arg(long)]
-    unload_extension: Option<String>,
+    unregister_extension: Option<String>,
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
@@ -27,16 +27,16 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         return print_local_build_manifest();
     }
 
-    if let Some(name) = cmdline.unload_extension {
-        return unload_extension(&name);
+    if let Some(name) = cmdline.unregister_extension {
+        return unregister_extension(&name);
     }
 
     Ok(())
 }
 
-pub fn unload_extension(name: &str) -> anyhow::Result<()> {
+pub fn unregister_extension(name: &str) -> anyhow::Result<()> {
     let mut conn = super::connect()?;
-    conn.unload_extension(name)??;
+    conn.unregister_extension(name)??;
 
     Ok(())
 }

@@ -9,7 +9,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-cgroups = ["cgroups-rs"]
+cgroups = ["dep:cgroups-rs"]
 
 [dependencies]
 airupfx-time = { path = "../airupfx-time" }

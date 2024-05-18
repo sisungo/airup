@@ -188,13 +188,13 @@ pub trait ConnectionExt<'a>: crate::Connection {
     }
 
     /// Loads an extension.
-    fn load_extension(&'a mut self, name: &'a str, path: &'a str) -> Self::Invoke<'a, ()> {
-        self.invoke("system.load_extension", (name, path))
+    fn register_extension(&'a mut self, name: &'a str, path: &'a str) -> Self::Invoke<'a, ()> {
+        self.invoke("system.register_extension", (name, path))
     }
 
     /// Unloads an extension.
-    fn unload_extension(&'a mut self, name: &'a str) -> Self::Invoke<'a, ()> {
-        self.invoke("system.load_extension", name)
+    fn unregister_extension(&'a mut self, name: &'a str) -> Self::Invoke<'a, ()> {
+        self.invoke("system.unregister_extension", name)
     }
 }
 impl<'a, T> ConnectionExt<'a> for T where T: crate::Connection {}
