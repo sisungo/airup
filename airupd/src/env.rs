@@ -33,8 +33,13 @@ impl Cmdline {
     /// Parses a new [`Cmdline`] instance from the command-line arguments. This function will automatically detect the
     /// environment to detect the style of the parser.
     pub fn parse() -> Self {
-        if cfg!(target_os = "linux") && airupfx::process::as_pid1() {
-            // TODO: Allow avoiding this branch even if we are `pid = 1` and running on Linux.
+        if cfg!(target_os = "linux")
+            && airupfx::process::as_pid1()
+            && !matches!(
+                airupfx::env::take_var("AIRUP_CMDLINE").as_deref(),
+                Ok("unix")
+            )
+        {
             Self::parse_as_linux_init()
         } else {
             Self::parse_as_unix_command()
