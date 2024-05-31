@@ -5,7 +5,13 @@ use airup_sdk::system::{QuerySystem, Status};
 use airupfx::signal::{
     self, SIGHUP, SIGINT, SIGPIPE, SIGQUIT, SIGTERM, SIGTTIN, SIGTTOU, SIGUSR1, SIGUSR2,
 };
-use std::{path::Path, sync::OnceLock};
+use std::{
+    path::Path,
+    sync::{
+        atomic::{self, AtomicU32},
+        OnceLock,
+    },
+};
 
 static AIRUPD: OnceLock<Airupd> = OnceLock::new();
 
@@ -66,12 +72,25 @@ impl Airupd {
         ]);
 
         _ = signal::signal(SIGINT, |_| async {
-            _ = self.enter_milestone("reboot".into()).await;
+            self.on_sigint().await;
         });
 
         _ = signal::signal(SIGHUP, |_| async {
             self.ipc.reload();
         });
+    }
+
+    /// Called when a `SIGINT` signal is received.
+    async fn on_sigint(&self) {
+        static COUNTER: AtomicU32 = AtomicU32::new(0);
+
+        let counter = COUNTER.fetch_add(1, atomic::Ordering::SeqCst);
+
+        if counter >= 8 {
+            self.lifetime.reboot();
+        } else if counter == 0 {
+            _ = self.enter_milestone("reboot".into()).await;
+        }
     }
 }
 

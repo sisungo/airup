@@ -75,3 +75,14 @@ pub async fn setup_stdio(path: &Path) -> std::io::Result<()> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn take_var() {
+        std::env::set_var("magic", "1");
+        assert!(matches!(std::env::var("magic").as_deref(), Ok("1")));
+        assert!(matches!(crate::take_var("magic").as_deref(), Ok("1")));
+        assert!(matches!(std::env::var("magic").as_deref(), Err(_)));
+    }
+}
