@@ -112,7 +112,7 @@ pub struct Env {
     ///
     /// By default, the service runs with the same environment variables as `airupd`.
     #[serde(default)]
-    pub vars: HashMap<String, Option<String>>,
+    pub vars: HashMap<String, toml::Value>,
 }
 impl Default for Env {
     fn default() -> Self {

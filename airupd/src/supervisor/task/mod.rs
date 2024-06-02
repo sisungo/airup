@@ -197,6 +197,23 @@ async fn ace_environment(
         airup_sdk::files::service::Stdio::Log => log(y),
     };
 
+    let vars = env
+        .vars
+        .iter()
+        .filter(|(_, v)| v.as_integer() == Some(0) || v.is_str())
+        .map(|(k, v)| {
+            (
+                k.into(),
+                if v.is_integer() {
+                    None
+                } else if let Some(s) = v.as_str() {
+                    Some(s.into())
+                } else {
+                    unreachable!()
+                },
+            )
+        });
+
     result
         .login(env.login.as_deref())?
         .uid(env.uid)
@@ -205,7 +222,7 @@ async fn ace_environment(
         .stdout(to_ace(env.stdout.clone(), 1))
         .stderr(to_ace(env.stderr.clone(), 2))
         .clear_vars(env.clear_vars)
-        .vars::<String, _, String>(env.vars.clone().into_iter())
+        .vars::<String, _, String>(vars)
         .working_dir::<PathBuf, _>(env.working_dir.clone())
         .setsid(true);
 

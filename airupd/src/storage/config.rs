@@ -36,7 +36,11 @@ impl Config {
             vars.insert(k.to_owned(), v.as_ref().map(Into::into));
         }
         for (k, v) in &self.system_conf.env.vars {
-            vars.insert(k.into(), v.clone());
+            if v.as_integer() == Some(0) {
+                vars.insert(k.clone(), None);
+            } else if let Some(s) = v.as_str() {
+                vars.insert(k.clone(), Some(s.into()));
+            }
         }
         airupfx::env::set_vars(vars);
     }

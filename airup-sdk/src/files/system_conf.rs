@@ -37,7 +37,7 @@ pub struct Env {
     ///
     /// If a value is set to `null`, the environment variable gets removed if it exists.
     #[serde(default)]
-    pub vars: HashMap<String, Option<String>>,
+    pub vars: HashMap<String, toml::Value>,
 }
 
 fn default_os_name() -> String {
