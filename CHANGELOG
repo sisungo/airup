@@ -1,3 +1,7 @@
+Changes in v0.10.2:
+ * fix: cannot actually unset an environment variable becuase toml lacks support of `null`
+ * fix: #33 "reboot-in-reboot"
+
 Changes in v0.10.1:
  * feature: added support of SELinux
  * BREAKING: renamed `system.\[un\]load_extension` to `system.\[un\]register_extension`
