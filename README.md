@@ -12,10 +12,6 @@ supervisor or the `init` daemon (`pid == 1`).
 ## Build & Installation
 See [Installation Guide](INSTALL.md).
 
-## Related Projects
-These projects may help you use Airup better:
- - [`airup-extras`](https://github.com/sisungo/airup-extras): Collection of extra extensions, helpers or other files for Airup.
-
 ## License
 Airup is licensed under the [MIT License](LICENSE).
 

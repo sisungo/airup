@@ -4,3 +4,4 @@
 
 未分类的内容：
  - [教程：使用 Airup 制作 Linux 发行版](linux_distro_tutorial.md)
+ - [教程：将 Airup 用于独立的服务管理器](standalone_supervisor.md)

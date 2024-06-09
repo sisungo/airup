@@ -4,3 +4,4 @@ File formats:
 
 Uncategoried content:
  - [Tutorial: Use Airup to Build a Linux Distro](linux_distro_tutorial.md)
+ - [Tutorial: Use Airup as Standlone Service Supervisor](standalone_supervisor.md)
