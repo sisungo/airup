@@ -65,7 +65,7 @@ impl<R: AsyncRead + Unpin + Send + 'static> LinePiperEntity<R> {
                 }
                 position += count;
                 if let Some(pos) = &buf[..position].iter().position(|x| b"\n\r\0".contains(x)) {
-                    break *pos;
+                    break pos + 1;
                 }
                 assert!(position <= 4096);
                 if position == 4096 {
@@ -79,11 +79,11 @@ impl<R: AsyncRead + Unpin + Send + 'static> LinePiperEntity<R> {
 }
 
 #[derive(Clone)]
-struct ChannelCallback {
+pub struct ChannelCallback {
     tx: mpsc::Sender<Vec<u8>>,
 }
 impl ChannelCallback {
-    fn new(tx: mpsc::Sender<Vec<u8>>) -> Self {
+    pub fn new(tx: mpsc::Sender<Vec<u8>>) -> Self {
         Self { tx }
     }
 }

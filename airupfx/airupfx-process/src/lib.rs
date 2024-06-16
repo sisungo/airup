@@ -10,12 +10,7 @@ cfg_if::cfg_if! {
 }
 
 use airupfx_io::line_piper::Callback as LinePiperCallback;
-use std::{
-    convert::Infallible,
-    ffi::OsString,
-    ops::{Deref, DerefMut},
-    path::PathBuf,
-};
+use std::{convert::Infallible, ffi::OsString, path::PathBuf};
 
 /// Returns `true` if supervising `forking` services are supported on the system.
 pub fn is_forking_supervisable() -> bool {
@@ -345,20 +340,26 @@ impl Command {
     }
 
     #[inline]
+    pub fn stdin(&mut self, new: Stdio) -> &mut Self {
+        self.env.stdin(new);
+        self
+    }
+
+    #[inline]
+    pub fn stdout(&mut self, new: Stdio) -> &mut Self {
+        self.env.stdout(new);
+        self
+    }
+
+    #[inline]
+    pub fn stderr(&mut self, new: Stdio) -> &mut Self {
+        self.env.stderr(new);
+        self
+    }
+
+    #[inline]
     pub async fn spawn(&self) -> std::io::Result<Child> {
         Ok(sys::spawn(self).await?.into())
-    }
-}
-impl Deref for Command {
-    type Target = CommandEnv;
-
-    fn deref(&self) -> &Self::Target {
-        &self.env
-    }
-}
-impl DerefMut for Command {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.env
     }
 }
 
@@ -375,14 +376,33 @@ impl From<sys::WaitError> for WaitError {
 mod tests {
     #[tokio::test]
     async fn spawn_and_wait() {
-        let wait = crate::Command::new("true")
+        let spawn_wait = move |x| async move {
+            crate::Command::new(x)
+                .spawn()
+                .await
+                .unwrap()
+                .wait()
+                .await
+                .unwrap()
+        };
+
+        assert!(spawn_wait("true").await.is_success());
+        assert!(!spawn_wait("false").await.is_success());
+    }
+
+    #[tokio::test]
+    async fn stdout_capture() {
+        let (tx, mut rx) = tokio::sync::mpsc::channel(2);
+        let callback = airupfx_io::line_piper::ChannelCallback::new(tx);
+        crate::Command::new("echo")
+            .arg("Hello, world!")
+            .stdout(crate::Stdio::Callback(Box::new(callback)))
             .spawn()
             .await
             .unwrap()
             .wait()
             .await
             .unwrap();
-
-        assert!(wait.is_success());
+        assert_eq!(rx.recv().await.as_deref(), Some(&b"Hello, world!\n"[..]));
     }
 }

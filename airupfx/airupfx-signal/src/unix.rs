@@ -118,3 +118,11 @@ extern "C" fn fatal_error_handler(signum: libc::c_int) {
         std::hint::spin_loop();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn ignore() {
+        super::ignore(super::SIGUSR1).unwrap();
+    }
+}

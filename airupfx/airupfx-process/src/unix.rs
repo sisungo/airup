@@ -327,7 +327,7 @@ pub(crate) async fn command_to_std(
     result
         .stdout(command.env.stdout.to_std().await?)
         .stderr(command.env.stderr.to_std().await?)
-        .stdin(command.stdin.to_std().await?);
+        .stdin(command.env.stdin.to_std().await?);
     if command.env.setsid {
         result.setsid();
     }
@@ -359,7 +359,10 @@ pub(crate) fn command_login(env: &mut CommandEnv, name: &str) -> std::io::Result
 }
 
 pub(crate) async fn spawn(cmd: &crate::Command) -> std::io::Result<Child> {
-    Ok(Child::from_std(cmd, command_to_std(cmd).await?.spawn()?))
+    Ok(Child::from_std(
+        &cmd.env,
+        command_to_std(cmd).await?.spawn()?,
+    ))
 }
 
 pub type WaitError = std::convert::Infallible;
