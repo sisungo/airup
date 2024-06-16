@@ -58,7 +58,7 @@ pub fn api_function_complex<
         }
         Err(err) => {
             let err = crate::Error::Io {
-                message: err.to_string(),
+                message: err.to_string().into(),
             };
             set_last_error(err.into());
             None

@@ -27,24 +27,22 @@ impl Connection {
 
     /// Receives a datagram and deserializes it from CBOR to `T`.
     pub async fn recv<T: DeserializeOwned>(&mut self) -> Result<T, IpcError> {
-        Ok(ciborium::from_reader(Cursor::new(self.0.recv().await?))?)
+        let mut buf = Vec::new();
+        self.0.recv(&mut buf).await?;
+        Ok(ciborium::from_reader(&buf[..])?)
     }
 
     /// Receives a request from the underlying protocol.
     pub async fn recv_req(&mut self) -> Result<Request, IpcError> {
-        let req: Request =
-            ciborium::from_reader(Cursor::new(self.0.recv().await?)).unwrap_or_else(|err| {
-                Request::new(
-                    "debug.echo_raw",
-                    Response::Err(ApiError::bad_request("InvalidJson", err.to_string())),
-                )
-            });
+        let mut buf = Vec::new();
+        self.0.recv(&mut buf).await?;
+        let req: Request = ciborium::from_reader(&buf[..]).unwrap_or_else(|err| {
+            Request::new(
+                "debug.echo_raw",
+                Response::Err(ApiError::bad_request("InvalidCbor", err.to_string())),
+            )
+        });
         Ok(req)
-    }
-
-    /// Receives a response from the underlying protocol.
-    pub async fn recv_resp(&mut self) -> Result<Response, IpcError> {
-        self.recv().await
     }
 
     /// Sends a datagram with CBOR-serialized given object.
@@ -84,22 +82,22 @@ impl Server {
 
 pub trait MessageProtoRecvExt {
     /// Receives a message from the stream.
-    fn recv(&mut self) -> impl Future<Output = Result<Vec<u8>, IpcError>>;
+    fn recv(&mut self, buf: &mut Vec<u8>) -> impl Future<Output = Result<(), IpcError>>;
 }
 pub trait MessageProtoSendExt {
     /// Sends a message to the stream.
     fn send(&mut self, blob: &[u8]) -> impl Future<Output = Result<(), IpcError>>;
 }
 impl<T: AsyncRead + Unpin> MessageProtoRecvExt for MessageProto<T> {
-    async fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
+    async fn recv(&mut self, buf: &mut Vec<u8>) -> Result<(), IpcError> {
         let len = self.inner.read_u64_le().await? as usize;
         if len > self.size_limit {
             return Err(IpcError::MessageTooLong(len));
         }
-        let mut blob = vec![0u8; len];
-        self.inner.read_exact(&mut blob).await?;
+        buf.resize(len, 0u8);
+        self.inner.read_exact(buf).await?;
 
-        Ok(blob)
+        Ok(())
     }
 }
 impl<T: AsyncWrite + Unpin> MessageProtoSendExt for MessageProto<T> {

@@ -1,3 +1,9 @@
+Changes in v0.10.3:
+ * fix: line pipers (used for stdio logging) removes `\n`, `\r` or `\0` which is placed on the end of a line
+ * BREAKING: make `system.refresh` return `[(string, error)]` instead of `null`
+ * BREAKING: error code `NO_SUCH_METHOD` is renamed to `NOT_IMPLEMENTED`
+ * performance improvements
+
 Changes in v0.10.2:
  * fix: cannot actually unset an environment variable becuase toml lacks support of `null`
  * fix: #33 "reboot-in-reboot"

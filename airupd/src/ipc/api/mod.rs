@@ -38,7 +38,7 @@ impl Manager {
         let method = self.methods.get(&req.method[..]).copied();
         match method {
             Some(method) => Response::new(method(req).await),
-            None => Response::Err(Error::NoSuchMethod),
+            None => Response::Err(Error::NotImplemented),
         }
     }
 }

@@ -134,9 +134,10 @@ impl Session {
     }
 
     pub async fn run(mut self) -> anyhow::Result<()> {
+        let mut buf = Vec::with_capacity(4096);
         loop {
-            let request: airup_sdk::extension::Request =
-                ciborium::from_reader(&self.rx.recv().await?[..])?;
+            self.rx.recv(&mut buf).await?;
+            let request: airup_sdk::extension::Request = ciborium::from_reader(&buf[..])?;
             self.handle_request(request);
         }
     }
@@ -171,7 +172,7 @@ impl Session {
     ) -> airup_sdk::ipc::Response {
         match rpc_methods.get(&request.method) {
             Some(method) => airup_sdk::ipc::Response::new(method(request).await),
-            None => airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NoSuchMethod)),
+            None => airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented)),
         }
     }
 }

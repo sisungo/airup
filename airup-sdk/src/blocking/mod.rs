@@ -33,7 +33,9 @@ impl Connection {
 
     /// Receives a raw message.
     pub fn recv_raw(&mut self) -> Result<Vec<u8>, IpcError> {
-        (*self.underlying).recv()
+        let mut buf = Vec::new();
+        (*self.underlying).recv(&mut buf)?;
+        Ok(buf)
     }
 
     /// Invokes an RPC method.
@@ -44,7 +46,10 @@ impl Connection {
     ) -> Result<Result<T, ApiError>, IpcError> {
         let req = Request::new(method, params);
         self.underlying.send(&req)?;
-        Ok(self.underlying.recv_resp()?.into_result())
+        Ok(self
+            .underlying
+            .recv::<crate::ipc::Response>()?
+            .into_result())
     }
 }
 impl Deref for Connection {

@@ -32,7 +32,7 @@ impl Extensions {
                 Extension::new(name, path)
                     .await
                     .map_err(|x| airup_sdk::Error::Io {
-                        message: x.to_string(),
+                        message: x.to_string().into(),
                     })?,
             ),
         );
@@ -44,10 +44,10 @@ impl Extensions {
         let mut method_splited = req.method.splitn(2, '.');
         let extension = method_splited.next().unwrap();
         let Some(ext_method) = method_splited.next() else {
-            return airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NoSuchMethod));
+            return airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented));
         };
         let Some(ext) = self.0.read().await.get(extension).cloned() else {
-            return airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NoSuchMethod));
+            return airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented));
         };
         req.method = ext_method.into();
 
@@ -143,8 +143,9 @@ impl ExtensionHost {
         let mut handler = {
             let reqs = Arc::clone(&reqs);
             tokio::spawn(async move {
+                let mut buf = Vec::with_capacity(4096);
                 loop {
-                    let Ok(buf) = rx.recv().await else {
+                    if rx.recv(&mut buf).await.is_err() {
                         return;
                     };
                     let Ok(resp) = ciborium::from_reader::<Response, _>(&buf[..]) else {

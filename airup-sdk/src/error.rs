@@ -11,7 +11,7 @@ use thiserror::Error;
 pub enum ApiError {
     /// The requested method was not found.
     #[error("function not implemented")]
-    NoSuchMethod,
+    NotImplemented,
 
     /// The requested method's parameter requirements wasn't satisfied.
     #[error("invalid parameters: {message}")]
