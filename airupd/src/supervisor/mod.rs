@@ -161,7 +161,7 @@ impl Manager {
     }
 
     /// Refreshes all running supervisors. Returns a list of services that was not successfully refreshed.
-    pub async fn refresh_all(&self) -> Vec<String> {
+    pub async fn refresh_all(&self) -> Vec<(String, Error)> {
         let supervisors = self.supervisors.read().await;
         let mut errors = vec![];
 
@@ -173,13 +173,13 @@ impl Manager {
                 .await;
             let new = match new {
                 Ok(x) => x,
-                Err(_) => {
-                    errors.push(k.into());
+                Err(err) => {
+                    errors.push((k.into(), err.into()));
                     continue;
                 }
             };
-            if v.update_def(Box::new(new)).await.is_err() {
-                errors.push(k.into());
+            if let Err(err) = v.update_def(Box::new(new)).await {
+                errors.push((k.into(), err));
             }
         }
 

@@ -168,7 +168,7 @@ pub trait ConnectionExt<'a>: crate::Connection {
     }
 
     /// Refreshes cached system information in the `airupd` daemon.
-    fn refresh(&'a mut self) -> Self::Invoke<'a, ()> {
+    fn refresh(&'a mut self) -> Self::Invoke<'a, Vec<(String, Error)>> {
         self.invoke("system.refresh", ())
     }
 

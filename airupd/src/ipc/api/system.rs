@@ -40,11 +40,15 @@ pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H
 }
 
 #[airupfx::macros::api]
-async fn refresh() -> Result<(), Error> {
-    airupfx::env::refresh().await;
-    airupd().supervisors.refresh_all().await;
+async fn refresh() -> Result<Vec<(String, Error)>, Error> {
+    let mut errors = Vec::new();
 
-    Ok(())
+    airupfx::env::refresh().await;
+    for (name, error) in airupd().supervisors.refresh_all().await {
+        errors.push((format!("service-manifest:{name}"), error));
+    }
+
+    Ok(errors)
 }
 
 #[airupfx::macros::api]

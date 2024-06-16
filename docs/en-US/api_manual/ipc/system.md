@@ -16,7 +16,7 @@ Module `system` provides methods for managing the system.
 
 **Parameters**: None
 
-**Return Value**: `null`
+**Return Value**: `[(string, error)] (array of a tuple which combines error position and error)`
 
 **Description**: Refreshes some of `airupd`'s internal status.
 
