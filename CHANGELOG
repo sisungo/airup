@@ -1,3 +1,6 @@
+Changes in v0.10.4:
+ * fix: line pipers loses lines when receiving multi lines in one `read`
+
 Changes in v0.10.3:
  * fix: line pipers (used for stdio logging) removes `\n`, `\r` or `\0` which is placed on the end of a line
  * BREAKING: make `system.refresh` return `[(string, error)]` instead of `null`

@@ -24,20 +24,28 @@ async fn append(subject: String, module: String, msg: Vec<u8>) -> Result<(), Err
         message: x.to_string(),
     })?;
     let timestamp = airupfx::time::timestamp_ms();
+    let mut evaluted_bytes = 0;
 
-    let record = LogRecord {
-        timestamp,
-        module: module.to_owned(),
-        message: String::from_utf8_lossy(&msg).into_owned(),
-    };
-    writeln!(
-        appender,
-        "{}",
-        serde_json::to_string(&record).unwrap().as_str()
-    )
-    .map_err(|x| airup_sdk::Error::Io {
-        message: x.to_string(),
-    })?;
+    for line in msg.split(|x| b"\n\r".contains(x)) {
+        evaluted_bytes += line.len() + 1;
+        if evaluted_bytes >= msg.len() && line.is_empty() {
+            break;
+        }
+
+        let record = LogRecord {
+            timestamp,
+            module: module.to_owned(),
+            message: String::from_utf8_lossy(line).into_owned(),
+        };
+        writeln!(
+            appender,
+            "{}",
+            serde_json::to_string(&record).unwrap().as_str()
+        )
+        .map_err(|x| airup_sdk::Error::Io {
+            message: x.to_string(),
+        })?;
+    }
 
     Ok(())
 }

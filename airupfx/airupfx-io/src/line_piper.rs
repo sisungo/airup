@@ -44,6 +44,8 @@ struct LinePiperEntity<R> {
     callback: Box<dyn Callback>,
 }
 impl<R: AsyncRead + Unpin + Send + 'static> LinePiperEntity<R> {
+    const LINE_BREAK_BYTES: &'static [u8] = b"\n\r";
+
     fn new(reader: R, callback: Box<dyn Callback>) -> Self {
         Self { reader, callback }
     }
@@ -64,7 +66,10 @@ impl<R: AsyncRead + Unpin + Send + 'static> LinePiperEntity<R> {
                     return None;
                 }
                 position += count;
-                if let Some(pos) = &buf[..position].iter().position(|x| b"\n\r\0".contains(x)) {
+                if let Some(pos) = &buf[..position]
+                    .iter()
+                    .rposition(|x| Self::LINE_BREAK_BYTES.contains(x))
+                {
                     break pos + 1;
                 }
                 assert!(position <= 4096);
@@ -96,5 +101,18 @@ impl Callback for ChannelCallback {
         Box::pin(async {
             _ = self.tx.send(a.to_vec()).await;
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn multi_line() {
+        const TEST_STRING: &'static [u8] = b"AirupFX Test\nairupfx::io::line_piper\n";
+
+        let line_piper = LinePiper::new(TEST_STRING);
+        assert_eq!(line_piper.read_line().await.unwrap(), TEST_STRING);
     }
 }
