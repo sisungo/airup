@@ -106,7 +106,7 @@ pub struct MessageProto<T> {
     pub(crate) size_limit: usize,
 }
 impl<T> MessageProto<T> {
-    pub const DEFAULT_SIZE_LIMIT: usize = 2 * 1024 * 1024;
+    pub const DEFAULT_SIZE_LIMIT: usize = 128 * 1024;
 
     /// Creates a new [`MessageProto`] with provided stream.
     pub fn new(inner: T, size_limit: usize) -> Self {

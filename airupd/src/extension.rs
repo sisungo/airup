@@ -32,7 +32,7 @@ impl Extensions {
                 Extension::new(name, path)
                     .await
                     .map_err(|x| airup_sdk::Error::Io {
-                        message: x.to_string().into(),
+                        message: x.to_string(),
                     })?,
             ),
         );

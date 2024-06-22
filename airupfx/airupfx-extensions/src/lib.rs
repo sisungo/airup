@@ -1,5 +1,5 @@
 //! # AirupFX Extension Framework
-//! This crate provides a high-level framework for writing Airup extensions in Rust.
+//! This crate provides a high-level framework for writing Airup extensions in Rust easily.
 
 use airup_sdk::{
     info::ConnectionExt,
@@ -15,13 +15,14 @@ use tokio::net::{
     UnixListener,
 };
 
+/// An extension server.
 #[derive(Debug)]
 pub struct Server {
     listener: UnixListener,
     path: String,
     extension_name: String,
     service_name: String,
-    rpc_methods: HashMap<String, Method>,
+    rpc_methods: HashMap<&'static str, Method>,
 }
 impl Server {
     pub async fn new(extension_name: impl Into<String>) -> anyhow::Result<Self> {
@@ -58,11 +59,13 @@ impl Server {
         })
     }
 
-    pub fn mount(mut self, s: impl Into<String>, m: Method) -> Self {
-        self.rpc_methods.insert(s.into(), m);
+    /// Mounts specific RPC method to specified handler.
+    pub fn mount(mut self, name: &'static str, handler: Method) -> Self {
+        self.rpc_methods.insert(name, handler);
         self
     }
 
+    /// Runs the extension server.
     pub async fn run(self) -> ! {
         let rpc_methods = Arc::new(self.rpc_methods);
 
@@ -126,7 +129,7 @@ impl Server {
 struct Session {
     rx: MessageProto<OwnedReadHalf>,
     tx: Arc<tokio::sync::Mutex<MessageProto<OwnedWriteHalf>>>,
-    rpc_methods: Arc<HashMap<String, Method>>,
+    rpc_methods: Arc<HashMap<&'static str, Method>>,
 }
 impl Session {
     pub fn run_on_the_fly(self) {
@@ -167,10 +170,10 @@ impl Session {
     }
 
     async fn handle_rpc(
-        rpc_methods: Arc<HashMap<String, Method>>,
+        rpc_methods: Arc<HashMap<&'static str, Method>>,
         request: airup_sdk::ipc::Request,
     ) -> airup_sdk::ipc::Response {
-        match rpc_methods.get(&request.method) {
+        match rpc_methods.get(&request.method[..]) {
             Some(method) => airup_sdk::ipc::Response::new(method(request).await),
             None => airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented)),
         }

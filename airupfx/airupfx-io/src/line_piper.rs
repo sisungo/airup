@@ -5,6 +5,10 @@ use tokio::{
     task::JoinHandle,
 };
 
+/// Asynchronous callback used for line pipers.
+///
+/// We chose to create our own callback trait, instead of using standard [FnOnce], because several lifetime issues around
+/// closure types has not been stablized yet.
 pub trait Callback: Send + Sync {
     fn invoke<'a>(&'a self, a: &'a [u8]) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>>;
     fn clone_boxed(&self) -> Box<dyn Callback>;
@@ -35,6 +39,7 @@ impl Drop for LinePiper {
     }
 }
 
+/// Sets up a line piper and sets a callback for it. The line piper is automatically closed when stream `reader` reached EOF.
 pub fn set_callback(reader: impl AsyncRead + Unpin + Send + 'static, callback: Box<dyn Callback>) {
     LinePiperEntity::new(reader, callback).start();
 }

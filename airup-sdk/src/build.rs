@@ -80,3 +80,12 @@ fn embedded_manifest() -> BuildManifest {
     ciborium::from_reader(&include_bytes!(concat!(env!("OUT_DIR"), "/build_manifest.cbor"))[..])
         .expect("bad airup build")
 }
+
+#[cfg(test)]
+mod tests {
+    #[cfg(feature = "_internal")]
+    #[test]
+    fn embedded_manifest() {
+        super::embedded_manifest();
+    }
+}

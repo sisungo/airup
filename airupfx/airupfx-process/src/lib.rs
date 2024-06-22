@@ -22,11 +22,14 @@ pub fn as_pid1() -> bool {
     std::process::id() == 1
 }
 
-/// Called when using an alternative process manager.
+/// Temporarily disables `airupfx`'s process manager managing child processes.
+///
+/// This is useful avoiding TOCTOU-like attacks, or manually managing child processes.
 pub async fn lock() -> impl Drop {
     sys::lock().await
 }
 
+/// Reloads current process' executable image.
 pub fn reload_image() -> std::io::Result<Infallible> {
     sys::reload_image()
 }
@@ -203,7 +206,6 @@ pub struct CommandEnv {
 }
 impl CommandEnv {
     #[inline]
-    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
