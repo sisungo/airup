@@ -1,10 +1,9 @@
-//! # The Airupd Logger
 //! Airupd-flavored presets for the [`tracing`] framework.
 
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{filter::filter_fn, prelude::*};
 
-/// Builder of `AirupFX`-flavor tracing configuration.
+/// Builder of `airupd`-flavor tracing configuration.
 #[derive(Debug, Clone)]
 pub struct Builder {
     name: String,

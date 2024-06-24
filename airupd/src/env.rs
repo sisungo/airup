@@ -12,6 +12,7 @@ macro_rules! feed_parser {
     };
 }
 
+/// Represents to Airup's command-line arguments.
 #[derive(Debug, Clone)]
 pub struct Cmdline {
     /// Enable verbose console outputs
@@ -103,6 +104,7 @@ impl Cmdline {
         object
     }
 
+    /// Prints help information.
     fn print_help() -> ! {
         println!("Usage: airupd [OPTIONS]");
         println!();
@@ -117,6 +119,7 @@ impl Cmdline {
         std::process::exit(0);
     }
 
+    /// Prints version information.
     fn print_version() -> ! {
         println!("airupd v{}", env!("CARGO_PKG_VERSION"));
         std::process::exit(0);

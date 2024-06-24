@@ -13,9 +13,11 @@ use tokio::{
     sync::{mpsc, oneshot},
 };
 
+/// Represents to an extension manager.
 #[derive(Debug, Default)]
 pub struct Extensions(tokio::sync::RwLock<HashMap<String, Arc<Extension>>>);
 impl Extensions {
+    /// Creates a new [`Extensions`] instance.
     pub fn new() -> Self {
         Self::default()
     }
@@ -39,7 +41,7 @@ impl Extensions {
         Ok(())
     }
 
-    /// Invokes an RPC invokation to an extension.
+    /// Invokes an RPC invokation on an extension.
     pub async fn rpc_invoke(&self, mut req: airup_sdk::ipc::Request) -> airup_sdk::ipc::Response {
         let mut method_splited = req.method.splitn(2, '.');
         let extension = method_splited.next().unwrap();
@@ -69,12 +71,14 @@ impl Extensions {
     }
 }
 
+/// Interface to a hosting extension.
 #[derive(Debug)]
-pub struct Extension {
+struct Extension {
     gate: mpsc::Sender<(Request, oneshot::Sender<ciborium::Value>)>,
 }
 impl Extension {
-    pub async fn new(name: String, path: &str) -> std::io::Result<Self> {
+    /// Creates a new [`Extension`] instance, hosting the extension.
+    async fn new(name: String, path: &str) -> std::io::Result<Self> {
         let (tx, rx) = mpsc::channel(8);
         let connection = UnixStream::connect(path).await?;
         ExtensionHost {
@@ -88,10 +92,8 @@ impl Extension {
         Ok(Self { gate: tx })
     }
 
-    pub async fn rpc_invoke(
-        &self,
-        req: airup_sdk::ipc::Request,
-    ) -> Option<airup_sdk::ipc::Response> {
+    /// Invokes an RPC invokation on the extension.
+    async fn rpc_invoke(&self, req: airup_sdk::ipc::Request) -> Option<airup_sdk::ipc::Response> {
         let req = Request {
             id: 0,
             class: Request::CLASS_AIRUP_RPC,
