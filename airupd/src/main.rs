@@ -47,7 +47,7 @@ async fn main() {
         .unwrap_log("failed to create airupd ipc socket")
         .await
         .start();
-    app::airupd().listen_signals();
+    app::airupd().set_signal_hooks();
 
     if airupfx::process::as_pid1() && !cmdline.quiet {
         println!(

@@ -4,8 +4,9 @@
 extern "C" {
     /// Reboots the system or halts the processor.
     ///
-    /// This is a Apple Private API.
-    fn reboot(howto: libc::c_int) -> libc::c_int;
+    /// This is an Apple Private API. See `reboot(2)` for more details.
+    #[link_name = "reboot"]
+    fn sys_reboot(howto: libc::c_int) -> libc::c_int;
 }
 
 use crate::PowerManager;
@@ -20,17 +21,17 @@ pub struct Power;
 impl PowerManager for Power {
     async fn poweroff(&self) -> std::io::Result<Infallible> {
         crate::unix::prepare().await;
-        system_reboot(RB_HALT)
+        reboot(RB_HALT)
     }
 
     async fn reboot(&self) -> std::io::Result<Infallible> {
         crate::unix::prepare().await;
-        system_reboot(RB_AUTOBOOT)
+        reboot(RB_AUTOBOOT)
     }
 
     async fn halt(&self) -> std::io::Result<Infallible> {
         crate::unix::prepare().await;
-        system_reboot(RB_HALT)
+        reboot(RB_HALT)
     }
 
     async fn userspace(&self) -> std::io::Result<Infallible> {
@@ -39,8 +40,8 @@ impl PowerManager for Power {
     }
 }
 
-fn system_reboot(cmd: libc::c_int) -> std::io::Result<Infallible> {
-    let status = unsafe { reboot(cmd) };
+fn reboot(cmd: libc::c_int) -> std::io::Result<Infallible> {
+    let status = unsafe { sys_reboot(cmd) };
     match status {
         -1 => Err(std::io::Error::last_os_error()),
         _ => unreachable!(),

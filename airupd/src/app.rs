@@ -63,8 +63,8 @@ impl Airupd {
         }
     }
 
-    /// Starts tasks to listen to UNIX signals.
-    pub fn listen_signals(&'static self) {
+    /// Registers global signal hooks associated to this instance.
+    pub fn set_signal_hooks(&'static self) {
         signal::init();
 
         signal::ignore_all([

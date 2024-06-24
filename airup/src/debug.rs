@@ -1,35 +1,57 @@
-use airup_sdk::prelude::*;
-use clap::Parser;
+use airup_sdk::{debug::ConnectionExt, prelude::*};
+use anyhow::anyhow;
+use clap::{Parser, ValueEnum};
 
 /// Debug options of Airup
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
-    /// Prints build manifest acquired from Airup daemon
+    /// Print build manifest acquired from Airup daemon
     #[arg(long)]
-    print_remote_build_manifest: bool,
+    print: Option<Printable>,
 
-    /// Prints build manifest from this utility
+    /// Reduce RPC if possible
     #[arg(long)]
-    print_local_build_manifest: bool,
+    reduce_rpc: bool,
 
-    /// Unregisters an Airup extension
+    /// Unregister an Airup extension
     #[arg(long)]
     unregister_extension: Option<String>,
+
+    /// Dump Airup's internal debug information
+    #[arg(long)]
+    dump: bool,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum Printable {
+    BuildManifest,
+}
+impl Printable {
+    fn print(self, reduce_rpc: bool) -> anyhow::Result<()> {
+        match self {
+            Self::BuildManifest => print_build_manifest(reduce_rpc),
+        }
+    }
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
-    if cmdline.print_remote_build_manifest {
-        return print_remote_build_manifest();
+    if let Some(printable) = cmdline.print {
+        printable.print(cmdline.reduce_rpc)
+    } else if let Some(name) = cmdline.unregister_extension {
+        unregister_extension(&name)
+    } else if cmdline.dump {
+        dump()
+    } else {
+        Err(anyhow!("no action specified"))
     }
+}
 
-    if cmdline.print_local_build_manifest {
-        return print_local_build_manifest();
-    }
+pub fn dump() -> anyhow::Result<()> {
+    let mut conn = super::connect()?;
+    let reply = conn.dump()??;
 
-    if let Some(name) = cmdline.unregister_extension {
-        return unregister_extension(&name);
-    }
+    println!("{reply}");
 
     Ok(())
 }
@@ -41,16 +63,14 @@ pub fn unregister_extension(name: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn print_remote_build_manifest() -> anyhow::Result<()> {
-    let mut conn = super::connect()?;
-    let build_manifest = serde_json::to_string_pretty(&conn.build_manifest()??).unwrap();
-    println!("{}", build_manifest);
-
-    Ok(())
-}
-
-pub fn print_local_build_manifest() -> anyhow::Result<()> {
-    let build_manifest = include_str!("../../build_manifest.json");
+pub fn print_build_manifest(reduce_rpc: bool) -> anyhow::Result<()> {
+    let build_manifest = if reduce_rpc {
+        serde_json::to_string_pretty(&super::connect()?.build_manifest()??)
+            .expect("failed to serialize server side `BuildManifest` into JSON")
+    } else {
+        serde_json::to_string_pretty(airup_sdk::build::manifest())
+            .expect("failed to serialize `airup_sdk::build::manifest()` into JSON")
+    };
     println!("{}", build_manifest);
 
     Ok(())

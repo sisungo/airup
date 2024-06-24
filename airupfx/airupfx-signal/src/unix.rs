@@ -83,6 +83,7 @@ pub fn init() {
             libc::SIGILL,
             libc::SIGFPE,
             libc::SIGABRT,
+            libc::SIGSYS,
         ] {
             unsafe {
                 libc::signal(signum, fatal_error_handler as *const u8 as usize);
@@ -103,6 +104,7 @@ extern "C" fn fatal_error_handler(signum: libc::c_int) {
         libc::SIGILL => &b"SIGILL"[..],
         libc::SIGFPE => &b"SIGFPE"[..],
         libc::SIGABRT => &b"SIGABRT"[..],
+        libc::SIGSYS => &b"SIGSYS"[..],
         _ => &b"unknown signal"[..],
     };
     let end = b", this is a fatal error.\n";
