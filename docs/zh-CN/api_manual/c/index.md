@@ -1,5 +1,7 @@
 # Airup SDK for C API 手册
-Airup SDK for C 是 Airup SDK 的一个实现，适用于 C99/C11/C23 和 C++（C++ 23 以下）。
+Airup SDK for C 是 Airup SDK 的一个实现，适用于 C99/C11/C23 和 C++。
+
+🚧 **警告** 🚧: 该 SDK 正在被重写，并且旧 SDK 已从仓库删除。若要使用该 SDK，请查看旧版（v0.10.3），或等待新的 SDK 完成。
 
 ## 示例
 ```c

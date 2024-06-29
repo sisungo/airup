@@ -7,7 +7,7 @@ The manuals are written for users of `Airup`.
 
 ## API Manuals
 The manuals are written for developers using `Airup`.
- - [Airup IPC API Manual](api_manual/ipc/index.md): Manual which describes calling Airup API in the IPC way.
+ - [Airup RPC API Manual](api_manual/rpc/index.md): Manual which describes the Airup RPC API.
  - [Airup Pre-defined Events Manual](api_manual/predefined_events/index.md): Manual which describes a set of events that are
  pre-defined by Airup and has conventional meanings.
  - [Airup SDK for C Manual](api_manual/c/index.md): Manual which describes API of Airup SDK for C.

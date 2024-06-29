@@ -1,12 +1,12 @@
 pub mod files;
 pub mod fs;
-pub mod ipc;
+pub mod rpc;
 
 use crate::{
-    ipc::{Error as IpcError, Request},
+    rpc::{Error as IpcError, Request},
     Error as ApiError,
 };
-use ipc::{MessageProtoRecvExt, MessageProtoSendExt};
+use rpc::{MessageProtoRecvExt, MessageProtoSendExt};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     future::Future,
@@ -18,13 +18,13 @@ use std::{
 /// A high-level wrapper of a connection to `airupd`.
 #[derive(Debug)]
 pub struct Connection {
-    underlying: ipc::Connection,
+    underlying: rpc::Connection,
 }
 impl Connection {
     /// Connects to the specific path.
     pub async fn connect<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
         Ok(Self {
-            underlying: ipc::Connection::connect(path).await?,
+            underlying: rpc::Connection::connect(path).await?,
         })
     }
 
@@ -50,13 +50,13 @@ impl Connection {
         self.underlying.send(&req).await?;
         Ok(self
             .underlying
-            .recv::<crate::ipc::Response>()
+            .recv::<crate::rpc::Response>()
             .await?
             .into_result())
     }
 }
 impl Deref for Connection {
-    type Target = ipc::Connection;
+    type Target = rpc::Connection;
 
     fn deref(&self) -> &Self::Target {
         &self.underlying

@@ -4,7 +4,7 @@ use super::{Method, MethodFuture};
 use crate::app::airupd;
 use airup_sdk::{
     error::ApiError,
-    ipc::{Request, Response},
+    rpc::{Request, Response},
 };
 use std::{collections::HashMap, hash::BuildHasher};
 

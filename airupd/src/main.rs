@@ -5,10 +5,10 @@ mod app;
 mod env;
 mod events;
 mod extension;
-mod ipc;
 mod lifetime;
 mod logging;
 mod milestones;
+mod rpc;
 mod storage;
 mod supervisor;
 

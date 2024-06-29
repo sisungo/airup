@@ -1,5 +1,5 @@
-//! # Airup IPC Protocol
-//! Airup's protocol for IPC.
+//! # Airup RPC Protocol
+//! This module contains major structures and definitions for Airup's RPC protocol.
 //!
 //! ## Stream to Datagram
 //! Airup uses a very simple protocol to wrap streaming protocols to datagram protocols.
@@ -16,7 +16,7 @@
 use crate::error::ApiError;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-/// A request object in the Airup IPC protocol.
+/// A request object in the Airup RPC protocol.
 ///
 /// Interpreted as CBOR, a serialized request object looks like (converted to human-readable JSON):
 ///
@@ -55,7 +55,7 @@ impl Request {
     }
 }
 
-/// A response object in the Airup IPC protocol.
+/// A response object in the Airup RPC protocol.
 ///
 /// Interpreted as CBOR, a serialized response object looks like (converted to human-readable JSON):
 ///

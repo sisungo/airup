@@ -1,6 +1,6 @@
 //! Represents to Airup's runtime directory.
 
-use crate::ipc;
+use crate::rpc;
 use airupfx::fs::Lock;
 use std::path::PathBuf;
 
@@ -24,9 +24,9 @@ impl Runtime {
     }
 
     /// Creates an IPC server.
-    pub async fn ipc_server(&self) -> anyhow::Result<ipc::Server> {
+    pub async fn ipc_server(&self) -> anyhow::Result<rpc::Server> {
         let socket_path = self.base_dir.join("airupd.sock");
         std::env::set_var("AIRUP_SOCK", &socket_path);
-        ipc::Server::new_force(&socket_path).await
+        rpc::Server::new_force(&socket_path).await
     }
 }

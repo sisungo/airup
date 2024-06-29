@@ -4,7 +4,7 @@ authors = ["sisungo <sisungo@icloud.com>"]
 description = "SDK library of Airup"
 documentation = "https://docs.rs/airup-sdk"
 repository = "https://github.com/sisungo/airup"
-version = "0.10.4"
+version = "0.10.5"
 edition = "2021"
 license = "MIT"
 
@@ -14,11 +14,11 @@ license = "MIT"
 crate-type = ["rlib", "cdylib"]
 
 [features]
-_internal = ["tokio-1", "ffi"]
+_internal = ["tokio-1", "blocking", "ffi"]
+ffi = ["blocking"]
 blocking = []
 nonblocking = []
-ffi = ["blocking"]
-tokio-1 = ["tokio", "nonblocking"]
+tokio-1 = ["dep:tokio", "nonblocking"]
 
 [dependencies]
 cfg-if = "1"

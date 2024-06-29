@@ -1,5 +1,8 @@
 # Airup SDK for C manual
-Airup SDK for C is an implementation of the Airup SDK. It is for C99/C11/C23 and C++ prior than C++ 23.
+Airup SDK for C is an implementation of the Airup SDK. It is for C99/C11/C23 and C++.
+
+🚧 **WARNING** 🚧: The SDK is currently being rewritten and the old SDK has been deleted from repository. Please refer to older
+versions (v0.10.3) to get the SDK, or wait for the newly-written C SDK is done.
 
 ## Example
 ```c
