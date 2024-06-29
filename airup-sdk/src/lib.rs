@@ -21,6 +21,9 @@ pub mod nonblocking;
 #[cfg(feature = "blocking")]
 pub mod blocking;
 
+#[cfg(feature = "ffi")]
+pub mod ffi;
+
 pub use error::ApiError as Error;
 
 use serde::{de::DeserializeOwned, Serialize};

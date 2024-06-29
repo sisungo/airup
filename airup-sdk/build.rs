@@ -2,10 +2,10 @@
 fn main() {
     use std::path::Path;
 
-    println!("cargo::rerun-if-changed=../../build_manifest.json");
+    println!("cargo::rerun-if-changed=../build_manifest.json");
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let build_manifest: ciborium::Value =
-        serde_json::from_reader(std::fs::File::open("../../build_manifest.json").unwrap()).unwrap();
+        serde_json::from_reader(std::fs::File::open("../build_manifest.json").unwrap()).unwrap();
     let mut file = std::fs::File::options()
         .create(true)
         .truncate(true)

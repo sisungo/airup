@@ -8,7 +8,7 @@ publish = false
 
 [dependencies]
 airupfx = { path = "../../airupfx/airupfx" }
-airup-sdk = { path = "../../sdks/rust", features = ["_internal"] }
+airup-sdk = { path = "../../airup-sdk", features = ["_internal"] }
 anyhow = "1"
 ciborium = "0.2"
 rev_lines = "0.3"
