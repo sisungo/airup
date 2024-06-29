@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "airup-sdk",
     "airupd",
     "airup",
     "airupfx/airupfx",
@@ -15,6 +14,7 @@ members = [
     "airupfx/airupfx-isolator",
     "airupfx/airupfx-extensions",
     "extensions/fallback-logger",
+    "sdks/rust",
 ]
 resolver = "2"
 

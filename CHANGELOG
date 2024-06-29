@@ -1,3 +1,8 @@
+Changes in v0.10.5:
+ * cli: refactor `debug` subcommand and removed unnecessary interfaces
+ * rpc: reset request size limit \(2M to 128K\)
+ * developer: remove old airup sdk for c to prepare for the new c sdk
+
 Changes in v0.10.4:
  * fix: line pipers loses lines when receiving multi lines in one `read`
 

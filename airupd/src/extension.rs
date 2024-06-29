@@ -1,8 +1,8 @@
 use crate::app::airupd;
 use airup_sdk::{
     extension::{Request, Response},
-    ipc::MessageProto,
-    nonblocking::ipc::{MessageProtoRecvExt, MessageProtoSendExt},
+    nonblocking::rpc::{MessageProtoRecvExt, MessageProtoSendExt},
+    rpc::MessageProto,
 };
 use std::{
     collections::HashMap,
@@ -42,19 +42,19 @@ impl Extensions {
     }
 
     /// Invokes an RPC invokation on an extension.
-    pub async fn rpc_invoke(&self, mut req: airup_sdk::ipc::Request) -> airup_sdk::ipc::Response {
+    pub async fn rpc_invoke(&self, mut req: airup_sdk::rpc::Request) -> airup_sdk::rpc::Response {
         let mut method_splited = req.method.splitn(2, '.');
         let extension = method_splited.next().unwrap();
         let Some(ext_method) = method_splited.next() else {
-            return airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented));
+            return airup_sdk::rpc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented));
         };
         let Some(ext) = self.0.read().await.get(extension).cloned() else {
-            return airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented));
+            return airup_sdk::rpc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented));
         };
         req.method = ext_method.into();
 
         ext.rpc_invoke(req).await.unwrap_or_else(|| {
-            airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::Io {
+            airup_sdk::rpc::Response::new::<()>(Err(airup_sdk::Error::Io {
                 message: "extension communication error".into(),
             }))
         })
@@ -93,7 +93,7 @@ impl Extension {
     }
 
     /// Invokes an RPC invokation on the extension.
-    async fn rpc_invoke(&self, req: airup_sdk::ipc::Request) -> Option<airup_sdk::ipc::Response> {
+    async fn rpc_invoke(&self, req: airup_sdk::rpc::Request) -> Option<airup_sdk::rpc::Response> {
         let req = Request {
             id: 0,
             class: Request::CLASS_AIRUP_RPC,

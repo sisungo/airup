@@ -1,6 +1,6 @@
 use crate::{
     error::ApiError,
-    ipc::{Error as IpcError, MessageProto, Request, Response},
+    rpc::{Error as IpcError, MessageProto, Request, Response},
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::{

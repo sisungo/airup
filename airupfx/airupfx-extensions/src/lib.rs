@@ -3,8 +3,8 @@
 
 use airup_sdk::{
     info::ConnectionExt,
-    ipc::MessageProto,
-    nonblocking::ipc::{MessageProtoRecvExt, MessageProtoSendExt},
+    nonblocking::rpc::{MessageProtoRecvExt, MessageProtoSendExt},
+    rpc::MessageProto,
     system::{ConnectionExt as _, Event},
 };
 use airupfx_signal::SIGTERM;
@@ -171,16 +171,16 @@ impl Session {
 
     async fn handle_rpc(
         rpc_methods: Arc<HashMap<&'static str, Method>>,
-        request: airup_sdk::ipc::Request,
-    ) -> airup_sdk::ipc::Response {
+        request: airup_sdk::rpc::Request,
+    ) -> airup_sdk::rpc::Response {
         match rpc_methods.get(&request.method[..]) {
-            Some(method) => airup_sdk::ipc::Response::new(method(request).await),
-            None => airup_sdk::ipc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented)),
+            Some(method) => airup_sdk::rpc::Response::new(method(request).await),
+            None => airup_sdk::rpc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented)),
         }
     }
 }
 
-pub type Method = fn(airup_sdk::ipc::Request) -> MethodFuture;
+pub type Method = fn(airup_sdk::rpc::Request) -> MethodFuture;
 
 /// Represents to future type of an IPC method.
 pub type MethodFuture =

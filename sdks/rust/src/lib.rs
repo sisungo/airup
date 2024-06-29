@@ -8,8 +8,8 @@ pub mod extapi;
 pub mod extension;
 pub mod files;
 pub mod info;
-pub mod ipc;
 pub mod prelude;
+pub mod rpc;
 pub mod system;
 
 #[allow(unused)]
@@ -17,9 +17,6 @@ mod util;
 
 #[cfg(feature = "nonblocking")]
 pub mod nonblocking;
-
-#[cfg(feature = "ffi")]
-pub mod ffi;
 
 #[cfg(feature = "blocking")]
 pub mod blocking;

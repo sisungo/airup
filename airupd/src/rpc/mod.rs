@@ -3,7 +3,7 @@
 pub mod api;
 
 use crate::app::airupd;
-use airup_sdk::ipc::Request;
+use airup_sdk::rpc::Request;
 use anyhow::anyhow;
 use std::path::PathBuf;
 use tokio::sync::broadcast;
@@ -37,13 +37,13 @@ impl Default for Context {
 #[derive(Debug)]
 pub struct Server {
     path: PathBuf,
-    server: airup_sdk::nonblocking::ipc::Server,
+    server: airup_sdk::nonblocking::rpc::Server,
 }
 impl Server {
     /// Creates a new [`Server`] instance.
     pub async fn new<P: Into<PathBuf>>(path: P) -> anyhow::Result<Self> {
         let path = path.into();
-        let server = airup_sdk::nonblocking::ipc::Server::new(&path)?;
+        let server = airup_sdk::nonblocking::rpc::Server::new(&path)?;
         airupfx::fs::set_permission(&path, airupfx::fs::Permission::Socket).await?;
 
         Ok(Self { path, server })
@@ -91,11 +91,11 @@ impl Server {
 /// Represents to an Airupd IPC session.
 #[derive(Debug)]
 pub struct Session {
-    conn: airup_sdk::nonblocking::ipc::Connection,
+    conn: airup_sdk::nonblocking::rpc::Connection,
 }
 impl Session {
     /// Constructs a new [`Session`] instance with connection `conn`.
-    fn new(conn: airup_sdk::nonblocking::ipc::Connection) -> Self {
+    fn new(conn: airup_sdk::nonblocking::rpc::Connection) -> Self {
         Self { conn }
     }
 

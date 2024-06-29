@@ -5,7 +5,7 @@ mod info;
 mod system;
 
 use airup_sdk::{
-    ipc::{Request, Response},
+    rpc::{Request, Response},
     Error,
 };
 use airupfx::prelude::*;

@@ -8,7 +8,7 @@ pub mod stop;
 
 use super::SupervisorContext;
 use crate::ace::Ace;
-use airup_sdk::{ipc::Request, Error};
+use airup_sdk::{rpc::Request, Error};
 use airupfx::{io::line_piper::Callback as LinePiperCallback, prelude::*};
 use std::{future::Future, path::PathBuf, pin::Pin};
 use tokio::sync::watch;
