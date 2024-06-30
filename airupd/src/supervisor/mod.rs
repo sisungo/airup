@@ -607,29 +607,35 @@ impl StatusContext {
     }
 }
 
+/// Context type that stores last supervisor error.
 #[derive(Debug, Default)]
 struct LastErrorContext {
     data: RwLock<Option<Error>>,
     auto_save: AtomicBool,
 }
 impl LastErrorContext {
+    /// Sets last error.
     fn set<E: Into<Option<Error>>>(&self, new: E) -> Option<Error> {
         std::mem::replace(&mut self.data.write().unwrap(), new.into())
     }
 
+    /// Gets last error.
     fn get(&self) -> Option<Error> {
         self.data.read().unwrap().clone()
     }
 
+    /// Sets task error auto-saving, returning the original value.
     fn set_autosave(&self, val: bool) -> bool {
         self.auto_save.swap(val, atomic::Ordering::AcqRel)
     }
 
+    /// Sets auto-saving to false, returning `true` if auto-saving is enabled.
     fn take_autosave(&self) -> bool {
         self.set_autosave(false)
     }
 }
 
+/// Context type that stores service retry status.
 #[derive(Debug, Default)]
 struct RetryContext {
     disabled: AtomicBool,
@@ -692,6 +698,7 @@ impl RetryContext {
     }
 }
 
+/// A structure that provides a collection of supervisor timers.
 #[derive(Debug, Default)]
 struct Timers {
     health_check: Option<Alarm>,
@@ -710,6 +717,7 @@ impl From<&Service> for Timers {
     }
 }
 impl Timers {
+    /// Waits for the given optional timer, which runs like `.map`.
     async fn wait(timer: &mut Option<Alarm>) -> Option<()> {
         match timer {
             Some(x) => x.wait().await,
@@ -717,6 +725,7 @@ impl Timers {
         }
     }
 
+    /// Called when the service started.
     fn on_start(&mut self) {
         if let Some(alarm) = &mut self.health_check {
             alarm.enable();
@@ -867,6 +876,7 @@ enum Request {
     MakeActive(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
 }
 
+/// Does necessary operations in special context for a child.
 async fn do_child(context: &SupervisorContext, has_task: bool) -> Option<Wait> {
     let mut lock = context.child.write().await;
 
@@ -877,6 +887,7 @@ async fn do_child(context: &SupervisorContext, has_task: bool) -> Option<Wait> {
     wait(&mut lock).await
 }
 
+/// Waits for a child, working like `.map`.
 async fn wait(lock: &mut Option<Child>) -> Option<Wait> {
     debug_assert!(lock.is_some());
     let wait = lock.as_mut().unwrap().wait().await.ok();
@@ -884,6 +895,7 @@ async fn wait(lock: &mut Option<Child>) -> Option<Wait> {
     wait
 }
 
+/// Set up a realm.
 fn setup_realm(realm: &Option<Arc<Realm>>, service: &Service) {
     if let Some(realm) = &realm {
         if let Some(x) = service.reslimit.cpu {

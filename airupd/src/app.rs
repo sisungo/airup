@@ -118,6 +118,7 @@ pub async fn init() {
     AIRUPD.set(object).unwrap();
 }
 
+/// Reads and sets global build manifest at path `path`, in CBOR format.
 pub async fn set_manifest_at(path: Option<&Path>) {
     if let Some(path) = path {
         std::env::set_var("AIRUP_OVERRIDE_MANIFEST_PATH", path);
