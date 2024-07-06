@@ -44,8 +44,8 @@ pub struct QuerySystem {
     /// List of entered milestones in the system.
     pub milestones: Vec<EnteredMilestone>,
 
-    /// Hostname of the system.
-    pub hostname: Option<String>,
+    /// Instance name of the server.
+    pub instance_name: String,
 
     /// List of cached services in the system.
     pub services: Vec<String>,
@@ -180,6 +180,11 @@ pub trait ConnectionExt<'a>: crate::Connection {
     /// Enters the specific milestone.
     fn enter_milestone(&'a mut self, name: &'a str) -> Self::Invoke<'a, ()> {
         self.invoke("system.enter_milestone", name)
+    }
+
+    /// Sets the server's instance name.
+    fn set_instance_name(&'a mut self, name: &'a str) -> Self::Invoke<'a, ()> {
+        self.invoke("system.set_instance_name", name)
     }
 
     /// Triggers the specific event.

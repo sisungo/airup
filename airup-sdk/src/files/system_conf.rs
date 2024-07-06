@@ -20,12 +20,16 @@ pub struct System {
 
     #[serde(default = "default_reboot_timeout")]
     pub reboot_timeout: u32,
+
+    #[serde(default)]
+    pub instance_name: String,
 }
 impl Default for System {
     fn default() -> Self {
         Self {
             os_name: default_os_name(),
             reboot_timeout: default_reboot_timeout(),
+            instance_name: String::new(),
         }
     }
 }

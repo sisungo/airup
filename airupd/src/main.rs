@@ -31,7 +31,7 @@ async fn main() {
     app::init().await;
 
     // Creates Airup runtime primitives
-    app::airupd().storage.config.override_env();
+    app::airupd().storage.config.populate_system_config();
     let _lock = app::airupd()
         .storage
         .runtime

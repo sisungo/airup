@@ -28,6 +28,7 @@ pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H
             interrupt_service_task,
             list_services,
             enter_milestone,
+            set_instance_name,
             trigger_event,
             register_extension,
             unregister_extension,
@@ -128,6 +129,12 @@ async fn list_services() -> Result<Vec<String>, Error> {
 #[airupfx::macros::api]
 async fn enter_milestone(name: String) -> Result<(), Error> {
     airupd().enter_milestone(name).await
+}
+
+#[airupfx::macros::api]
+async fn set_instance_name(name: String) -> Result<(), Error> {
+    airupfx::env::set_instance_name(name);
+    Ok(())
 }
 
 #[airupfx::macros::api]

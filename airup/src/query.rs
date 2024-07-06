@@ -134,11 +134,7 @@ fn print_query_system(
     }
 
     let status = PrintedStatus::of_system(query_system);
-    println!(
-        "{} {}",
-        status.theme_dot(),
-        query_system.hostname.as_deref().unwrap_or("localhost")
-    );
+    println!("{} {}", status.theme_dot(), query_system.instance_name);
     println!("{:>14} {}", "Status:", status);
     println!("{:>14} /", "Services:");
     for (name, status) in &services {

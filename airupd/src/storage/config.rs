@@ -29,8 +29,12 @@ impl Config {
         self.base_dir.find(format!("{name}.airs.airc")).await
     }
 
-    /// Overrides the environment with the system config.
-    pub fn override_env(&self) {
+    /// Populates the process' environment with the system config.
+    pub fn populate_system_config(&self) {
+        if !self.system_conf.system.instance_name.is_empty() {
+            airupfx::env::set_instance_name(self.system_conf.system.instance_name.clone());
+        }
+
         let mut vars: HashMap<String, Option<String>> = HashMap::default();
         for (k, v) in &airup_sdk::build::manifest().env_vars {
             vars.insert(k.to_owned(), v.as_ref().map(Into::into));

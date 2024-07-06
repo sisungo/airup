@@ -7,7 +7,10 @@ pub use users::{current_uid, with_current_user, with_user_by_id, with_user_by_na
 use std::{
     ffi::{OsStr, OsString},
     path::Path,
+    sync::RwLock,
 };
+
+static INSTANCE_NAME: RwLock<String> = RwLock::new(String::new());
 
 /// Sets environment variables in the iterator for the currently running process, removing environment variables with value
 /// `None`.
@@ -47,10 +50,21 @@ pub async fn refresh() {
     users::refresh();
 }
 
-/// Returns host name of the machine currently running the process.
+/// Sets instance name of the process.
 #[inline]
-pub fn host_name() -> Option<String> {
-    sysinfo::System::host_name()
+pub fn set_instance_name(name: String) {
+    *INSTANCE_NAME.write().unwrap() = name;
+}
+
+/// Returns instance name of the process. This is default to the machine's host name, and can be set via [`set_instance_name`].
+#[inline]
+pub fn instance_name() -> String {
+    let global = INSTANCE_NAME.read().unwrap();
+    if global.is_empty() {
+        sysinfo::System::host_name().unwrap_or_else(|| String::from("localhost"))
+    } else {
+        global.clone()
+    }
 }
 
 pub async fn setup_stdio(path: &Path) -> std::io::Result<()> {

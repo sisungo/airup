@@ -151,6 +151,26 @@ with the same name will be overridden, rather than returning an error.
 
 **Description**: Triggers the specified event.
 
+## Method: `system.enter_milestone`
+
+**Name**: `system.enter_milestone`
+
+**Parameters**: `string`
+
+**Return Value**: `null`
+
+**Description**: Enters a milestone.
+
+## Method: `system.set_instance_name`
+
+**Name**: `system.set_instance_name`
+
+**Parameters**: `string`
+
+**Return Value**: `null`
+
+**Description**: Sets the server's instance name. If the string parameter was empty, it restores the default instance name.
+
 ## Method: `system.load_extension`
 
 **Name**: `system.load_extension`

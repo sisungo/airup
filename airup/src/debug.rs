@@ -21,6 +21,10 @@ pub struct Cmdline {
     /// Dump Airup's internal debug information
     #[arg(long)]
     dump: bool,
+
+    /// Sets the server's instance name
+    #[arg(long)]
+    set_instance_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -42,6 +46,8 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         unregister_extension(&name)
     } else if cmdline.dump {
         dump()
+    } else if let Some(name) = cmdline.set_instance_name {
+        set_instance_name(&name)
     } else {
         Err(anyhow!("no action specified"))
     }
@@ -56,6 +62,12 @@ pub fn dump() -> anyhow::Result<()> {
     Ok(())
 }
 
+pub fn set_instance_name(name: &str) -> anyhow::Result<()> {
+    let mut conn = super::connect()?;
+    conn.set_instance_name(name)??;
+    Ok(())
+}
+
 pub fn unregister_extension(name: &str) -> anyhow::Result<()> {
     let mut conn = super::connect()?;
     conn.unregister_extension(name)??;
@@ -65,11 +77,11 @@ pub fn unregister_extension(name: &str) -> anyhow::Result<()> {
 
 pub fn print_build_manifest(reduce_rpc: bool) -> anyhow::Result<()> {
     let build_manifest = if reduce_rpc {
-        serde_json::to_string_pretty(&super::connect()?.build_manifest()??)
-            .expect("failed to serialize server side `BuildManifest` into JSON")
-    } else {
         serde_json::to_string_pretty(airup_sdk::build::manifest())
             .expect("failed to serialize `airup_sdk::build::manifest()` into JSON")
+    } else {
+        serde_json::to_string_pretty(&super::connect()?.build_manifest()??)
+            .expect("failed to serialize server side `BuildManifest` into JSON")
     };
     println!("{}", build_manifest);
 

@@ -160,6 +160,26 @@
 
 **描述**：加载一个 Airup 扩展。
 
+## `system.set_instance_name` 方法
+
+**名称**：`system.set_instance_name`
+
+**参数**：`字符串`
+
+**返回值**：`null`
+
+**描述**：设置服务器的实例名称。如果字符串参数为空字符串，则恢复默认实例名。
+
+## `system.enter_milestone` 方法
+
+**名称**：`system.enter_milestone`
+
+**参数**：`字符串`
+
+**返回值**：`null`
+
+**描述**：进入一个里程碑。
+
 ## `system.unload_extension` 方法
 
 **名称**：`system.unload_extension`
