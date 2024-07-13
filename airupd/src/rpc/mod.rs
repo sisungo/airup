@@ -102,15 +102,12 @@ impl Session {
     /// Starts the session task.
     fn start(mut self) {
         tokio::spawn(async move {
-            if let Err(err) = self.run().await {
-                tracing::debug!("{} disconnected: {}", self.audit_name().await, err);
-            }
+            _ = self.run().await;
         });
     }
 
     /// Runs the session in place.
     async fn run(&mut self) -> anyhow::Result<()> {
-        tracing::debug!("{} established", self.audit_name().await);
         loop {
             let req = self.conn.recv_req().await?;
             if req.method == "debug.disconnect" {
@@ -127,24 +124,5 @@ impl Session {
             };
             self.conn.send(&resp).await?;
         }
-    }
-
-    /// Returns audit-style name of the IPC session.
-    async fn audit_name(&self) -> String {
-        let cred = self.conn.as_ref().peer_cred().ok();
-        let uid = cred
-            .as_ref()
-            .map(|x| x.uid().to_string())
-            .unwrap_or_else(|| "?".into());
-        let gid = cred
-            .as_ref()
-            .map(|x| x.gid().to_string())
-            .unwrap_or_else(|| "?".into());
-        let pid = cred
-            .as_ref()
-            .and_then(|x| x.pid())
-            .map(|x| x.to_string())
-            .unwrap_or_else(|| "?".into());
-        format!("ipc_session(uid={}, gid={}, pid={})", uid, gid, pid)
     }
 }

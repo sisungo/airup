@@ -83,7 +83,7 @@ async fn enter_milestone(name: String, hist: &mut HashSet<String>) -> Result<(),
     let def = match app::airupd().storage.milestones.get(&name).await {
         Ok(x) => x,
         Err(err) => {
-            tracing::error!(target: "console", "Failed to enter milestone `{}`: {}", name, err);
+            crate::report_error!("Failed to enter milestone `{}`: {}", name, err);
             return Err(err.into());
         }
     };
@@ -91,15 +91,14 @@ async fn enter_milestone(name: String, hist: &mut HashSet<String>) -> Result<(),
     // Detects if dependency ring exists. If a dependency ring is detected, it's automatically broken, then a warning
     // event is recorded, and the method immediately returns.
     if !hist.insert(name.clone()) {
-        tracing::warn!(
-            target: "console",
+        crate::warn!(
             "Dependency loop detected for milestone `{}`. Breaking loop.",
             def.display_name()
         );
         return Ok(());
     }
 
-    tracing::info!(target: "console", "Entering milestone {}", def.display_name());
+    crate::inform!("Entering milestone {}", def.display_name());
     let begin_timestamp = airupfx::time::timestamp_ms();
 
     // Enters dependency milestones
@@ -140,20 +139,20 @@ async fn exec_milestone_async(def: &Milestone) {
         match item {
             Item::Cache(service) => {
                 if let Err(err) = app::airupd().cache_service(&service).await {
-                    tracing::error!(target: "console", "Failed to load service {}: {}", service, err);
+                    crate::report_error!("Failed to load service {}: {}", service, err);
                 }
             }
             Item::Start(service) => match app::airupd().start_service(&service).await {
                 Ok(_) => {
-                    tracing::info!(target: "console", "Starting {}", display_name(&service).await)
+                    crate::inform!("Starting {}", display_name(&service).await)
                 }
                 Err(err) => {
-                    tracing::error!(target: "console", "Failed to start {}: {}", service, err)
+                    crate::report_error!("Failed to start {}: {}", service, err)
                 }
             },
             Item::Run(cmd) => {
                 if let Err(err) = ace.run(&cmd).await {
-                    tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
+                    crate::report_error!("Failed to execute command `{cmd}`: {}", err);
                 }
             }
         }
@@ -166,20 +165,24 @@ async fn exec_milestone_serial(def: &Milestone) {
         match item {
             Item::Cache(service) => {
                 if let Err(err) = app::airupd().cache_service(&service).await {
-                    tracing::error!(target: "console", "Failed to load service {}: {}", service, err);
+                    crate::report_error!("Failed to load service {}: {}", service, err);
                 }
             }
             Item::Start(service) => match app::airupd().make_service_active(&service).await {
                 Ok(_) => {
-                    tracing::info!(target: "console", "Starting {}", display_name(&service).await)
+                    crate::inform!("Starting {}", display_name(&service).await)
                 }
                 Err(err) => {
-                    tracing::error!(target: "console", "Failed to start {}: {}", display_name(&service).await, err);
+                    crate::report_error!(
+                        "Failed to start {}: {}",
+                        display_name(&service).await,
+                        err
+                    );
                 }
             },
             Item::Run(cmd) => {
                 if let Err(err) = run_wait(&ace, &cmd).await {
-                    tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
+                    crate::report_error!("Failed to execute command `{cmd}`: {}", err);
                 }
             }
         }
@@ -195,7 +198,7 @@ async fn exec_milestone_sync(def: &Milestone) {
         match item {
             Item::Cache(service) => {
                 if let Err(err) = app::airupd().cache_service(&service).await {
-                    tracing::error!(target: "console", "Failed to load service {}: {}", service, err);
+                    crate::report_error!("Failed to load service {}: {}", service, err);
                 }
             }
             Item::Start(service) => match app::airupd().start_service(&service).await {
@@ -203,7 +206,7 @@ async fn exec_milestone_sync(def: &Milestone) {
                     handles.push((service, x));
                 }
                 Err(err) => {
-                    tracing::error!(target: "console", "Failed to start {}: {}", service, err);
+                    crate::report_error!("Failed to start {}: {}", service, err);
                 }
             },
             Item::Run(cmd) => match ace.run(&cmd).await {
@@ -211,7 +214,7 @@ async fn exec_milestone_sync(def: &Milestone) {
                     commands.push((cmd, x));
                 }
                 Err(err) => {
-                    tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
+                    crate::report_error!("Failed to execute command `{cmd}`: {}", err);
                 }
             },
         }
@@ -220,17 +223,17 @@ async fn exec_milestone_sync(def: &Milestone) {
     for (name, handle) in handles {
         match handle.wait().await {
             Ok(_) | Err(Error::Started) => {
-                tracing::info!(target: "console", "Starting {}", display_name(&name).await)
+                crate::inform!("Starting {}", display_name(&name).await)
             }
             Err(err) => {
-                tracing::error!(target: "console", "Failed to start {}: {}", display_name(&name).await, err);
+                crate::report_error!("Failed to start {}: {}", display_name(&name).await, err);
             }
         }
     }
 
     for (cmd, child) in commands {
         if let Err(err) = child.wait().await {
-            tracing::error!(target: "console", "Failed to execute command `{cmd}`: {}", err);
+            crate::report_error!("Failed to execute command `{cmd}`: {}", err);
         }
     }
 }

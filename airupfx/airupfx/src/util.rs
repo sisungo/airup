@@ -17,14 +17,14 @@ where
         match self {
             Ok(val) => val,
             Err(err) => {
-                tracing::error!(target: "console", "{}: {}", why, err);
+                eprintln!("{why}: {err}");
                 if crate::process::as_pid1() {
                     loop {
                         if let Err(err) = shell().await {
-                            tracing::error!(target: "console", "Failed to start `/bin/sh`: {err}");
+                            eprintln!("Failed to start `/bin/sh`: {err}");
                         }
                         if let Err(err) = crate::process::reload_image() {
-                            tracing::error!(target: "console", "Failed to reload `airupd` process image: {err}");
+                            eprintln!("Failed to reload `airupd` process image: {err}");
                         }
                     }
                 } else {
