@@ -4,7 +4,6 @@ pub mod api;
 
 use crate::app::airupd;
 use airup_sdk::rpc::Request;
-use anyhow::anyhow;
 use std::path::PathBuf;
 use tokio::sync::broadcast;
 
@@ -113,9 +112,6 @@ impl Session {
         tracing::debug!("{} established", self.audit_name().await);
         loop {
             let req = self.conn.recv_req().await?;
-            if req.method == "debug.disconnect" {
-                break Err(anyhow!("invocation of `debug.disconnect`"));
-            }
             let resp = match req.method.strip_prefix("extapi.") {
                 Some(method) => {
                     airupd()
