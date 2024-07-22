@@ -187,11 +187,6 @@ pub trait ConnectionExt<'a>: crate::Connection {
         self.invoke("system.trigger_event", event)
     }
 
-    /// Loads an extension.
-    fn register_extension(&'a mut self, name: &'a str, path: &'a str) -> Self::Invoke<'a, ()> {
-        self.invoke("system.register_extension", (name, path))
-    }
-
     /// Unloads an extension.
     fn unregister_extension(&'a mut self, name: &'a str) -> Self::Invoke<'a, ()> {
         self.invoke("system.unregister_extension", name)

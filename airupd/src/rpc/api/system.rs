@@ -29,7 +29,6 @@ pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H
             enter_milestone,
             set_instance_name,
             trigger_event,
-            register_extension,
             unregister_extension,
         ]
     )
@@ -135,11 +134,6 @@ async fn set_instance_name(name: String) -> Result<(), Error> {
 async fn trigger_event(event: Event) -> Result<(), Error> {
     airupd().events.trigger(event).await;
     Ok(())
-}
-
-#[airupfx::macros::api]
-async fn register_extension(name: String, path: String) -> Result<(), Error> {
-    airupd().extensions.register(name, &path).await
 }
 
 #[airupfx::macros::api]

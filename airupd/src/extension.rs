@@ -23,7 +23,7 @@ impl Extensions {
     }
 
     /// Registers an extension.
-    pub async fn register(&self, name: String, path: &str) -> Result<(), airup_sdk::Error> {
+    pub async fn register(&self, name: String, conn: UnixStream) -> Result<(), airup_sdk::Error> {
         let mut lock = self.0.write().await;
         if lock.contains_key(&name) {
             return Err(airup_sdk::Error::Exists);
@@ -31,7 +31,7 @@ impl Extensions {
         lock.insert(
             name.clone(),
             Arc::new(
-                Extension::new(name, path)
+                Extension::new(name, conn)
                     .await
                     .map_err(|x| airup_sdk::Error::Io {
                         message: x.to_string(),
@@ -78,9 +78,8 @@ struct Extension {
 }
 impl Extension {
     /// Creates a new [`Extension`] instance, hosting the extension.
-    async fn new(name: String, path: &str) -> std::io::Result<Self> {
+    async fn new(name: String, connection: UnixStream) -> std::io::Result<Self> {
         let (tx, rx) = mpsc::channel(8);
-        let connection = UnixStream::connect(path).await?;
         ExtensionHost {
             name,
             connection,

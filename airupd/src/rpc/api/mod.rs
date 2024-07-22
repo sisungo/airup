@@ -2,6 +2,7 @@
 
 mod debug;
 mod info;
+pub mod session;
 mod system;
 
 use airup_sdk::{

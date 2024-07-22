@@ -4,22 +4,17 @@
 use airup_sdk::{
     info::ConnectionExt,
     nonblocking::rpc::{MessageProtoRecvExt, MessageProtoSendExt},
-    rpc::MessageProto,
+    rpc::{MessageProto, Request},
     system::{ConnectionExt as _, Event},
 };
 use airupfx_signal::SIGTERM;
 use ciborium::cbor;
-use std::{collections::HashMap, future::Future, path::Path, pin::Pin, sync::Arc};
-use tokio::net::{
-    unix::{OwnedReadHalf, OwnedWriteHalf},
-    UnixListener,
-};
+use std::{collections::HashMap, future::Future, pin::Pin, sync::Arc};
+use tokio::net::unix::{OwnedReadHalf, OwnedWriteHalf};
 
 /// An extension server.
 #[derive(Debug)]
 pub struct Server {
-    listener: UnixListener,
-    path: String,
     extension_name: String,
     service_name: String,
     rpc_methods: HashMap<&'static str, Method>,
@@ -39,20 +34,14 @@ impl Server {
             .to_string();
         _ = std::fs::remove_file(&extension_socket_path);
 
-        Ok(Self::with_config(extension_name, service_name, extension_socket_path).await?)
+        Ok(Self::with_config(extension_name, service_name).await?)
     }
 
-    pub async fn with_config<P: AsRef<Path>>(
+    pub async fn with_config(
         extension_name: impl Into<String>,
         service_name: impl Into<String>,
-        path: P,
     ) -> std::io::Result<Self> {
-        let listener = UnixListener::bind(path.as_ref())?;
-        airupfx_fs::set_permission(path.as_ref(), airupfx_fs::Permission::Socket).await?;
-
         Ok(Self {
-            listener,
-            path: path.as_ref().display().to_string(),
             extension_name: extension_name.into(),
             service_name: service_name.into(),
             rpc_methods: HashMap::with_capacity(16),
@@ -66,35 +55,21 @@ impl Server {
     }
 
     /// Runs the extension server.
-    pub async fn run(self) -> ! {
+    pub async fn run(self) -> anyhow::Result<()> {
         let rpc_methods = Arc::new(self.rpc_methods);
 
         let extension_name = self.extension_name.clone();
-        tokio::spawn(async move {
-            let mut airup_rpc_conn =
-                airup_sdk::nonblocking::Connection::connect(airup_sdk::socket_path()).await?;
+        let mut extension_conn =
+            airup_sdk::nonblocking::Connection::connect(airup_sdk::socket_path()).await?;
 
-            match airup_rpc_conn
-                .register_extension(&extension_name, &self.path)
-                .await
-            {
-                Ok(Ok(())) => (),
-                Ok(Err(err)) => {
-                    eprintln!("error: api failure: {err}");
-                    std::process::exit(1);
-                }
-                Err(err) => {
-                    eprintln!("error: rpc failure: {err}");
-                    std::process::exit(1);
-                }
-            }
+        extension_conn
+            .send(&Request::new("session.into_extension", extension_name))
+            .await?;
 
-            _ = airup_rpc_conn
-                .trigger_event(&Event::new("notify_active".into(), self.service_name))
-                .await;
-
-            Ok::<(), anyhow::Error>(())
-        });
+        _ = airup_sdk::nonblocking::Connection::connect(airup_sdk::socket_path())
+            .await?
+            .trigger_event(&Event::new("notify_active".into(), self.service_name))
+            .await;
 
         let extension_name = self.extension_name.clone();
         _ = airupfx_signal::signal(SIGTERM, |_| async move {
@@ -109,19 +84,16 @@ impl Server {
             std::process::exit(0);
         });
 
-        loop {
-            let Ok((stream, _)) = self.listener.accept().await else {
-                continue;
-            };
-            let (rx, tx) = stream.into_split();
+        let stream = extension_conn.into_inner().into_inner().into_inner();
+        let (rx, tx) = stream.into_split();
 
-            Session {
-                rx: MessageProto::new(rx, 6 * 1024 * 1024),
-                tx: Arc::new(MessageProto::new(tx, 6 * 1024 * 1024).into()),
-                rpc_methods: rpc_methods.clone(),
-            }
-            .run_on_the_fly();
+        Session {
+            rx: MessageProto::new(rx, 6 * 1024 * 1024),
+            tx: Arc::new(MessageProto::new(tx, 6 * 1024 * 1024).into()),
+            rpc_methods: rpc_methods.clone(),
         }
+        .run()
+        .await
     }
 }
 
@@ -132,10 +104,6 @@ struct Session {
     rpc_methods: Arc<HashMap<&'static str, Method>>,
 }
 impl Session {
-    pub fn run_on_the_fly(self) {
-        tokio::spawn(self.run());
-    }
-
     pub async fn run(mut self) -> anyhow::Result<()> {
         let mut buf = Vec::with_capacity(4096);
         loop {
