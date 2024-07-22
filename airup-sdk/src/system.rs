@@ -108,13 +108,8 @@ impl Event {
 /// An extension trait to provide `system.*` API invocation.
 pub trait ConnectionExt<'a>: crate::Connection {
     /// Sideloads a service.
-    fn sideload_service(
-        &'a mut self,
-        name: &'a str,
-        service: &'a Service,
-        ovrd: bool,
-    ) -> Self::Invoke<'a, ()> {
-        self.invoke("system.sideload_service", (name, service, ovrd))
+    fn sideload_service(&'a mut self, name: &'a str, service: &'a Service) -> Self::Invoke<'a, ()> {
+        self.invoke("system.sideload_service", (name, service))
     }
 
     /// Starts the specified service.

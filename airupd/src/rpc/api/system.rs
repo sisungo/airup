@@ -22,7 +22,6 @@ pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H
             kill_service,
             reload_service,
             sideload_service,
-            unsideload_service,
             cache_service,
             uncache_service,
             interrupt_service_task,
@@ -102,13 +101,8 @@ async fn interrupt_service_task(service: String) -> Result<(), Error> {
 }
 
 #[airupfx::macros::api]
-async fn sideload_service(name: String, service: Service, ovrd: bool) -> Result<(), Error> {
-    airupd().storage.services.load(&name, service, ovrd)
-}
-
-#[airupfx::macros::api]
-async fn unsideload_service(name: String) -> Result<(), Error> {
-    airupd().storage.services.unload(&name)
+async fn sideload_service(name: String, service: Service) -> Result<(), Error> {
+    airupd().sideload_service(&name, service).await
 }
 
 #[airupfx::macros::api]

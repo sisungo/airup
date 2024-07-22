@@ -16,9 +16,6 @@ pub struct Cmdline {
     /// Sideload a service
     #[arg(long)]
     sideload: Option<PathBuf>,
-
-    #[arg(long = "override", requires = "sideload")]
-    ovrd: bool,
 }
 
 pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
@@ -27,7 +24,7 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
     if let Some(path) = &cmdline.sideload {
         let service = files::read_merge(vec![path.clone()])
             .map_err(|e| anyhow!("failed to read service at `{}`: {}", path.display(), e))?;
-        conn.sideload_service(&cmdline.service, &service, cmdline.ovrd)??;
+        conn.sideload_service(&cmdline.service, &service)??;
     }
 
     if !cmdline.cache {
