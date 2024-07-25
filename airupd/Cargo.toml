@@ -20,7 +20,6 @@ airupfx = { path = "../airupfx/airupfx" }
 airup-sdk = { path = "../airup-sdk", features = ["_internal"] }
 ciborium = "0.2"
 libc = "0.2"
-once_cell = "1"
 thiserror = "1"
 tokio = { workspace = true }
 tracing = "0.1"
