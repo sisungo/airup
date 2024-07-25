@@ -23,7 +23,6 @@ airupfx-signal = { path = "../airupfx-signal" }
 airupfx-time = { path = "../airupfx-time" }
 airupfx-macros = { path = "../airupfx-macros" }
 airupfx-extensions = { path = "../airupfx-extensions" }
-tracing = "0.1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 selinux = { version = "0.4", optional = true }

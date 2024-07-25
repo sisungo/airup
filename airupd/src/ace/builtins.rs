@@ -30,18 +30,24 @@ pub fn console_setup(args: Vec<String>) -> JoinHandle<i32> {
 }
 
 pub fn console_info(args: Vec<String>) -> JoinHandle<i32> {
-    tracing::info!(target: "console", "{}", merge_args(&args));
-    tokio::spawn(async { 0 })
+    tokio::spawn(async move {
+        crate::inform!("{}", merge_args(&args));
+        0
+    })
 }
 
 pub fn console_warn(args: Vec<String>) -> JoinHandle<i32> {
-    tracing::warn!(target: "console", "{}", merge_args(&args));
-    tokio::spawn(async { 0 })
+    tokio::spawn(async move {
+        crate::warn!("{}", merge_args(&args));
+        0
+    })
 }
 
 pub fn console_error(args: Vec<String>) -> JoinHandle<i32> {
-    tracing::error!(target: "console", "{}", merge_args(&args));
-    tokio::spawn(async { 0 })
+    tokio::spawn(async move {
+        crate::report_error!("{}", merge_args(&args));
+        0
+    })
 }
 
 pub fn noop(_: Vec<String>) -> JoinHandle<i32> {

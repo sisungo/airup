@@ -53,7 +53,7 @@ fn stop_service_task(service: String) -> JoinHandle<()> {
                         error = Some(err);
                     }
                 } else {
-                    tracing::info!(target: "console", "Stopping {}", super::display_name(&service).await);
+                    crate::inform!("Stopping {}", super::display_name(&service).await);
                 }
             }
             Err(err) => {
@@ -64,8 +64,7 @@ fn stop_service_task(service: String) -> JoinHandle<()> {
             }
         };
         if let Some(err) = error {
-            tracing::error!(
-                target: "console",
+            crate::report_error!(
                 "Failed to stop {}: {}",
                 super::display_name(&service).await,
                 err

@@ -6,7 +6,7 @@ mod env;
 mod events;
 mod extension;
 mod lifetime;
-mod logging;
+mod log;
 mod milestones;
 mod rpc;
 mod storage;
@@ -20,8 +20,7 @@ async fn main() {
     airupfx::init().await;
     let cmdline = self::env::Cmdline::parse();
 
-    logging::Builder::new()
-        .name("airupd")
+    log::Builder::new()
         .quiet(cmdline.quiet)
         .color(!cmdline.no_color)
         .verbose(cmdline.verbose)
