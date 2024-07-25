@@ -108,17 +108,7 @@
 
 **返回值**：`null`
 
-**描述**：以指定名称侧载给出的服务。如果第三个参数为 `true`，如果指定名称的侧载服务已经存在，将会覆盖该槽位而不是返回错误。
-
-## `system.unsideload_service` 方法
-
-**名称**：`system.unsideload_service`
-
-**参数**：`字符串（要操作的服务名称）`
-
-**返回值**：`null`
-
-**描述**：从侧载存储删除指定服务。
+**描述**：以指定名称缓存给出的服务。
 
 ## `system.kill_service` 方法
 
@@ -150,16 +140,6 @@
 
 **描述**：触发指定事件。
 
-## `system.load_extension` 方法
-
-**名称**：`system.load_extension`
-
-**参数**：`字符串 (扩展名称)`, `字符串 (扩展套接字路径)`
-
-**返回值**：`null`
-
-**描述**：加载一个 Airup 扩展。
-
 ## `system.set_instance_name` 方法
 
 **名称**：`system.set_instance_name`
@@ -180,15 +160,15 @@
 
 **描述**：进入一个里程碑。
 
-## `system.unload_extension` 方法
+## `system.unregister_extension` 方法
 
-**名称**：`system.unload_extension`
+**名称**：`system.unregister_extension`
 
 **参数**：`字符串 (扩展名称)`
 
 **返回值**：`null`
 
-**描述**：卸载一个 Airup 扩展。
+**描述**：取消注册一个 Airup 扩展。
 
 **可能的错误**：
 

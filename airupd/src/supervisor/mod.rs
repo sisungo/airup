@@ -5,7 +5,7 @@ pub mod task;
 
 use crate::{ace::Child, app::airupd};
 use airup_sdk::{
-    files::{service::WatchdogKind, Service},
+    files::{service::WatchdogKind, Service, Validate},
     system::{Event, QueryService, Status},
     Error,
 };
@@ -837,6 +837,18 @@ impl crate::app::Airupd {
         self.supervisors
             .supervise(self.storage.get_service_patched(name).await?)
             .await;
+        Ok(())
+    }
+
+    /// Sideloads the given service.
+    ///
+    /// # Errors
+    /// This method would fail if the service object was invalid, or the name has been registered.
+    pub async fn sideload_service(&self, name: &str, mut service: Service) -> Result<(), Error> {
+        let name = name.strip_prefix(".airs").unwrap_or(name);
+        service.validate()?;
+        service.name = name.into();
+        self.supervisors.supervise(service).await;
         Ok(())
     }
 

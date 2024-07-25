@@ -17,6 +17,7 @@ use airup_sdk::{
     Error,
 };
 use std::{
+    cell::LazyCell,
     collections::HashSet,
     sync::{
         atomic::{self, AtomicBool},
@@ -134,7 +135,7 @@ async fn exec_milestone(def: &Milestone) {
 }
 
 async fn exec_milestone_async(def: &Milestone) {
-    let ace = once_cell::sync::Lazy::new(Ace::new);
+    let ace = LazyCell::new(Ace::new);
     for item in def.items().await {
         match item {
             Item::Cache(service) => {
@@ -160,7 +161,7 @@ async fn exec_milestone_async(def: &Milestone) {
 }
 
 async fn exec_milestone_serial(def: &Milestone) {
-    let ace = once_cell::sync::Lazy::new(Ace::new);
+    let ace = LazyCell::new(Ace::new);
     for item in def.items().await {
         match item {
             Item::Cache(service) => {
@@ -190,7 +191,7 @@ async fn exec_milestone_serial(def: &Milestone) {
 }
 
 async fn exec_milestone_sync(def: &Milestone) {
-    let ace = once_cell::sync::Lazy::new(Ace::new);
+    let ace = LazyCell::new(Ace::new);
     let items = def.items().await;
     let mut commands = Vec::with_capacity(items.len());
     let mut handles = Vec::with_capacity(items.len());

@@ -104,22 +104,11 @@ Module `system` provides methods for managing the system.
 
 **Name**: `system.sideload_service`
 
-**Parameters**: `string (name of service)`, `Service` object and `bool`
+**Parameters**: `string (name of service)` and `Service` object
 
 **Return Value**: `null`
 
-**Description**: Sideloads the given service in given name. If the third parameter is set `true`, existing sideloaded service
-with the same name will be overridden, rather than returning an error.
-
-## Method: `system.unsideload_service`
-
-**Name**: `system.unsideload_service`
-
-**Parameters**: `string (name of service to operate)`
-
-**Return Value**: `null`
-
-**Description**: Removes the specified service from sideload store.
+**Description**: Caches the given service in given name.
 
 ## Method: `system.kill_service`
 
@@ -171,25 +160,15 @@ with the same name will be overridden, rather than returning an error.
 
 **Description**: Sets the server's instance name. If the string parameter was empty, it restores the default instance name.
 
-## Method: `system.load_extension`
+## Method: `system.unregister_extension`
 
-**Name**: `system.load_extension`
-
-**Parameters**: `string (name of extension)`, `string (path of the extension's socket)`
-
-**Return Value**: `null`
-
-**Description**: Loads an Airup extension.
-
-## Method: `system.unload_extension`
-
-**Name**: `system.unload_extension`
+**Name**: `system.unregister_extension`
 
 **Parameters**: `string (name of extension)`
 
 **Return Value**: `null`
 
-**Description**: Unloads an Airup extension.
+**Description**: Unregisters an Airup extension.
 
 **Possible Errors**:
 

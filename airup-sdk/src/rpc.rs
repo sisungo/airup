@@ -122,6 +122,11 @@ impl<T> MessageProto<T> {
     pub fn size_limit(&self) -> usize {
         self.size_limit
     }
+
+    /// Gets the inner stream.
+    pub fn into_inner(self) -> T {
+        self.inner
+    }
 }
 impl<T> AsRef<T> for MessageProto<T> {
     fn as_ref(&self) -> &T {

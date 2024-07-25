@@ -51,6 +51,10 @@ impl Connection {
             .recv::<crate::rpc::Response>()?
             .into_result())
     }
+
+    pub fn into_inner(self) -> rpc::Connection {
+        self.underlying
+    }
 }
 impl Deref for Connection {
     type Target = rpc::Connection;

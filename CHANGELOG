@@ -1,3 +1,9 @@
+Changes in v0.10.6:
+ * BREAKING: Extensions now uses the registering connection, rather than listen to a new UNIX socket and let the daemon connect.
+ * BREAKING: Service sideloading is now a part of the supervisor cache system.
+ * BREAKING: Removed API `debug.disconnect`
+ * Feature: Seperated instance name from system host name
+
 Changes in v0.10.5:
  * cli: refactor `debug` subcommand and removed unnecessary interfaces
  * rpc: reset request size limit \(2M to 128K\)

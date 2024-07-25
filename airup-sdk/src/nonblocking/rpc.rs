@@ -51,6 +51,11 @@ impl Connection {
         ciborium::into_writer(obj, &mut buffer)?;
         self.0.send(&buffer.into_inner()).await
     }
+
+    /// Returns the underlying message protocol.
+    pub fn into_inner(self) -> MessageProto<UnixStream> {
+        self.0
+    }
 }
 impl Deref for Connection {
     type Target = MessageProto<UnixStream>;

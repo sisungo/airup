@@ -22,7 +22,6 @@ pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H
             kill_service,
             reload_service,
             sideload_service,
-            unsideload_service,
             cache_service,
             uncache_service,
             interrupt_service_task,
@@ -30,7 +29,6 @@ pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H
             enter_milestone,
             set_instance_name,
             trigger_event,
-            register_extension,
             unregister_extension,
         ]
     )
@@ -102,13 +100,8 @@ async fn interrupt_service_task(service: String) -> Result<(), Error> {
 }
 
 #[airupfx::macros::api]
-async fn sideload_service(name: String, service: Service, ovrd: bool) -> Result<(), Error> {
-    airupd().storage.services.load(&name, service, ovrd)
-}
-
-#[airupfx::macros::api]
-async fn unsideload_service(name: String) -> Result<(), Error> {
-    airupd().storage.services.unload(&name)
+async fn sideload_service(name: String, service: Service) -> Result<(), Error> {
+    airupd().sideload_service(&name, service).await
 }
 
 #[airupfx::macros::api]
@@ -141,11 +134,6 @@ async fn set_instance_name(name: String) -> Result<(), Error> {
 async fn trigger_event(event: Event) -> Result<(), Error> {
     airupd().events.trigger(event).await;
     Ok(())
-}
-
-#[airupfx::macros::api]
-async fn register_extension(name: String, path: String) -> Result<(), Error> {
-    airupd().extensions.register(name, &path).await
 }
 
 #[airupfx::macros::api]

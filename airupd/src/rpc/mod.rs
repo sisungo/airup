@@ -4,7 +4,6 @@ pub mod api;
 
 use crate::app::airupd;
 use airup_sdk::rpc::Request;
-use anyhow::anyhow;
 use std::path::PathBuf;
 use tokio::sync::broadcast;
 
@@ -100,18 +99,19 @@ impl Session {
     }
 
     /// Starts the session task.
-    fn start(mut self) {
+    fn start(self) {
         tokio::spawn(async move {
             _ = self.run().await;
         });
     }
 
     /// Runs the session in place.
-    async fn run(&mut self) -> anyhow::Result<()> {
+    async fn run(mut self) -> anyhow::Result<()> {
         loop {
             let req = self.conn.recv_req().await?;
-            if req.method == "debug.disconnect" {
-                break Err(anyhow!("invocation of `debug.disconnect`"));
+            if req.method.strip_prefix("session.").is_some() {
+                api::session::invoke(self, req).await;
+                return Ok(());
             }
             let resp = match req.method.strip_prefix("extapi.") {
                 Some(method) => {
