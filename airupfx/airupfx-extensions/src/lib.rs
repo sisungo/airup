@@ -87,7 +87,7 @@ impl Server {
         let stream = extension_conn.into_inner().into_inner().into_inner();
         let (rx, tx) = stream.into_split();
 
-        Session {
+        ServerImpl {
             rx: MessageProto::new(rx, 6 * 1024 * 1024),
             tx: Arc::new(MessageProto::new(tx, 6 * 1024 * 1024).into()),
             rpc_methods: rpc_methods.clone(),
@@ -98,13 +98,13 @@ impl Server {
 }
 
 #[derive(Debug)]
-struct Session {
+struct ServerImpl {
     rx: MessageProto<OwnedReadHalf>,
     tx: Arc<tokio::sync::Mutex<MessageProto<OwnedWriteHalf>>>,
     rpc_methods: Arc<HashMap<&'static str, Method>>,
 }
-impl Session {
-    pub async fn run(mut self) -> anyhow::Result<()> {
+impl ServerImpl {
+    async fn run(mut self) -> anyhow::Result<()> {
         let mut buf = Vec::with_capacity(4096);
         loop {
             self.rx.recv(&mut buf).await?;

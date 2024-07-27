@@ -1,47 +1,48 @@
+use libc::c_int;
 use std::future::Future;
 use tokio::signal::unix::SignalKind;
 
 /// Terminal line hangup.
-pub const SIGHUP: i32 = libc::SIGHUP;
+pub const SIGHUP: c_int = libc::SIGHUP;
 
 /// Interrupt program.
-pub const SIGINT: i32 = libc::SIGINT;
+pub const SIGINT: c_int = libc::SIGINT;
 
 /// Quit program.
-pub const SIGQUIT: i32 = libc::SIGQUIT;
+pub const SIGQUIT: c_int = libc::SIGQUIT;
 
 /// Write on a pipe with no reader.
-pub const SIGPIPE: i32 = libc::SIGPIPE;
+pub const SIGPIPE: c_int = libc::SIGPIPE;
 
 /// Software termination signal.
-pub const SIGTERM: i32 = libc::SIGTERM;
+pub const SIGTERM: c_int = libc::SIGTERM;
 
 /// Stop signal generated from keyboard.
-pub const SIGTSTP: i32 = libc::SIGTSTP;
+pub const SIGTSTP: c_int = libc::SIGTSTP;
 
 /// Child status has changed.
-pub const SIGCHLD: i32 = libc::SIGCHLD;
+pub const SIGCHLD: c_int = libc::SIGCHLD;
 
 /// Background read attempted from control terminal.
-pub const SIGTTIN: i32 = libc::SIGTTIN;
+pub const SIGTTIN: c_int = libc::SIGTTIN;
 
 /// Background write attempted to control terminal.
-pub const SIGTTOU: i32 = libc::SIGTTOU;
+pub const SIGTTOU: c_int = libc::SIGTTOU;
 
 /// I/O is possible on a descriptor (see fcntl(2)).
-pub const SIGIO: i32 = libc::SIGIO;
+pub const SIGIO: c_int = libc::SIGIO;
 
 /// User defined signal 1.
-pub const SIGUSR1: i32 = libc::SIGUSR1;
+pub const SIGUSR1: c_int = libc::SIGUSR1;
 
 /// User defined signal 2.
-pub const SIGUSR2: i32 = libc::SIGUSR2;
+pub const SIGUSR2: c_int = libc::SIGUSR2;
 
 /// Window size change
-pub const SIGWINCH: i32 = libc::SIGWINCH;
+pub const SIGWINCH: c_int = libc::SIGWINCH;
 
 /// Kills the process.
-pub const SIGKILL: i32 = libc::SIGKILL;
+pub const SIGKILL: c_int = libc::SIGKILL;
 
 /// Registers a signal handler.
 ///

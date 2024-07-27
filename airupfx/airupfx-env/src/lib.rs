@@ -99,4 +99,12 @@ mod tests {
         assert!(matches!(crate::take_var("magic").as_deref(), Ok("1")));
         assert!(matches!(std::env::var("magic").as_deref(), Err(_)));
     }
+
+    #[test]
+    fn instance_name() {
+        let x = crate::instance_name();
+        crate::set_instance_name(format!("{x}-testing"));
+        let y = crate::instance_name();
+        assert_ne!(x, y);
+    }
 }
