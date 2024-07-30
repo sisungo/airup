@@ -106,6 +106,9 @@ pub struct Env {
     /// Working directory to start the service.
     pub working_dir: Option<PathBuf>,
 
+    /// Root directory to start the service.
+    pub root_dir: Option<PathBuf>,
+
     /// Environment variables to execute for the service.
     ///
     /// If a value is set to `null`, the environment variable gets removed if it exists.
@@ -125,6 +128,7 @@ impl Default for Env {
             stdout: Stdio::Log,
             stderr: Stdio::Log,
             working_dir: None,
+            root_dir: None,
             vars: HashMap::default(),
         }
     }
