@@ -1,3 +1,4 @@
+/// Formats size byte number into human-readable string.
 pub fn format_size(bytes: u64) -> String {
     match bytes {
         0..=999 => format!("{} B", bytes),

@@ -5,7 +5,7 @@ use clap::Parser;
 #[derive(Debug, Clone, Parser)]
 #[command(about)]
 pub struct Cmdline {
-    /// Run garbage collector
+    /// Notify the daemon to decrease memory usage
     #[arg(long)]
     gc: bool,
 }
