@@ -313,16 +313,16 @@ pub struct Watchdog {
     /// Kind of the watchdog to use.
     pub kind: Option<WatchdogKind>,
 
-    /// Time interval of polling health check command.
-    #[serde(default = "Watchdog::default_health_check_interval")]
-    pub health_check_interval: u32,
+    /// Time interval of watchdog checking.
+    #[serde(default = "Watchdog::default_interval")]
+    pub health_interval: u32,
 
     /// Also mark the service failed on successful exits (`$? == 0`)
     #[serde(default)]
     pub successful_exit: bool,
 }
 impl Watchdog {
-    fn default_health_check_interval() -> u32 {
+    fn default_interval() -> u32 {
         5000
     }
 }
@@ -331,8 +331,11 @@ impl Watchdog {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum WatchdogKind {
-    /// Make the supervisor poll to execute the health check command.
+    /// The supervisor polls to execute the health check command.
     HealthCheck,
+
+    /// The service regularly notifies the supervisor that it's normally running.
+    Notify,
 }
 
 /// Resource limitation.

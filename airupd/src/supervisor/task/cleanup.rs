@@ -27,7 +27,7 @@ impl TaskHandle for CleanupServiceHandle {
     }
 
     fn is_important(&self) -> bool {
-        self.important.load(atomic::Ordering::SeqCst)
+        self.important.load(atomic::Ordering::Acquire)
     }
 
     fn send_interrupt(&self) {
@@ -94,7 +94,7 @@ impl CleanupService {
         )
         .await;
 
-        self.important.store(false, atomic::Ordering::SeqCst);
+        self.important.store(false, atomic::Ordering::Release);
         self.helper
             .would_interrupt(async {
                 tokio::time::sleep(Duration::from_millis(self.context.service.retry.delay)).await;
@@ -102,7 +102,7 @@ impl CleanupService {
             .await?;
 
         if self.retry {
-            self.important.store(true, atomic::Ordering::SeqCst);
+            self.important.store(true, atomic::Ordering::Release);
             let handle = super::start::start(self.context.clone());
             tokio::select! {
                 _ = handle.wait() => {},

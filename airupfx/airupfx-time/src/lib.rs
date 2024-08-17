@@ -47,6 +47,12 @@ impl Alarm {
         self.interval = None;
     }
 
+    pub fn reset(&mut self) {
+        if let Some(interval) = self.interval.as_mut() {
+            interval.reset();
+        }
+    }
+
     pub async fn wait(&mut self) -> Option<()> {
         match &mut self.interval {
             Some(x) => {

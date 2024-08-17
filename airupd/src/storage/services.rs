@@ -48,25 +48,18 @@ impl Services {
         files::read_merge(paths).await
     }
 
-    /// Lists names of all services installed on the system, including sideloaded ones and on-filesystem ones.
+    /// Lists names of all services installed in the storage.
     pub async fn list(&self) -> Vec<String> {
-        let mut result = Vec::new();
         self.base_chain
             .read_chain()
             .await
             .map(IntoIterator::into_iter)
             .into_iter()
             .flatten()
-            .filter(|x| {
-                let x = x.to_string_lossy();
-                !x.starts_with('.') && x.ends_with(".airs")
-            })
-            .for_each(|x| {
-                let name = x.to_string_lossy();
-                let name = name.strip_suffix(".airs").unwrap_or(&name);
-                result.push(name.into());
-            });
-        result
+            .map(|x| String::from(x.to_string_lossy()))
+            .filter(|x| !x.starts_with('.') && x.ends_with(".airs"))
+            .map(|x| x.strip_suffix(".airs").unwrap_or(&x).into())
+            .collect()
     }
 }
 impl Default for Services {

@@ -178,7 +178,7 @@ impl Manager {
                     continue;
                 }
             };
-            if let Err(err) = v.update_def(Box::new(new)).await {
+            if let Err(err) = v.update_manifest(Box::new(new)).await {
                 errors.push((k.into(), err));
             }
         }
@@ -232,9 +232,12 @@ impl SupervisorHandle {
         }
     }
 
-    pub async fn update_def(&self, new: Box<Service>) -> Result<Service, Error> {
+    pub async fn update_manifest(&self, new: Box<Service>) -> Result<Service, Error> {
         let (tx, rx) = oneshot::channel();
-        self.sender.send(Request::UpdateDef(new, tx)).await.unwrap();
+        self.sender
+            .send(Request::UpdateManifest(new, tx))
+            .await
+            .unwrap();
         rx.await.unwrap()
     }
 }
@@ -263,7 +266,7 @@ impl Supervisor {
                 req = self.receiver.recv() => self.handle_req(req?).await,
                 Some(wait) = do_child(&self.context, self.current_task.has_task()) => self.handle_wait(wait).await,
                 Some(handle) = self.current_task.wait() => self.handle_wait_task(handle).await,
-                Some(_) = Timers::wait(&mut self.timers.health_check) => self.handle_health_check().await,
+                Some(_) = Timers::wait(&mut self.timers.watchdog) => self.handle_watchdog().await,
                 Ok(event) = self.events.recv() => self.handle_event(&event).await,
             }
         }
@@ -290,8 +293,8 @@ impl Supervisor {
             Request::Reload(chan) => {
                 _ = chan.send(self.reload_service().await);
             }
-            Request::UpdateDef(new, chan) => {
-                _ = chan.send(self.update_def(*new).await);
+            Request::UpdateManifest(new, chan) => {
+                _ = chan.send(self.update_manifest(*new).await);
             }
             Request::InterruptTask(chan) => {
                 let handle = self.current_task.interrupt();
@@ -315,6 +318,12 @@ impl Supervisor {
 
     /// Called when an event is triggered.
     async fn handle_event(&mut self, event: &Event) {
+        if event.id == "notify_watchdog" && event.payload == self.context.service.name {
+            if let Some(x) = &mut self.timers.watchdog {
+                x.reset();
+            }
+            return;
+        }
         if let Some(exec) = self.context.service.event_handlers.get(&event.id) {
             let Ok(mut ace) = task::ace(&self.context).await else {
                 return;
@@ -345,19 +354,22 @@ impl Supervisor {
             return;
         };
         if handle.task_class() == "HealthCheck" {
-            self.context.last_error.set(Error::Watchdog);
-            _ = self.stop_service().await;
+            self.on_watchdog_failure().await;
         }
         if self.context.last_error.take_autosave() {
             self.context.last_error.set(error);
         }
     }
 
-    /// Called when the health check timer goes off.
-    async fn handle_health_check(&mut self) {
+    /// Called when the watchdog timer goes off.
+    async fn handle_watchdog(&mut self) {
         if self.context.status.get() == Status::Active {
-            _ = self.health_check().await;
-        } else if let Some(alarm) = &mut self.timers.health_check {
+            match self.context.service.watchdog.kind {
+                Some(WatchdogKind::HealthCheck) => _ = self.health_check().await,
+                Some(WatchdogKind::Notify) => _ = self.on_watchdog_failure().await,
+                None => (),
+            };
+        } else if let Some(alarm) = &mut self.timers.watchdog {
             alarm.disable();
         }
     }
@@ -381,12 +393,12 @@ impl Supervisor {
         }
     }
 
-    /// Updates service definition of the supervisor. On success, returns the elder service definition.
+    /// Updates service manifest of the supervisor. On success, returns the elder service manifest.
     ///
     /// # Errors
     /// This method would fail if the internal context has more than one reference, usually when a task is running for this
     /// supervisor.
-    async fn update_def(&mut self, new: Service) -> Result<Service, Error> {
+    async fn update_manifest(&mut self, new: Service) -> Result<Service, Error> {
         self.current_task.interrupt_non_important().await;
         let context = Arc::get_mut(&mut self.context).ok_or(Error::TaskExists)?;
         if context.service != new {
@@ -482,6 +494,11 @@ impl Supervisor {
                 task::health_check::start(&self.context).await
             })
             .await
+    }
+
+    async fn on_watchdog_failure(&mut self) {
+        self.context.last_error.set(Error::Watchdog);
+        _ = self.stop_service().await;
     }
 }
 
@@ -701,15 +718,15 @@ impl RetryContext {
 /// A structure that provides a collection of supervisor timers.
 #[derive(Debug, Default)]
 struct Timers {
-    health_check: Option<Alarm>,
+    watchdog: Option<Alarm>,
 }
 impl From<&Service> for Timers {
     fn from(service: &Service) -> Self {
         let mut result = Self::default();
 
-        if matches!(service.watchdog.kind, Some(WatchdogKind::HealthCheck)) {
-            result.health_check = Some(Alarm::new(Duration::from_millis(
-                service.watchdog.health_check_interval as _,
+        if service.watchdog.kind.is_some() {
+            result.watchdog = Some(Alarm::new(Duration::from_millis(
+                service.watchdog.health_interval as _,
             )));
         }
 
@@ -727,7 +744,7 @@ impl Timers {
 
     /// Called when the service started.
     fn on_start(&mut self) {
-        if let Some(alarm) = &mut self.health_check {
+        if let Some(alarm) = &mut self.watchdog {
             alarm.enable();
         }
     }
@@ -883,7 +900,7 @@ enum Request {
     Stop(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     Kill(oneshot::Sender<Result<(), Error>>),
     Reload(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
-    UpdateDef(Box<Service>, oneshot::Sender<Result<Service, Error>>),
+    UpdateManifest(Box<Service>, oneshot::Sender<Result<Service, Error>>),
     InterruptTask(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     MakeActive(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
 }
