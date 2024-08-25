@@ -23,9 +23,8 @@ where
                         if let Err(err) = shell().await {
                             tracing::error!(target: "console", "Failed to start `/bin/sh`: {err}");
                         }
-                        if let Err(err) = crate::process::reload_image() {
-                            tracing::error!(target: "console", "Failed to reload `airupd` process image: {err}");
-                        }
+                        let Err(err) = crate::process::reload_image();
+                        tracing::error!(target: "console", "Failed to reload `airupd` process image: {err}");
                     }
                 } else {
                     std::process::exit(1);
