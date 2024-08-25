@@ -32,7 +32,7 @@ impl Default for Context {
     }
 }
 
-/// Represents to an IPC server.
+/// Represents to an RPC server.
 #[derive(Debug)]
 pub struct Server {
     path: PathBuf,
@@ -72,7 +72,7 @@ impl Server {
 
     /// Runs the server in place.
     async fn run(&mut self) {
-        let mut reload = airupd().ipc.reload.subscribe();
+        let mut reload = airupd().rpc.reload.subscribe();
 
         loop {
             tokio::select! {
@@ -120,7 +120,7 @@ impl Session {
                         .rpc_invoke(Request::new::<&str, ciborium::Value, _>(method, req.params))
                         .await
                 }
-                None => airupd().ipc.api.invoke(req).await,
+                None => airupd().rpc.api.invoke(req).await,
             };
             self.conn.send(&resp).await?;
         }

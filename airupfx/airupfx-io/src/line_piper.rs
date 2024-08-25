@@ -1,3 +1,5 @@
+//! A cancel-safe solution for reading lines from a stream.
+
 use std::{future::Future, pin::Pin};
 use tokio::{
     io::{AsyncRead, AsyncReadExt},
@@ -40,8 +42,11 @@ impl Drop for LinePiper {
 }
 
 /// Sets up a line piper and sets a callback for it. The line piper is automatically closed when stream `reader` reached EOF.
-pub fn set_callback(reader: impl AsyncRead + Unpin + Send + 'static, callback: Box<dyn Callback>) {
-    LinePiperEntity::new(reader, callback).start();
+pub fn set_callback(
+    reader: impl AsyncRead + Unpin + Send + 'static,
+    callback: Box<dyn Callback>,
+) -> JoinHandle<()> {
+    LinePiperEntity::new(reader, callback).start()
 }
 
 struct LinePiperEntity<R> {

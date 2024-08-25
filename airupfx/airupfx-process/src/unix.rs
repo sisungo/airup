@@ -115,7 +115,7 @@ impl ExitStatusExt for ExitStatus {
 macro_rules! map_stdio {
     ($fx:expr, $std:expr) => {
         match &$fx {
-            Stdio::Callback(c) => line_piper::set_callback($std, c.clone_boxed()),
+            Stdio::Callback(c) => _ = line_piper::set_callback($std, c.clone_boxed()),
             _ => (),
         }
     };

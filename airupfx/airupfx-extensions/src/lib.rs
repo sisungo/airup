@@ -1,5 +1,5 @@
 //! # AirupFX Extension Framework
-//! This crate provides a high-level framework for writing Airup extensions in Rust easily.
+//! This crate provides a high-level framework for writing Airup extensions in async Rust easily.
 
 use airup_sdk::{
     info::ConnectionExt,

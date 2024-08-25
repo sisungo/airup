@@ -1,7 +1,7 @@
 //! A simple logger for fallback use.
 //!
-//! This has some limitations and has poor performance. Being designed as an "fallback choice", the implementation aims to be
-//! small.
+//! This has some limitations and has poor performance. Being designed as a "fallback choice", the implementation aims to be
+//! small and simple.
 
 use airup_sdk::{blocking::fs::DirChain, system::LogRecord, Error};
 use airupfx::extensions::*;

@@ -1,3 +1,7 @@
+Changes in v0.10.7:
+ * Feature: Support of notify-styled watchdogs.
+ * Few minor bug fixes.
+
 Changes in v0.10.6:
  * BREAKING: Extensions now uses the registering connection, rather than listen to a new UNIX socket and let the daemon connect.
  * BREAKING: Service sideloading is now a part of the supervisor cache system.

@@ -1,4 +1,4 @@
-//! # airupd
+//! The Airup daemon.
 
 mod ace;
 mod app;

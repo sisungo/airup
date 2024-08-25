@@ -1,3 +1,7 @@
+//! A fallback isolator implementation that does no-op for all operations.
+//!
+//! This is useful for compatibility with operating systems that support no isolators.
+
 #[derive(Debug)]
 pub struct Realm;
 impl Realm {

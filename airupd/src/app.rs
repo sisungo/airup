@@ -26,8 +26,8 @@ pub struct Airupd {
     /// The extension manager.
     pub extensions: extension::Extensions,
 
-    /// The IPC context.
-    pub ipc: rpc::Context,
+    /// The RPC context.
+    pub rpc: rpc::Context,
 
     /// The lifetime manager of the `airupd` process.
     pub lifetime: lifetime::System,
@@ -76,7 +76,7 @@ impl Airupd {
         });
 
         _ = signal::signal(SIGHUP, |_| async {
-            self.ipc.reload();
+            self.rpc.reload();
         });
     }
 
@@ -107,7 +107,7 @@ pub async fn init() {
     let object = Airupd {
         storage: storage::Storage::new().await,
         extensions: extension::Extensions::new(),
-        ipc: rpc::Context::new(),
+        rpc: rpc::Context::new(),
         lifetime: lifetime::System::new(),
         milestones: milestones::Manager::new(),
         supervisors: supervisor::Manager::new(),

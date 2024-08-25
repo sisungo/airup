@@ -1,4 +1,4 @@
-//! # Airup CLI
+//! Command-line utility for accessing Airup facilities.
 
 mod daemon;
 mod debug;

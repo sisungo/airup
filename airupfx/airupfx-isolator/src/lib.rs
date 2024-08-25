@@ -1,3 +1,5 @@
+//! Utilities for handling resource isolation.
+
 cfg_if::cfg_if! {
     if #[cfg(all(target_os = "linux", feature = "cgroups"))] {
         #[path = "linux.rs"]
