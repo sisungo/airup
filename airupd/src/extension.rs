@@ -11,11 +11,12 @@ use std::{
 use tokio::{
     net::UnixStream,
     sync::{mpsc, oneshot},
+    task::JoinHandle,
 };
 
 /// Represents to an extension manager.
 #[derive(Debug, Default)]
-pub struct Extensions(tokio::sync::RwLock<HashMap<String, Arc<Extension>>>);
+pub struct Extensions(std::sync::RwLock<HashMap<String, Arc<Extension>>>);
 impl Extensions {
     /// Creates a new [`Extensions`] instance.
     pub fn new() -> Self {
@@ -23,48 +24,55 @@ impl Extensions {
     }
 
     /// Registers an extension.
-    pub async fn register(&self, name: String, conn: UnixStream) -> Result<(), airup_sdk::Error> {
-        let mut lock = self.0.write().await;
+    pub fn register(&self, name: String, conn: UnixStream) -> Result<(), airup_sdk::Error> {
+        let mut lock = self.0.write().unwrap();
         if lock.contains_key(&name) {
             return Err(airup_sdk::Error::Exists);
         }
         lock.insert(
             name.clone(),
             Arc::new(
-                Extension::new(name, conn)
-                    .await
-                    .map_err(|x| airup_sdk::Error::Io {
-                        message: x.to_string(),
-                    })?,
+                Extension::new(name, conn).map_err(|x| airup_sdk::Error::Io {
+                    message: x.to_string(),
+                })?,
             ),
         );
         Ok(())
     }
 
     /// Invokes an RPC invokation on an extension.
-    pub async fn rpc_invoke(&self, mut req: airup_sdk::rpc::Request) -> airup_sdk::rpc::Response {
+    pub fn rpc_invoke(
+        &self,
+        mut req: airup_sdk::rpc::Request,
+    ) -> JoinHandle<airup_sdk::rpc::Response> {
         let mut method_splited = req.method.splitn(2, '.');
         let extension = method_splited.next().unwrap();
         let Some(ext_method) = method_splited.next() else {
-            return airup_sdk::rpc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented));
+            return tokio::spawn(std::future::ready(airup_sdk::rpc::Response::new::<()>(
+                Err(airup_sdk::Error::NotImplemented),
+            )));
         };
-        let Some(ext) = self.0.read().await.get(extension).cloned() else {
-            return airup_sdk::rpc::Response::new::<()>(Err(airup_sdk::Error::NotImplemented));
+        let Some(ext) = self.0.read().unwrap().get(extension).cloned() else {
+            return tokio::spawn(std::future::ready(airup_sdk::rpc::Response::new::<()>(
+                Err(airup_sdk::Error::NotImplemented),
+            )));
         };
         req.method = ext_method.into();
 
-        ext.rpc_invoke(req).await.unwrap_or_else(|| {
-            airup_sdk::rpc::Response::new::<()>(Err(airup_sdk::Error::Io {
-                message: "extension communication error".into(),
-            }))
+        tokio::spawn(async move {
+            ext.rpc_invoke(req).await.unwrap_or_else(|| {
+                airup_sdk::rpc::Response::new::<()>(Err(airup_sdk::Error::Io {
+                    message: "extension communication error".into(),
+                }))
+            })
         })
     }
 
     /// Unregisters an extension.
-    pub async fn unregister(&self, name: &str) -> Result<(), airup_sdk::Error> {
+    pub fn unregister(&self, name: &str) -> Result<(), airup_sdk::Error> {
         self.0
             .write()
-            .await
+            .unwrap()
             .remove(name)
             .ok_or(airup_sdk::Error::NotFound)
             .map(|_| ())
@@ -78,7 +86,7 @@ struct Extension {
 }
 impl Extension {
     /// Creates a new [`Extension`] instance, hosting the extension.
-    async fn new(name: String, connection: UnixStream) -> std::io::Result<Self> {
+    fn new(name: String, connection: UnixStream) -> std::io::Result<Self> {
         let (tx, rx) = mpsc::channel(8);
         ExtensionHost {
             name,
@@ -115,6 +123,7 @@ impl ExtensionHost {
     const SIZE_LIMIT: usize = 8 * 1024 * 1024;
 
     fn run_on_the_fly(mut self) {
+        // FIXME: Using `HashMap` here may be slow and memory-consuming.
         let reqs = Arc::new(Mutex::new(self.reqs));
 
         let (rx, tx) = self.connection.into_split();
@@ -171,7 +180,7 @@ impl ExtensionHost {
                 },
             };
 
-            airupd().extensions.0.write().await.remove(&self.name);
+            airupd().extensions.0.write().unwrap().remove(&self.name);
         });
     }
 }

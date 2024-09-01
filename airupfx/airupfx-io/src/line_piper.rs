@@ -4,13 +4,15 @@ use std::{future::Future, pin::Pin};
 use tokio::{
     io::{AsyncRead, AsyncReadExt},
     sync::mpsc,
-    task::JoinHandle,
+    task::{AbortHandle, JoinHandle},
 };
 
 /// Asynchronous callback used for line pipers.
 ///
-/// We chose to create our own callback trait, instead of using standard [FnOnce], because several lifetime issues around
+/// We chose to create our own callback trait, instead of using standard [`FnOnce`], because several lifetime issues around
 /// closure types has not been stablized yet.
+///
+/// The callback should be cancel-safe, since the task is cancelled when [`CallbackGuard`] is dropped.
 pub trait Callback: Send + Sync {
     fn invoke<'a>(&'a self, a: &'a [u8]) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>>;
     fn clone_boxed(&self) -> Box<dyn Callback>;
@@ -19,15 +21,15 @@ pub trait Callback: Send + Sync {
 #[derive(Debug)]
 pub struct LinePiper {
     rx: tokio::sync::Mutex<mpsc::Receiver<Vec<u8>>>,
-    join_handle: JoinHandle<()>,
+    _guard: CallbackGuard,
 }
 impl LinePiper {
     pub fn new(reader: impl AsyncRead + Unpin + Send + 'static) -> Self {
         let (tx, rx) = mpsc::channel(4);
-        let join_handle = LinePiperEntity::new(reader, Box::new(ChannelCallback::new(tx))).start();
+        let _guard = set_callback(reader, Box::new(ChannelCallback::new(tx)));
         Self {
             rx: rx.into(),
-            join_handle,
+            _guard,
         }
     }
 
@@ -35,9 +37,13 @@ impl LinePiper {
         self.rx.lock().await.recv().await
     }
 }
-impl Drop for LinePiper {
+
+#[must_use]
+#[derive(Debug)]
+pub struct CallbackGuard(AbortHandle);
+impl Drop for CallbackGuard {
     fn drop(&mut self) {
-        self.join_handle.abort();
+        self.0.abort();
     }
 }
 
@@ -45,8 +51,12 @@ impl Drop for LinePiper {
 pub fn set_callback(
     reader: impl AsyncRead + Unpin + Send + 'static,
     callback: Box<dyn Callback>,
-) -> JoinHandle<()> {
-    LinePiperEntity::new(reader, callback).start()
+) -> CallbackGuard {
+    CallbackGuard(
+        LinePiperEntity::new(reader, callback)
+            .start()
+            .abort_handle(),
+    )
 }
 
 struct LinePiperEntity<R> {
@@ -117,12 +127,38 @@ impl Callback for ChannelCallback {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Arc, Mutex};
+
+    const TEST_STRING: &'static [u8] = b"AirupFX Test\nairupfx::io::line_piper\n";
 
     #[tokio::test]
     async fn multi_line() {
-        const TEST_STRING: &'static [u8] = b"AirupFX Test\nairupfx::io::line_piper\n";
-
         let line_piper = LinePiper::new(TEST_STRING);
         assert_eq!(line_piper.read_line().await.unwrap(), TEST_STRING);
+    }
+
+    #[tokio::test]
+    async fn callback() {
+        #[derive(Clone)]
+        struct TestCallback(Arc<Mutex<Vec<u8>>>);
+        impl Callback for TestCallback {
+            fn clone_boxed(&self) -> Box<dyn Callback> {
+                Box::new(self.clone())
+            }
+
+            fn invoke<'a>(&'a self, a: &'a [u8]) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
+                Box::pin(async {
+                    self.0.lock().unwrap().append(&mut a.to_vec());
+                })
+            }
+        }
+
+        let buffer = Default::default();
+        let callback = TestCallback(Arc::clone(&buffer));
+        let _guard = set_callback(TEST_STRING, Box::new(callback));
+        while Arc::strong_count(&buffer) > 1 {
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(*buffer.lock().unwrap(), TEST_STRING);
     }
 }

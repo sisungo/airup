@@ -160,7 +160,7 @@ impl LinePiperCallback for LogCallback {
         msg: &'a [u8],
     ) -> Pin<Box<dyn for<'b> Future<Output = ()> + Send + 'a>> {
         Box::pin(async move {
-            crate::app::airupd()
+            _ = crate::app::airupd()
                 .extensions
                 .rpc_invoke(Request::new(
                     "logger.append",

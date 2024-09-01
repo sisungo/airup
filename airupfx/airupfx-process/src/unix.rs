@@ -8,7 +8,7 @@
 #![allow(unstable_name_collisions)]
 
 use super::{CommandEnv, ExitStatus, Stdio, Wait};
-use airupfx_io::line_piper;
+use airupfx_io::line_piper::{self, CallbackGuard};
 use std::{
     cmp,
     collections::HashMap,
@@ -115,8 +115,8 @@ impl ExitStatusExt for ExitStatus {
 macro_rules! map_stdio {
     ($fx:expr, $std:expr) => {
         match &$fx {
-            Stdio::Callback(c) => _ = line_piper::set_callback($std, c.clone_boxed()),
-            _ => (),
+            Stdio::Callback(c) => Some(line_piper::set_callback($std, c.clone_boxed())),
+            _ => None,
         }
     };
 }
@@ -126,6 +126,8 @@ macro_rules! map_stdio {
 pub(crate) struct Child {
     pid: Pid,
     wait_queue: watch::Receiver<Option<Wait>>,
+    _stdout_guard: Option<CallbackGuard>,
+    _stderr_guard: Option<CallbackGuard>,
 }
 impl Child {
     pub(crate) const fn id(&self) -> Pid {
@@ -134,21 +136,19 @@ impl Child {
 
     fn from_std(env: &CommandEnv, c: std::process::Child) -> Self {
         let pid = c.id();
-        if let Some(x) = c
+        let _stdout_guard = c
             .stdout
             .and_then(|x| tokio::process::ChildStdout::from_std(x).ok())
-        {
-            map_stdio!(env.stdout, x);
-        }
-        if let Some(x) = c
+            .and_then(|x| map_stdio!(env.stdout, x));
+        let _stderr_guard = c
             .stderr
             .and_then(|x| tokio::process::ChildStderr::from_std(x).ok())
-        {
-            map_stdio!(env.stderr, x);
-        }
+            .and_then(|x| map_stdio!(env.stderr, x));
         Self {
             pid: pid as _,
             wait_queue: child_queue().subscribe(pid as _),
+            _stdout_guard,
+            _stderr_guard,
         }
     }
 
@@ -160,6 +160,8 @@ impl Child {
         Self {
             pid,
             wait_queue: child_queue().subscribe(pid),
+            _stdout_guard: None,
+            _stderr_guard: None,
         }
     }
 

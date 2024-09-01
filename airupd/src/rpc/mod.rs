@@ -114,12 +114,11 @@ impl Session {
                 return Ok(());
             }
             let resp = match req.method.strip_prefix("extapi.") {
-                Some(method) => {
-                    airupd()
-                        .extensions
-                        .rpc_invoke(Request::new::<&str, ciborium::Value, _>(method, req.params))
-                        .await
-                }
+                Some(method) => airupd()
+                    .extensions
+                    .rpc_invoke(Request::new::<&str, ciborium::Value, _>(method, req.params))
+                    .await
+                    .unwrap(),
                 None => airupd().rpc.api.invoke(req).await,
             };
             self.conn.send(&resp).await?;

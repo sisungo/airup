@@ -16,14 +16,14 @@ async fn send_error(
 
 pub async fn invoke(mut session: crate::rpc::Session, req: Request) {
     _ = match &req.method[..] {
-        "session.into_extension" => into_extension(session, req).await,
+        "session.into_extension" => into_extension(session, req),
         _ => send_error(&mut session, airup_sdk::Error::NotImplemented).await,
     };
 }
 
-async fn into_extension(session: crate::rpc::Session, req: Request) -> anyhow::Result<()> {
+fn into_extension(session: crate::rpc::Session, req: Request) -> anyhow::Result<()> {
     let name: String = req.extract_params()?;
     let conn = session.conn.into_inner().into_inner();
-    airupd().extensions.register(name, conn).await?;
+    airupd().extensions.register(name, conn)?;
     Ok(())
 }

@@ -138,5 +138,5 @@ async fn trigger_event(event: Event) -> Result<(), Error> {
 
 #[airupfx::macros::api]
 async fn unregister_extension(name: String) -> Result<(), Error> {
-    airupd().extensions.unregister(&name).await
+    airupd().extensions.unregister(&name)
 }
