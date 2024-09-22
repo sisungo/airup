@@ -1,6 +1,10 @@
 # Airup Installation Guide
 This guide describes how to build, configure and install Airup.
 
+## Platform Support
+Airup compiles on all Unix-like operating systems. As a service supervisor, it has been tested to work on Linux, macOS,
+Android and FreeBSD. As an init system \(`pid == 1`\), it has been tested to work on Linux.
+
 ## Build Dependencies
 To build Airup, you need to install the few dependencies first:
  - [Rust](https://rust-lang.org): The programming language used to implement Airup.
