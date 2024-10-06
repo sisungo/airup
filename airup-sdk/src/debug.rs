@@ -8,4 +8,4 @@ pub trait ConnectionExt<'a>: crate::Connection {
         self.invoke("debug.dump", ())
     }
 }
-impl<'a, T> ConnectionExt<'a> for T where T: crate::Connection {}
+impl<T> ConnectionExt<'_> for T where T: crate::Connection {}

@@ -13,6 +13,7 @@ use std::{
     },
 };
 
+/// The global [`Airupd`] instance.
 static AIRUPD: OnceLock<Airupd> = OnceLock::new();
 
 /// An instance of the Airupd app.

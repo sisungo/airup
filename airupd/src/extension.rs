@@ -112,6 +112,7 @@ impl Extension {
     }
 }
 
+/// Background task for holding an extension.
 struct ExtensionHost {
     name: String,
     connection: UnixStream,
@@ -122,6 +123,7 @@ impl ExtensionHost {
     /// Maximum size of received message from an extension, in bytes.
     const SIZE_LIMIT: usize = 8 * 1024 * 1024;
 
+    /// Runs the host on the fly.
     fn run_on_the_fly(mut self) {
         // FIXME: Using `HashMap` here may be slow and memory-consuming.
         let reqs = Arc::new(Mutex::new(self.reqs));

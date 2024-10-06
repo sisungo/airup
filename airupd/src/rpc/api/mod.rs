@@ -12,13 +12,13 @@ use airup_sdk::{
 use airupfx::prelude::*;
 use std::collections::HashMap;
 
-/// The Airup IPC API (implementation) manager.
+/// The Airup RPC API (implementation) manager.
 #[derive(Debug)]
 pub struct Manager {
     methods: HashMap<&'static str, Method>,
 }
 impl Manager {
-    /// Creates a new `Manager` instance.
+    /// Creates a new [`Manager`] instance.
     pub fn new() -> Self {
         let mut object = Self {
             methods: HashMap::with_capacity(32),
@@ -27,7 +27,7 @@ impl Manager {
         object
     }
 
-    /// Initializes the `Manager` instance.
+    /// Initializes the [`Manager`] instance with RPC methods.
     pub fn init(&mut self) {
         info::init(&mut self.methods);
         debug::init(&mut self.methods);

@@ -63,7 +63,7 @@ impl Ace {
     fn run_tokenized<'a>(
         &'a self,
         tokens: impl Iterator<Item = String> + Send + 'a,
-    ) -> BoxFuture<'_, Result<Child, Error>> {
+    ) -> BoxFuture<'a, Result<Child, Error>> {
         Box::pin(async {
             let cmd: parser::Command = tokens.into();
             if cmd.module == "-" {

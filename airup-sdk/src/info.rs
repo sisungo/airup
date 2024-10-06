@@ -10,4 +10,4 @@ pub trait ConnectionExt<'a>: crate::Connection {
         self.invoke("info.version", ())
     }
 }
-impl<'a, T> ConnectionExt<'a> for T where T: crate::Connection {}
+impl<T> ConnectionExt<'_> for T where T: crate::Connection {}

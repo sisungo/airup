@@ -1,4 +1,6 @@
 //! # The `CleanupService` Task
+//! This is started when the service stopped. This executes the cleanup command, and (if necessary) restarts the service.
+//! Depending on what it is doing, it may act as `StartService` or `StopService`.
 
 use super::*;
 use crate::ace::CommandExitError;
