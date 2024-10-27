@@ -5,5 +5,4 @@ Welcome to contribute for the Airup documentation project! To contribute documen
  $ cp en-US jp-JP
  ```
  - Start translating
- - Commit to the repository
- 
+ - Commit to the repository, making a pull request
