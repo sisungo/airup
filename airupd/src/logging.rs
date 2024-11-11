@@ -49,7 +49,7 @@ impl Builder {
 
     /// Initializes the logger.
     #[inline]
-    pub fn init(&mut self) {
+    pub fn install(&mut self) {
         let verbose = self.verbose;
         let level_filter = match self.quiet {
             true => LevelFilter::ERROR,

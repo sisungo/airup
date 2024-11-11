@@ -24,7 +24,7 @@ impl System {
 
     /// Powers the device off.
     pub fn poweroff(&self) {
-        self.send(Event::Poweroff);
+        self.send(Event::PowerOff);
     }
 
     /// Reboots the device.
@@ -60,7 +60,7 @@ pub enum Event {
     Exit(i32),
 
     /// Powers the device off.
-    Poweroff,
+    PowerOff,
 
     /// Reboots the device.
     Reboot,
@@ -76,7 +76,7 @@ impl Event {
     pub async fn handle(&self) -> ! {
         _ = match self {
             Self::Exit(code) => std::process::exit(*code),
-            Self::Poweroff => power_manager().poweroff().await,
+            Self::PowerOff => power_manager().poweroff().await,
             Self::Reboot => power_manager().reboot().await,
             Self::Halt => power_manager().halt().await,
             Self::UserspaceReboot => power_manager().userspace().await,

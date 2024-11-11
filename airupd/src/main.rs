@@ -25,7 +25,7 @@ async fn main() {
         .quiet(cmdline.quiet)
         .color(!cmdline.no_color)
         .verbose(cmdline.verbose)
-        .init();
+        .install();
     app::set_manifest_at(cmdline.build_manifest.as_deref()).await;
     milestones::early_boot::enter().await;
     app::init().await;

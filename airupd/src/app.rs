@@ -85,9 +85,10 @@ impl Airupd {
     async fn on_sigint(&self) {
         static COUNTER: AtomicU32 = AtomicU32::new(0);
 
-        let counter = COUNTER.fetch_add(1, atomic::Ordering::SeqCst);
+        let counter = COUNTER.fetch_add(1, atomic::Ordering::Acquire);
 
         if counter >= 8 {
+            tracing::warn!(target: "console", "Too many signals were received. Performing a forced reboot.");
             self.lifetime.reboot();
         } else if counter == 0 {
             _ = self.enter_milestone("reboot".into()).await;
@@ -112,7 +113,7 @@ pub async fn init() {
         lifetime: lifetime::System::new(),
         milestones: milestones::Manager::new(),
         supervisors: supervisor::Manager::new(),
-        boot_timestamp: airupfx::time::timestamp_ms(),
+        boot_timestamp: timestamp_ms(),
         events: events::Bus::new(),
     };
 
