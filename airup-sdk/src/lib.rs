@@ -12,7 +12,6 @@ pub mod prelude;
 pub mod rpc;
 pub mod system;
 
-#[allow(unused)]
 mod util;
 
 #[cfg(feature = "nonblocking")]

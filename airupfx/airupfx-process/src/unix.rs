@@ -5,7 +5,10 @@
 //! `waitpid()` completed, if the PID was previously subscribed, the result will be sent to the subscriber and then the
 //! subscription is cancelled.
 
-#![allow(unstable_name_collisions)]
+#![allow(
+    unstable_name_collisions,
+    reason = "The names are to build Airup on stable Rust, since the methods are not stablized yet"
+)]
 
 use super::{CommandEnv, ExitStatus, Stdio, Wait};
 use airupfx_io::line_piper::{self, CallbackGuard};

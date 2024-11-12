@@ -1,4 +1,7 @@
-#![allow(unused)]
+#![allow(
+    unused,
+    reason = "UNIX systems depending on this module may provide their own implementation for some function"
+)]
 
 use std::time::Duration;
 
