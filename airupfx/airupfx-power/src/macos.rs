@@ -1,7 +1,7 @@
 //! Apple macOS power management.
 
 #[link(name = "System")]
-extern "C" {
+unsafe extern "C" {
     /// Reboots the system or halts the processor.
     ///
     /// This is an Apple Private API. See `reboot(2)` for more details.
