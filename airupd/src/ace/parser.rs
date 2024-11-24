@@ -1,92 +1,108 @@
-//! A very simple parser.
+//! A parser based on `rust-peg`.
 
-use std::str::FromStr;
+peg::parser! {
+    grammar ace() for str {
+        // ==- Commons -==
+        rule _()
+            = quiet!{comment()}
+            / quiet!{[x if x.is_ascii_whitespace()]}
 
-#[derive(Debug, Clone)]
+        // ==- Comments -==
+        rule comment()
+            = quiet! {"#" [^ '\n']* "\n"}
+            / expected!("comment")
+
+        // ==- Text Literals -==
+        rule ascii_escape() -> char
+            = "\\" esc:[x if ['n', 'r', 't', '\\', '0'].contains(&x)] { map_ascii_escape(esc) }
+
+        rule quote_escape() -> char
+            = "\\" esc:[x if ['\'', '"'].contains(&x)] { esc }
+
+        rule text_literal_escape() -> char
+            = x:(ascii_escape() / quote_escape()) { x }
+
+        rule strong_string_literal() -> String
+            = "\""  s:(text_literal_escape() / [^ '\n' | '\r' | '\\' | '\"'])* "\"" { s.into_iter().collect() }
+
+        rule weak_string_literal() -> &'input str
+            = s:$([^ '$' | '"'] [^ '\n' | '\r' | '\\' | '\"' | ' ']*) { s }
+
+        rule string_literal() -> String
+            = quiet! {x:strong_string_literal() { x }}
+            / quiet! {x:weak_string_literal() { x.into() }}
+            / expected!("string literal")
+
+        // ==- Variables -==
+        rule ident() -> &'input str
+            = s:$([^ x if (x.is_ascii_punctuation() && x != '_' && x != '-') || x.is_whitespace() ]*) { s }
+
+        rule variable() -> &'input str
+            = "${" s:ident() "}" { s }
+
+        // ==- Expressions -==
+        rule expr() -> String
+            = v:variable() {? std::env::var(v).or(Err("environment not found")) }
+            / s:string_literal() { s }
+
+        pub rule command() -> Command
+            = _* module:expr() _+ args:(expr() ** _) _* {
+                Command { module, args }
+            }
+    }
+}
+
+fn map_ascii_escape(x: char) -> char {
+    match x {
+        'n' => '\n',
+        'r' => '\r',
+        't' => '\t',
+        '\\' => '\\',
+        '0' => '\0',
+        _ => unreachable!(),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Command {
     pub module: String,
     pub args: Vec<String>,
 }
-impl<T> From<T> for Command
-where
-    T: Iterator<Item = String>,
-{
-    fn from(mut value: T) -> Self {
-        let module = value.next().unwrap_or_else(|| "noop".into());
-        let args = value.collect();
-
-        Self { module, args }
-    }
-}
-impl FromStr for Command {
-    type Err = super::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(tokenize(s)
-            .map_err(|_| super::Error::Parse)?
-            .into_iter()
-            .into())
+impl Command {
+    pub fn parse(s: &str) -> Result<Self, anyhow::Error> {
+        Ok(ace::command(s)?)
     }
 }
 
-pub fn tokenize(s: &str) -> Result<Vec<String>, Error> {
-    let mut tokens = Vec::with_capacity(s.len() / 4);
-    let mut in_literal = false;
-    let mut in_escape = false;
-    let mut this = Vec::with_capacity(8);
+#[cfg(test)]
+#[test]
+fn tests() {
+    unsafe {
+        std::env::set_var("TEST_ENV", "It works!");
+    }
 
-    for b in s.bytes() {
-        if in_literal {
-            if in_escape {
-                match b {
-                    b'n' => this.push(b'\n'),
-                    b'r' => this.push(b'\r'),
-                    b'"' => this.push(b'"'),
-                    b'\\' => this.push(b'\\'),
-                    b'0' => this.push(b'\0'),
-                    _ => this.push(b),
-                };
-                in_escape = false;
-            } else {
-                match b {
-                    b'\\' => in_escape = true,
-                    b'"' => {
-                        in_literal = false;
-                        tokens.push(
-                            String::from_utf8(this.clone()).map_err(|_| Error::CorruptUnicode)?,
-                        );
-                        this.clear();
-                    }
-                    _ => this.push(b),
-                }
-            }
-        } else if b"\" ".contains(&b) {
-            if !this.is_empty() {
-                tokens.push(String::from_utf8(this.clone()).map_err(|_| Error::CorruptUnicode)?);
-                this.clear();
-            }
-
-            match b {
-                b'"' => in_literal = true,
-                b' ' => { /* skip */ }
-                _ => unreachable!(),
-            }
-        } else {
-            this.push(b);
+    assert_eq!(
+        Command::parse("echo \"Hello, world!\"").unwrap(),
+        Command {
+            module: "echo".into(),
+            args: vec!["Hello, world!".into()],
         }
-    }
+    );
+    assert_eq!(
+        Command::parse("echo ${TEST_ENV}").unwrap(),
+        Command {
+            module: "echo".into(),
+            args: vec!["It works!".into()],
+        }
+    );
+    assert_eq!(
+        Command::parse("echo -n Hello, world!").unwrap(),
+        Command {
+            module: "echo".into(),
+            args: vec!["-n".into(), "Hello,".into(), "world!".into()],
+        }
+    );
 
-    if in_literal {
-        return Err(Error::IncompleteLiteral);
-    }
-    if !this.is_empty() {
-        tokens.push(String::from_utf8(this.clone()).map_err(|_| Error::CorruptUnicode)?);
-    }
-
-    Ok(tokens)
-}
-
-pub enum Error {
-    IncompleteLiteral,
-    CorruptUnicode,
+    Command::parse("echo \"Hello, world!").unwrap_err();
+    Command::parse("echo ${__ENV_NON_EXISTENT__}").unwrap_err();
 }

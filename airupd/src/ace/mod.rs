@@ -1,7 +1,10 @@
-//! ACE, short of Airup Command Engine, is the builtin shell-like command language of Airup.
+//! The Airup Command Engine.
+//!
+//! The **Airup Command Engine** (shortly, "ACE") is a simplified command language for Airup, with a syntax like (but
+//! different from) POSIX shells. It can spawn single commands, or execute built-in commands.
 
-pub mod builtins;
-pub mod parser;
+mod builtins;
+mod parser;
 
 use airup_sdk::error::IntoApiError;
 use airupfx::isolator::Realm;
@@ -27,13 +30,8 @@ impl Ace {
 
     /// Runs the given command, returning the child.
     pub async fn run(&self, cmd: &str) -> Result<Child, Error> {
-        if let Some(x) = cmd.strip_prefix("sh.run") {
-            self.run_tokenized(["sh".into(), "-c".into(), x.into()].into_iter())
-                .await
-        } else {
-            self.run_tokenized(parser::tokenize(cmd).map_err(|_| Error::Parse)?.into_iter())
-                .await
-        }
+        let cmd = parser::Command::parse(cmd).map_err(|x| Error::Parse(x.to_string()))?;
+        self.run_bin_command(&cmd).await
     }
 
     /// Runs the given command and waits until it completed.
@@ -58,33 +56,6 @@ impl Ace {
                 other => Err(other),
             },
         }
-    }
-
-    fn run_tokenized<'a>(
-        &'a self,
-        tokens: impl Iterator<Item = String> + Send + 'a,
-    ) -> BoxFuture<'a, Result<Child, Error>> {
-        Box::pin(async {
-            let cmd: parser::Command = tokens.into();
-            if cmd.module == "-" {
-                let otherwise = |_| {
-                    Child::AlwaysSuccess(Box::new(Child::Builtin(builtins::noop(vec![]).into())))
-                };
-                Ok(Child::AlwaysSuccess(Box::new(
-                    self.run_tokenized(cmd.args.into_iter())
-                        .await
-                        .unwrap_or_else(otherwise),
-                )))
-            } else if cmd.module == "&" {
-                Ok(Child::Async(Box::new(
-                    self.run_tokenized(cmd.args.into_iter()).await?,
-                )))
-            } else if let Some(x) = self.modules.builtins.get(&cmd.module[..]) {
-                Ok(Child::Builtin(tokio::sync::Mutex::new(x(cmd.args))))
-            } else {
-                self.run_bin_command(&cmd).await
-            }
-        })
     }
 
     async fn run_bin_command(&self, cmd: &parser::Command) -> Result<Child, Error> {
@@ -224,8 +195,8 @@ impl From<airupfx::process::Child> for Child {
 /// An error occured by ACE operations.
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum Error {
-    #[error("parse error")]
-    Parse,
+    #[error("parse error: {0}")]
+    Parse(String),
 
     #[error("wait() failed: {0}")]
     Wait(WaitError),
@@ -249,7 +220,7 @@ impl From<WaitError> for Error {
 impl IntoApiError for Error {
     fn into_api_error(self) -> airup_sdk::Error {
         match self {
-            Self::Parse => airup_sdk::Error::AceParseError,
+            Self::Parse(_) => airup_sdk::Error::AceParseError,
             Self::Wait(err) => airup_sdk::Error::internal(err.to_string()),
             Self::Io(message) => airup_sdk::Error::Io { message },
             Self::TimedOut => airup_sdk::Error::TimedOut,
