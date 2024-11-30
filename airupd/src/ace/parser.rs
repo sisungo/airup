@@ -69,8 +69,21 @@ pub struct Command {
     pub args: Vec<String>,
 }
 impl Command {
+    /// Parses a command.
     pub fn parse(s: &str) -> Result<Self, anyhow::Error> {
         Ok(ace::command(s)?)
+    }
+
+    /// Wraps a `sudo`-pattern command.
+    pub fn wrap<T>(mut self, f: impl FnOnce(Self) -> T) -> Option<T> {
+        if self.args.is_empty() {
+            return None;
+        }
+        let module = self.args.remove(0);
+        Some(f(Self {
+            module,
+            args: self.args,
+        }))
     }
 }
 
