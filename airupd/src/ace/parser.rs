@@ -46,7 +46,7 @@ peg::parser! {
             / s:string_literal() { s }
 
         pub rule command() -> Command
-            = _* module:expr() _+ args:(expr() ** _) _* {
+            = _* module:expr() _+ args:(expr() ** (_*)) _* {
                 Command { module, args }
             }
     }
@@ -71,7 +71,8 @@ pub struct Command {
 impl Command {
     /// Parses a command.
     pub fn parse(s: &str) -> Result<Self, anyhow::Error> {
-        Ok(ace::command(s)?)
+        let s = format!("{s} ");
+        Ok(ace::command(&s)?)
     }
 
     /// Wraps a `sudo`-pattern command.
@@ -102,7 +103,7 @@ fn tests() {
         }
     );
     assert_eq!(
-        Command::parse("echo ${TEST_ENV}").unwrap(),
+        Command::parse("echo   ${TEST_ENV}   ").unwrap(),
         Command {
             module: "echo".into(),
             args: vec!["It works!".into()],
@@ -113,6 +114,13 @@ fn tests() {
         Command {
             module: "echo".into(),
             args: vec!["-n".into(), "Hello,".into(), "world!".into()],
+        }
+    );
+    assert_eq!(
+        Command::parse("/bin/create").unwrap(),
+        Command {
+            module: "/bin/create".into(),
+            args: vec![],
         }
     );
 
