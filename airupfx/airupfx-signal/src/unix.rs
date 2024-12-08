@@ -59,7 +59,7 @@ pub fn signal<
     tokio::spawn(async move {
         loop {
             signal.recv().await;
-            op.clone()(signum).await;
+            tokio::spawn(op.clone()(signum));
         }
     });
 

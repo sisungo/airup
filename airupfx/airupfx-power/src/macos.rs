@@ -6,7 +6,7 @@ unsafe extern "C" {
     ///
     /// This is an Apple Private API. See `reboot(2)` for more details.
     #[link_name = "reboot"]
-    fn sys_reboot(howto: libc::c_int) -> libc::c_int;
+    safe fn sys_reboot(howto: libc::c_int) -> libc::c_int;
 }
 
 use crate::PowerManager;
@@ -41,7 +41,7 @@ impl PowerManager for Power {
 }
 
 fn reboot(cmd: libc::c_int) -> std::io::Result<Infallible> {
-    let status = unsafe { sys_reboot(cmd) };
+    let status = sys_reboot(cmd);
     match status {
         -1 => Err(std::io::Error::last_os_error()),
         _ => unreachable!(),

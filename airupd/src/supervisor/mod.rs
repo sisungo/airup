@@ -5,17 +5,17 @@ pub mod task;
 
 use crate::{ace::Child, app::airupd};
 use airup_sdk::{
-    files::{service::WatchdogKind, Service, Validate},
-    system::{Event, QueryService, Status},
     Error,
+    files::{Service, Validate, service::WatchdogKind},
+    system::{Event, QueryService, Status},
 };
 use airupfx::{isolator::Realm, process::Wait, time::Alarm};
 use std::{
     cmp,
     collections::HashMap,
     sync::{
-        atomic::{self, AtomicBool, AtomicI32, AtomicI64},
         Arc, Mutex, RwLock,
+        atomic::{self, AtomicBool, AtomicI32, AtomicI64},
     },
     time::Duration,
 };

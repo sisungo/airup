@@ -20,7 +20,8 @@ pub use airupfx_time as time;
 
 pub async fn init() {
     #[cfg(feature = "selinux")]
-    {
+    unsafe {
+        // FIXME: We can't avoid use of environmental variables here, but can we at least make it look better?
         if process::as_pid1() && env::take_var("AIRUP_TEMP_SELINUX_INITIALIZED").is_err() {
             _ = selinux::policy::load_initial();
             std::env::set_var("AIRUP_TEMP_SELINUX_INITIALIZED", "1");

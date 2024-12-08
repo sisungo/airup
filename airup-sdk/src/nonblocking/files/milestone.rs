@@ -1,4 +1,4 @@
-use crate::files::{milestone, Milestone, ReadError};
+use crate::files::{Milestone, ReadError, milestone};
 use crate::nonblocking::fs::DirChain;
 use std::{future::Future, path::Path};
 

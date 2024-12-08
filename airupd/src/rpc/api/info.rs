@@ -1,7 +1,7 @@
 //! APIs that provides information about Airup and the system.
 
 use super::{Method, MethodFuture};
-use airup_sdk::{build::BuildManifest, Error};
+use airup_sdk::{Error, build::BuildManifest};
 use std::{collections::HashMap, hash::BuildHasher};
 
 pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {

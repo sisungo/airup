@@ -7,7 +7,7 @@ use crate::{
     rpc::{Error as IpcError, Request},
 };
 use rpc::{MessageProtoRecvExt, MessageProtoSendExt};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{
     ops::{Deref, DerefMut},
     path::Path,

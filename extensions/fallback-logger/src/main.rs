@@ -3,7 +3,7 @@
 //! This has some limitations and has poor performance. Being designed as a "fallback choice", the implementation aims to be
 //! small and simple.
 
-use airup_sdk::{blocking::fs::DirChain, system::LogRecord, Error};
+use airup_sdk::{Error, blocking::fs::DirChain, system::LogRecord};
 use airupfx::extensions::*;
 use rev_lines::RevLines;
 use std::{io::Write, path::PathBuf, sync::OnceLock};

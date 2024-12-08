@@ -1,4 +1,4 @@
-use crate::{files::Service, Error};
+use crate::{Error, files::Service};
 use serde::{Deserialize, Serialize};
 
 /// Result of querying a service.

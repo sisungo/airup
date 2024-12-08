@@ -2,7 +2,7 @@
 name = "airupfx-macros"
 authors = ["sisungo <sisungo@icloud.com>"]
 version = "0.7.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 publish = false
 

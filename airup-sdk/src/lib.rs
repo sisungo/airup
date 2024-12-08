@@ -25,7 +25,7 @@ pub mod ffi;
 
 pub use error::ApiError as Error;
 
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{
     path::{Path, PathBuf},
     sync::OnceLock,

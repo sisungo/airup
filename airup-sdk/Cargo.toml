@@ -4,8 +4,8 @@ authors = ["sisungo <sisungo@icloud.com>"]
 description = "SDK library of Airup"
 documentation = "https://docs.rs/airup-sdk"
 repository = "https://github.com/sisungo/airup"
-version = "0.10.7"
-edition = "2021"
+version = "0.10.8"
+edition = "2024"
 license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

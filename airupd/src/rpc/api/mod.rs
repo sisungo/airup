@@ -6,8 +6,8 @@ pub mod session;
 mod system;
 
 use airup_sdk::{
-    rpc::{Request, Response},
     Error,
+    rpc::{Request, Response},
 };
 use airupfx::prelude::*;
 use std::collections::HashMap;

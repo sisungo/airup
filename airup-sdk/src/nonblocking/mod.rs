@@ -3,11 +3,11 @@ pub mod fs;
 pub mod rpc;
 
 use crate::{
-    rpc::{Error as IpcError, Request},
     Error as ApiError,
+    rpc::{Error as IpcError, Request},
 };
 use rpc::{MessageProtoRecvExt, MessageProtoSendExt};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{
     future::Future,
     ops::{Deref, DerefMut},

@@ -2,8 +2,8 @@
 
 use crate::PowerManager;
 use libc::{
-    c_void, syscall, SYS_reboot, LINUX_REBOOT_CMD_HALT, LINUX_REBOOT_CMD_POWER_OFF,
-    LINUX_REBOOT_CMD_RESTART, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+    LINUX_REBOOT_CMD_HALT, LINUX_REBOOT_CMD_POWER_OFF, LINUX_REBOOT_CMD_RESTART,
+    LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, SYS_reboot, c_void, syscall,
 };
 use std::{convert::Infallible, ptr::NonNull};
 

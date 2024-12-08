@@ -14,7 +14,7 @@
 //! datagram.
 
 use crate::error::ApiError;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 /// A request object in the Airup RPC protocol.
 ///

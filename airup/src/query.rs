@@ -6,7 +6,7 @@ use airup_sdk::{
 use anyhow::anyhow;
 use chrono::prelude::*;
 use clap::Parser;
-use console::{style, Emoji};
+use console::{Emoji, style};
 use std::{collections::HashMap, fmt::Display, ops::Deref};
 
 /// Query system information

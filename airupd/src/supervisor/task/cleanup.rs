@@ -8,8 +8,8 @@ use airup_sdk::files::Service;
 use airupfx::{prelude::*, process::Wait};
 use std::{
     sync::{
-        atomic::{self, AtomicBool},
         Arc,
+        atomic::{self, AtomicBool},
     },
     time::Duration,
 };

@@ -26,7 +26,12 @@ impl Runtime {
     /// Creates an IPC server.
     pub async fn ipc_server(&self) -> anyhow::Result<rpc::Server> {
         let socket_path = self.base_dir.join("airupd.sock");
-        std::env::set_var("AIRUP_SOCK", &socket_path);
+
+        // FIXME: Should we avoid using `std::env::set_var` here?
+        unsafe {
+            std::env::set_var("AIRUP_SOCK", &socket_path);
+        }
+
         rpc::Server::new_force(&socket_path).await
     }
 }

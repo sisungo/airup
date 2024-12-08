@@ -1,6 +1,6 @@
 use airup_sdk::{
     blocking::{files::*, fs::DirChain},
-    files::{milestone, Milestone},
+    files::{Milestone, milestone},
     system::ConnectionExt as _,
 };
 use anyhow::anyhow;

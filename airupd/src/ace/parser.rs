@@ -95,34 +95,22 @@ fn tests() {
         std::env::set_var("TEST_ENV", "It works!");
     }
 
-    assert_eq!(
-        Command::parse("echo \"Hello, world!\"").unwrap(),
-        Command {
-            module: "echo".into(),
-            args: vec!["Hello, world!".into()],
-        }
-    );
-    assert_eq!(
-        Command::parse("echo   ${TEST_ENV}   ").unwrap(),
-        Command {
-            module: "echo".into(),
-            args: vec!["It works!".into()],
-        }
-    );
-    assert_eq!(
-        Command::parse("echo -n Hello, world!").unwrap(),
-        Command {
-            module: "echo".into(),
-            args: vec!["-n".into(), "Hello,".into(), "world!".into()],
-        }
-    );
-    assert_eq!(
-        Command::parse("/bin/create").unwrap(),
-        Command {
-            module: "/bin/create".into(),
-            args: vec![],
-        }
-    );
+    assert_eq!(Command::parse("echo \"Hello, world!\"").unwrap(), Command {
+        module: "echo".into(),
+        args: vec!["Hello, world!".into()],
+    });
+    assert_eq!(Command::parse("echo   ${TEST_ENV}   ").unwrap(), Command {
+        module: "echo".into(),
+        args: vec!["It works!".into()],
+    });
+    assert_eq!(Command::parse("echo -n Hello, world!").unwrap(), Command {
+        module: "echo".into(),
+        args: vec!["-n".into(), "Hello,".into(), "world!".into()],
+    });
+    assert_eq!(Command::parse("/bin/create").unwrap(), Command {
+        module: "/bin/create".into(),
+        args: vec![],
+    });
 
     Command::parse("echo \"Hello, world!").unwrap_err();
     Command::parse("echo ${__ENV_NON_EXISTENT__}").unwrap_err();

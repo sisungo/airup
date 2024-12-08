@@ -8,8 +8,8 @@ use airupfx::signal::{
 use std::{
     path::Path,
     sync::{
-        atomic::{self, AtomicU32},
         OnceLock,
+        atomic::{self, AtomicU32},
     },
 };
 
@@ -85,9 +85,9 @@ impl Airupd {
     async fn on_sigint(&self) {
         static COUNTER: AtomicU32 = AtomicU32::new(0);
 
-        let counter = COUNTER.fetch_add(1, atomic::Ordering::Acquire);
+        let counter = COUNTER.fetch_add(1, atomic::Ordering::Relaxed);
 
-        if counter >= 8 {
+        if counter >= 7 {
             tracing::warn!(target: "console", "Too many signals were received. Performing a forced reboot.");
             self.lifetime.reboot();
         } else if counter == 0 {
@@ -123,7 +123,10 @@ pub async fn init() {
 /// Reads and sets global build manifest at path `path`, in CBOR format.
 pub async fn set_manifest_at(path: Option<&Path>) {
     if let Some(path) = path {
-        std::env::set_var("AIRUP_OVERRIDE_MANIFEST_PATH", path);
+        // FIXME: Should we avoid using `std::env::set_var`?
+        unsafe {
+            std::env::set_var("AIRUP_OVERRIDE_MANIFEST_PATH", path);
+        }
         airup_sdk::build::set_manifest(
             ciborium::from_reader(
                 &tokio::fs::read(path)

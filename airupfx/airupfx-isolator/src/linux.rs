@@ -1,11 +1,11 @@
 use cgroups_rs::{
-    cgroup_builder::CgroupBuilder, cpu::CpuController, memory::MemController, CgroupPid,
+    CgroupPid, cgroup_builder::CgroupBuilder, cpu::CpuController, memory::MemController,
 };
 use std::{
     io::ErrorKind,
     sync::{
-        atomic::{self, AtomicU64},
         OnceLock,
+        atomic::{self, AtomicU64},
     },
 };
 

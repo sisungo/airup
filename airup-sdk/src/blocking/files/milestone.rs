@@ -1,5 +1,5 @@
 use crate::blocking::fs::DirChain;
-use crate::files::{milestone, Milestone, ReadError};
+use crate::files::{Milestone, ReadError, milestone};
 use std::path::Path;
 
 pub trait MilestoneExt {

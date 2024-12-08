@@ -8,20 +8,20 @@ use crate::{
     app::{self, airupd},
 };
 use airup_sdk::{
+    Error,
     files::{
-        milestone::{Item, Kind},
         Milestone,
+        milestone::{Item, Kind},
     },
     prelude::*,
     system::EnteredMilestone,
-    Error,
 };
 use std::{
     cell::LazyCell,
     collections::HashSet,
     sync::{
-        atomic::{self, AtomicBool},
         RwLock,
+        atomic::{self, AtomicBool},
     },
 };
 
@@ -110,7 +110,11 @@ async fn enter_milestone(name: String, hist: &mut HashSet<String>) -> Result<(),
 
     // By default, Airup sets `AIRUP_MILESTONE` environment variable to indicate services which milestone is the system
     // in as it is started.
-    std::env::set_var("AIRUP_MILESTONE", &name);
+    //
+    // FIXME: We should avoid using `std::env::set_var` here.
+    unsafe {
+        std::env::set_var("AIRUP_MILESTONE", &name);
+    }
 
     // Starts services
     exec_milestone(&def).await;

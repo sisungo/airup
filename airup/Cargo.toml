@@ -1,8 +1,8 @@
 [package]
 name = "airup"
 authors = ["sisungo <sisungo@icloud.com>"]
-version = "0.10.7"
-edition = "2021"
+version = "0.10.8"
+edition = "2024"
 license = "MIT"
 publish = false
 

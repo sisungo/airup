@@ -2,7 +2,7 @@
 name = "airupfx-signal"
 authors = ["sisungo <sisungo@icloud.com>"]
 version = "0.6.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 publish = false
 

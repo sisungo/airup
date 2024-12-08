@@ -9,7 +9,7 @@ Android and FreeBSD. As an init system \(`pid == 1`\), it has been tested to wor
 To build Airup, you need to install the few dependencies first:
  - [Rust](https://rust-lang.org): The programming language used to implement Airup.
 
-Airup requires `Rust 1.80.0` or newer to compile.
+Airup requires `Rust 1.85.0` or newer to compile.
 
 ## Configuration
 Some Airup functions are configured at build time. The build manifest which is located at `build_manifest.json` stores primitive
