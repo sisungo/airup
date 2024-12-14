@@ -134,8 +134,7 @@ impl Manager {
             .service
             .provides
             .iter()
-            .map(|x| is_providing(provided, x))
-            .any(|x| x);
+            .any(|x| is_providing(provided, x));
 
         let removable = queried.status == Status::Stopped
             && queried.task_class.is_none()
