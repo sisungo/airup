@@ -10,7 +10,7 @@ fn sysinfo_users() -> &'static RwLock<sysinfo::Users> {
 
 /// Refreshes users database.
 pub fn refresh() {
-    sysinfo_users().write().unwrap().refresh_list();
+    sysinfo_users().write().unwrap().refresh();
 }
 
 /// Finds a user entry by UID.
