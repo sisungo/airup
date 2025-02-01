@@ -94,6 +94,19 @@ impl Airupd {
             _ = self.enter_milestone("reboot".into()).await;
         }
     }
+
+    /// Starts the RPC server.
+    pub async fn start_rpc_server(&self) -> anyhow::Result<()> {
+        #[cfg(target_os = "linux")]
+        {
+            if let Some(name) = airup_sdk::build::manifest().linux_ipc_name {
+                // TODO
+            }
+        }
+
+        self.storage.runtime.ipc_server().await?.start();
+        Ok(())
+    }
 }
 
 /// Gets a reference to the unique, global [`Airupd`] instance.

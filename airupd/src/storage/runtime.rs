@@ -32,6 +32,6 @@ impl Runtime {
             std::env::set_var("AIRUP_SOCK", &socket_path);
         }
 
-        rpc::Server::new_force(&socket_path).await
+        rpc::Server::with_path_force(&socket_path).await
     }
 }

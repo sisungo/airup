@@ -20,6 +20,7 @@ pub struct Server {
     rpc_methods: HashMap<&'static str, Method>,
 }
 impl Server {
+    /// Creates a new [`Server`] instance, which is going to register to the Airup daemon with given extension name.
     pub async fn new(extension_name: impl Into<String>) -> anyhow::Result<Self> {
         let mut airup_rpc_conn =
             airup_sdk::nonblocking::Connection::connect(airup_sdk::socket_path()).await?;
@@ -37,6 +38,7 @@ impl Server {
         Ok(Self::with_config(extension_name, service_name).await?)
     }
 
+    /// Creates a new [`Server`] instance with custom config, instead of fetching from the environment.
     pub async fn with_config(
         extension_name: impl Into<String>,
         service_name: impl Into<String>,
@@ -148,6 +150,7 @@ impl ServerImpl {
     }
 }
 
+/// Represents to type of function pointer of an IPC method.
 pub type Method = fn(airup_sdk::rpc::Request) -> MethodFuture;
 
 /// Represents to future type of an IPC method.

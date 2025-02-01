@@ -5,7 +5,9 @@ cfg_if::cfg_if! {
         #[path = "unix.rs"]
         mod sys;
     } else {
-        std::compile_error!("This target is not supported by `Airup` yet. Consider opening an issue at https://github.com/sisungo/airup/issues?");
+        std::compile_error!(
+            "This target is not supported by `Airup` yet. Consider opening an issue at https://github.com/sisungo/airup/issues?"
+        );
     }
 }
 

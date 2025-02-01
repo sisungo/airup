@@ -35,25 +35,28 @@ impl Default for Context {
 /// Represents to an RPC server.
 #[derive(Debug)]
 pub struct Server {
-    path: PathBuf,
+    path: Option<PathBuf>,
     server: airup_sdk::nonblocking::rpc::Server,
 }
 impl Server {
     /// Creates a new [`Server`] instance.
-    pub async fn new<P: Into<PathBuf>>(path: P) -> anyhow::Result<Self> {
+    pub async fn with_path<P: Into<PathBuf>>(path: P) -> anyhow::Result<Self> {
         let path = path.into();
         let server = airup_sdk::nonblocking::rpc::Server::new(&path)?;
         airupfx::fs::set_permission(&path, airupfx::fs::Permission::Socket).await?;
 
-        Ok(Self { path, server })
+        Ok(Self {
+            path: Some(path),
+            server,
+        })
     }
 
     /// Forces to create a new [`Server`] instance.
-    pub async fn new_force<P: Into<PathBuf>>(path: P) -> anyhow::Result<Self> {
+    pub async fn with_path_force<P: Into<PathBuf>>(path: P) -> anyhow::Result<Self> {
         let path = path.into();
         _ = tokio::fs::remove_file(&path).await;
 
-        Self::new(path).await
+        Self::with_path(path).await
     }
 
     /// Starts the server task.
@@ -65,8 +68,10 @@ impl Server {
 
     /// Reloads the server.
     async fn reload(&mut self) -> anyhow::Result<()> {
-        let newer = Self::new_force(&self.path).await?;
-        *self = newer;
+        if let Some(path) = self.path.as_ref() {
+            let newer = Self::with_path_force(path).await?;
+            *self = newer;
+        }
         Ok(())
     }
 

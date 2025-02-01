@@ -40,13 +40,10 @@ async fn main() {
         .unwrap_log("unable to lock database")
         .await;
     app::airupd()
-        .storage
-        .runtime
-        .ipc_server()
+        .start_rpc_server()
         .await
         .unwrap_log("failed to create airupd ipc socket")
-        .await
-        .start();
+        .await;
     app::airupd().set_signal_hooks();
 
     if airupfx::process::as_pid1() && !cmdline.quiet {

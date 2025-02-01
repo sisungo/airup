@@ -12,16 +12,16 @@ pub struct BuildManifest {
     #[serde(default = "default_os_name")]
     pub os_name: String,
 
-    /// Path of Airup's system-wide config directory, e.g. `/etc/airup`.
+    /// Path of Airup's config directory, e.g. `/etc/airup`.
     pub config_dir: PathBuf,
 
-    /// Path of Airup's system-wide service directory, e.g. `/etc/airup/services`.
+    /// Path of Airup's service directory, e.g. `/etc/airup/services`.
     pub service_dir: PathBuf,
 
-    /// Path of Airup's system-wide milestone directory, e.g. `/etc/airup/milestones`.
+    /// Path of Airup's milestone directory, e.g. `/etc/airup/milestones`.
     pub milestone_dir: PathBuf,
 
-    /// Path of Airup's system-wide runtime directory, e.g. `/run/airup`.
+    /// Path of Airup's runtime directory, e.g. `/run/airup`.
     pub runtime_dir: PathBuf,
 
     /// Table of initial environment variables.
@@ -31,6 +31,10 @@ pub struct BuildManifest {
     /// Commands executed in `early_boot` pseudo-milestone.
     #[serde(default)]
     pub early_cmds: Vec<String>,
+
+    /// Name of Airup's socket in the abstract namespace. This is Linux-only.
+    #[cfg(target_os = "linux")]
+    pub linux_ipc_name: Option<String>,
 }
 
 fn default_os_name() -> String {

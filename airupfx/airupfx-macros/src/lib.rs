@@ -2,12 +2,20 @@ use proc_macro2::TokenStream;
 use quote::{TokenStreamExt, quote};
 use syn::{FnArg, ItemFn, ReturnType};
 
+/// Declares a method for RPC.
 #[proc_macro_attribute]
 pub fn api(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input: ItemFn = match syn::parse2(item.clone().into()) {
         Ok(it) => it,
         Err(e) => return token_stream_with_error(item.into(), e).into(),
     };
+
+    if input.sig.unsafety.is_some() {
+        return quote! {
+            ::std::compile_error!("an API function cannot be marked `unsafe`");
+        }
+        .into();
+    }
 
     let mut tuple_type = TokenStream::new();
     tuple_type.append_separated(
