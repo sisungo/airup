@@ -10,25 +10,28 @@ use airup_sdk::{
 use std::{collections::HashMap, hash::BuildHasher};
 
 pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
-    crate::ipc_methods!(system, [
-        refresh,
-        gc,
-        start_service,
-        query_service,
-        query_system,
-        stop_service,
-        kill_service,
-        reload_service,
-        sideload_service,
-        cache_service,
-        uncache_service,
-        interrupt_service_task,
-        list_services,
-        enter_milestone,
-        set_instance_name,
-        trigger_event,
-        unregister_extension,
-    ])
+    crate::ipc_methods!(
+        system,
+        [
+            refresh,
+            gc,
+            start_service,
+            query_service,
+            query_system,
+            stop_service,
+            kill_service,
+            reload_service,
+            sideload_service,
+            cache_service,
+            uncache_service,
+            interrupt_service_task,
+            list_services,
+            enter_milestone,
+            set_instance_name,
+            trigger_event,
+            unregister_extension,
+        ]
+    )
     .iter()
     .for_each(|(k, v)| {
         methods.insert(k, *v);

@@ -9,17 +9,17 @@ pub struct Power;
 impl PowerManager for Power {
     async fn poweroff(&self) -> std::io::Result<Infallible> {
         crate::unix::prepare().await;
-        reboot(RB_POWEROFF)
+        reboot(libc::RB_POWEROFF)
     }
 
     async fn reboot(&self) -> std::io::Result<Infallible> {
         crate::unix::prepare().await;
-        reboot(RB_AUTOBOOT)
+        reboot(0)
     }
 
     async fn halt(&self) -> std::io::Result<Infallible> {
         crate::unix::prepare().await;
-        reboot(RB_HALT)
+        reboot(libc::RB_HALT)
     }
 
     async fn userspace(&self) -> std::io::Result<Infallible> {
