@@ -49,5 +49,5 @@ fn default_os_name() -> String {
 }
 
 fn default_reboot_timeout() -> u32 {
-    5000
+    1200000
 }

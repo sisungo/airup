@@ -3,7 +3,7 @@
 use crate::app::airupd;
 use airup_sdk::Error;
 use std::{collections::HashSet, time::Duration};
-use tokio::task::JoinHandle;
+use tokio::task::{JoinHandle, JoinSet};
 
 pub const PRESETS: &[&str] = &["reboot", "poweroff", "halt", "userspace-reboot"];
 
@@ -31,13 +31,11 @@ pub async fn enter(name: &str) -> Result<(), Error> {
 async fn stop_all_services(timeout: Duration) {
     _ = tokio::time::timeout(timeout, async {
         let services = airupd().supervisors.list().await;
-        let mut join_handles = Vec::with_capacity(services.len());
+        let mut join_set = JoinSet::new();
         for service in services {
-            join_handles.push(stop_service_task(service));
+            join_set.spawn(stop_service_task(service));
         }
-        for join_handle in join_handles {
-            _ = join_handle.await;
-        }
+        join_set.join_all().await;
     })
     .await;
 }
