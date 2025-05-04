@@ -20,21 +20,25 @@ pub fn main(cmdline: Cmdline) -> anyhow::Result<()> {
         do_edit(&editor, &find_or_create_service(&cmdline.file)?, |s| {
             files::read_merge::<Service>(vec![s.into()])?;
             Ok(())
-        })
+        })?;
     } else if let Some(x) = cmdline.file.strip_suffix(".airc") {
         let service = find_or_create_service(&format!("{x}.airs"))?;
         do_edit(&editor, &find_or_create_config(&cmdline.file)?, |s| {
             files::read_merge::<Service>(vec![service, s.into()])?;
             Ok(())
-        })
+        })?;
     } else {
         let (n, name) = cmdline.file.split('.').enumerate().last().unwrap();
         if n > 0 {
-            Err(anyhow!("unknown file suffix `{name}`"))
+            return Err(anyhow!("unknown file suffix `{name}`"));
         } else {
-            Err(anyhow!("file suffix must be specified to edit"))
+            return Err(anyhow!("file suffix must be specified to edit"));
         }
     }
+
+    println!("note: You may run `airup self-reload` to ensure necessary cache to be refreshed.");
+
+    Ok(())
 }
 
 fn get_editor() -> anyhow::Result<String> {
