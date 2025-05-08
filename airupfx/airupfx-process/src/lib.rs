@@ -203,6 +203,7 @@ pub struct CommandEnv {
     pub setsid: bool,
     pub cpu_limit: Option<u64>,
     pub mem_limit: Option<u64>,
+    pub root_dir: Option<PathBuf>,
 }
 impl CommandEnv {
     #[inline]
@@ -267,6 +268,13 @@ impl CommandEnv {
         self
     }
 
+    #[inline]
+    pub fn root_dir<P: Into<PathBuf>, T: Into<Option<P>>>(&mut self, value: T) -> &mut Self {
+        self.root_dir = value.into().map(Into::into);
+        self
+    }
+
+    #[inline]
     pub fn login<'a, U: Into<Option<&'a str>>>(&mut self, name: U) -> std::io::Result<&mut Self> {
         if let Some(x) = name.into() {
             sys::command_login(self, x)?;
