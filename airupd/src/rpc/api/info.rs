@@ -1,15 +1,13 @@
 //! APIs that provides information about Airup and the system.
 
-use super::{Method, MethodFuture};
+use super::MethodFuture;
+use crate::rpc::route::Router;
 use airup_sdk::{Error, build::BuildManifest};
-use std::{collections::HashMap, hash::BuildHasher};
 
-pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
-    crate::ipc_methods!(info, [version, build_manifest,])
-        .iter()
-        .for_each(|(k, v)| {
-            methods.insert(k, *v);
-        });
+pub fn router() -> Router {
+    Router::new()
+        .route("version", version)
+        .route("build_manifest", build_manifest)
 }
 
 #[airupfx::macros::api]

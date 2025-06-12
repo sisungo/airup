@@ -8,7 +8,7 @@ pub mod prelude;
 pub mod util;
 
 pub use airupfx_env as env;
-pub use airupfx_extensions as extensions;
+pub use airupfx_extension as extension;
 pub use airupfx_fs as fs;
 pub use airupfx_io as io;
 pub use airupfx_isolator as isolator;

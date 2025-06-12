@@ -1,3 +1,6 @@
+Changes in v0.10.8:
+ * BREAKING: Renamed `fallback_logger` to `airup-fallback-logger`.
+
 Changes in v0.10.7:
  * Feature: Support of notify-styled watchdogs.
  * Few minor bug fixes.

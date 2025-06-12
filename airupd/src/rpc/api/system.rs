@@ -1,41 +1,32 @@
 //! APIs that provides system operations.
 
-use super::{Method, MethodFuture};
-use crate::app::airupd;
+use super::MethodFuture;
+use crate::{app::airupd, rpc::route::Router};
 use airup_sdk::{
     Error,
     files::Service,
     system::{Event, QueryService, QuerySystem},
 };
-use std::{collections::HashMap, hash::BuildHasher};
 
-pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
-    crate::ipc_methods!(
-        system,
-        [
-            refresh,
-            gc,
-            start_service,
-            query_service,
-            query_system,
-            stop_service,
-            kill_service,
-            reload_service,
-            sideload_service,
-            cache_service,
-            uncache_service,
-            interrupt_service_task,
-            list_services,
-            enter_milestone,
-            set_instance_name,
-            trigger_event,
-            unregister_extension,
-        ]
-    )
-    .iter()
-    .for_each(|(k, v)| {
-        methods.insert(k, *v);
-    });
+pub fn router() -> Router {
+    Router::new()
+        .route("refresh", refresh)
+        .route("gc", gc)
+        .route("start_service", start_service)
+        .route("query_service", query_service)
+        .route("query_system", query_system)
+        .route("stop_service", stop_service)
+        .route("kill_service", kill_service)
+        .route("reload_service", reload_service)
+        .route("sideload_service", sideload_service)
+        .route("cache_service", cache_service)
+        .route("uncache_service", uncache_service)
+        .route("interrupt_service_task", interrupt_service_task)
+        .route("list_services", list_services)
+        .route("enter_milestone", enter_milestone)
+        .route("set_instance_name", set_instance_name)
+        .route("trigger_event", trigger_event)
+        .route("unregister_extension", unregister_extension)
 }
 
 #[airupfx::macros::api]

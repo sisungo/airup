@@ -4,7 +4,7 @@
 //! small and simple.
 
 use airup_sdk::{Error, blocking::fs::DirChain, system::LogRecord};
-use airupfx::extensions::*;
+use airupfx::extension::*;
 use rev_lines::RevLines;
 use std::{io::Write, path::PathBuf, sync::OnceLock};
 
@@ -12,8 +12,8 @@ use std::{io::Write, path::PathBuf, sync::OnceLock};
 async fn main() -> anyhow::Result<()> {
     Server::new("logger")
         .await?
-        .mount("append", append)
-        .mount("tail", tail)
+        .route("append", append)
+        .route("tail", tail)
         .run()
         .await
 }

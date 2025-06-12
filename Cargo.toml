@@ -13,8 +13,8 @@ members = [
     "airupfx/airupfx-time",
     "airupfx/airupfx-macros",
     "airupfx/airupfx-isolator",
-    "airupfx/airupfx-extensions",
-    "extensions/fallback-logger",
+    "airupfx/airupfx-extension",
+    "extensions/airup-fallback-logger",
 ]
 resolver = "2"
 

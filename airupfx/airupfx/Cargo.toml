@@ -22,7 +22,7 @@ airupfx-process = { path = "../airupfx-process" }
 airupfx-signal = { path = "../airupfx-signal" }
 airupfx-time = { path = "../airupfx-time" }
 airupfx-macros = { path = "../airupfx-macros" }
-airupfx-extensions = { path = "../airupfx-extensions" }
+airupfx-extension = { path = "../airupfx-extension" }
 tracing = "0.1"
 
 [target.'cfg(target_os = "linux")'.dependencies]

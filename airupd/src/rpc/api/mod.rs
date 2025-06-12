@@ -5,48 +5,15 @@ mod info;
 pub mod session;
 mod system;
 
-use airup_sdk::{
-    Error,
-    rpc::{Request, Response},
-};
+use crate::rpc::route::Router;
+use airup_sdk::{Error, rpc::Request};
 use airupfx::prelude::*;
-use std::collections::HashMap;
 
-/// The Airup RPC API (implementation) manager.
-#[derive(Debug)]
-pub struct Manager {
-    methods: HashMap<&'static str, Method>,
-}
-impl Manager {
-    /// Creates a new [`Manager`] instance.
-    pub fn new() -> Self {
-        let mut object = Self {
-            methods: HashMap::with_capacity(32),
-        };
-        object.init();
-        object
-    }
-
-    /// Initializes the [`Manager`] instance with RPC methods.
-    pub fn init(&mut self) {
-        info::init(&mut self.methods);
-        debug::init(&mut self.methods);
-        system::init(&mut self.methods);
-    }
-
-    /// Invokes a method by the given request.
-    pub(super) async fn invoke(&self, req: Request) -> Response {
-        let method = self.methods.get(&req.method[..]).copied();
-        match method {
-            Some(method) => Response::new(method(req).await),
-            None => Response::Err(Error::NotImplemented),
-        }
-    }
-}
-impl Default for Manager {
-    fn default() -> Self {
-        Self::new()
-    }
+pub fn root_router() -> Router {
+    Router::new()
+        .nest("system", system::router())
+        .nest("debug", debug::router())
+        .nest("info", info::router())
 }
 
 /// Represents to an IPC method.

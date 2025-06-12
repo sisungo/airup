@@ -39,7 +39,7 @@ cargo build --release
 A standard Airup installation consists of the following files:
  - `airupd`: The main Airup daemon binary.
  - `airup`: A CLI utility to inspect or manipulate Airup components.
- - \[`fallback-logger`\]: An Airup extension that implements a simple logger for the Airup Logger Interface for fallback use.
+ - \[`airup-fallback-logger`\]: An Airup extension that implements a simple logger for the Airup Logger Interface for fallback use.
  This is not subject to be executed directly by the user and is usually placed at `/usr/libexec/airup/fallback-logger`.
  - `libairup_sdk.so` OR `libairup_sdk.dylib`: The Airup SDK for C, in dynamic library.
  - \[`docs/resources/airup-fallback-logger.airs`\]: Service manifest file for the `fallback-logger` service.

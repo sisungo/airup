@@ -27,13 +27,6 @@ impl Server {
         let build_manifest = airup_rpc_conn.build_manifest().await??;
         airup_sdk::build::try_set_manifest(build_manifest.clone());
         let service_name = std::env::var("AIRUP_SERVICE")?;
-        let extension_socket_name = format!("airup_extension_{}.sock", service_name);
-        let extension_socket_path = build_manifest
-            .runtime_dir
-            .join(&extension_socket_name)
-            .display()
-            .to_string();
-        _ = std::fs::remove_file(&extension_socket_path);
 
         Ok(Self::with_config(extension_name, service_name).await?)
     }
@@ -51,7 +44,7 @@ impl Server {
     }
 
     /// Mounts specific RPC method to specified handler.
-    pub fn mount(mut self, name: &'static str, handler: Method) -> Self {
+    pub fn route(mut self, name: &'static str, handler: Method) -> Self {
         self.rpc_methods.insert(name, handler);
         self
     }

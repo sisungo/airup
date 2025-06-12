@@ -1,10 +1,12 @@
 //! Definitions of Airup's file formats.
 
 pub mod milestone;
+pub mod policy;
 pub mod service;
 pub mod system_conf;
 
 pub use milestone::Milestone;
+pub use policy::Policy;
 pub use service::Service;
 pub use system_conf::SystemConf;
 

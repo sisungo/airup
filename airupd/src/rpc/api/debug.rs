@@ -1,19 +1,18 @@
 //! APIs that provides Airup debugging utilities.
 
-use super::{Method, MethodFuture};
-use crate::app::airupd;
+use super::MethodFuture;
+use crate::{app::airupd, rpc::route::Router};
 use airup_sdk::{
     error::ApiError,
     rpc::{Request, Response},
 };
-use std::{collections::HashMap, hash::BuildHasher};
 
-pub(super) fn init<H: BuildHasher>(methods: &mut HashMap<&'static str, Method, H>) {
-    crate::ipc_methods!(debug, [echo_raw, dump, exit, is_forking_supervisable,])
-        .iter()
-        .for_each(|(k, v)| {
-            methods.insert(k, *v);
-        });
+pub fn router() -> Router {
+    Router::new()
+        .route("echo_raw", echo_raw)
+        .route("dump", dump)
+        .route("exit", exit)
+        .route("is_forking_supervisable", is_forking_supervisable)
 }
 
 fn echo_raw(x: Request) -> MethodFuture {

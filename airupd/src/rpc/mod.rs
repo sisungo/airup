@@ -1,6 +1,7 @@
 //! # Airup IPC - Server Implementation
 
 pub mod api;
+pub mod route;
 
 use crate::app::airupd;
 use airup_sdk::rpc::Request;
@@ -10,20 +11,28 @@ use tokio::sync::broadcast;
 /// An instance of the Airup IPC context.
 #[derive(Debug)]
 pub struct Context {
-    api: api::Manager,
+    root_router: route::Router,
     reload: broadcast::Sender<()>,
 }
 impl Context {
-    /// Creates a new `Context` instance.
+    /// Creates a new [`Context`] instance.
     pub fn new() -> Self {
         Self {
-            api: api::Manager::new(),
+            root_router: api::root_router(),
             reload: broadcast::channel(1).0,
         }
     }
 
     pub fn reload(&self) {
         _ = self.reload.send(());
+    }
+
+    /// Invokes a method by the given request.
+    pub(super) async fn invoke(&self, req: Request) -> airup_sdk::rpc::Response {
+        match self.root_router.get_method(&req.method[..]) {
+            Some(method) => airup_sdk::rpc::Response::new(method(req).await),
+            None => airup_sdk::rpc::Response::Err(airup_sdk::Error::NotImplemented),
+        }
     }
 }
 impl Default for Context {
@@ -124,7 +133,7 @@ impl Session {
                     .rpc_invoke(Request::new::<&str, ciborium::Value, _>(method, req.params))
                     .await
                     .unwrap(),
-                None => airupd().rpc.api.invoke(req).await,
+                None => airupd().rpc.invoke(req).await,
             };
             self.conn.send(&resp).await?;
         }
