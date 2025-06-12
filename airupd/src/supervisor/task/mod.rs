@@ -7,10 +7,10 @@ pub mod start;
 pub mod stop;
 
 use super::SupervisorContext;
-use crate::ace::Ace;
-use airup_sdk::{Error, rpc::Request};
-use airupfx::{io::line_piper::Callback as LinePiperCallback, prelude::*};
-use std::{future::Future, path::PathBuf, pin::Pin};
+use crate::{ace::Ace, supervisor::logging::LogCallback};
+use airup_sdk::Error;
+use airupfx::prelude::*;
+use std::{future::Future, path::PathBuf};
 use tokio::sync::watch;
 
 /// Representation of handle to a task.
@@ -142,36 +142,6 @@ pub fn task_helper() -> (TaskHelperHandle, TaskHelper) {
     };
 
     (handle, helper)
-}
-
-#[derive(Clone)]
-struct LogCallback {
-    name: String,
-    module: &'static str,
-}
-impl LogCallback {
-    pub fn new(name: String, module: &'static str) -> Self {
-        Self { name, module }
-    }
-}
-impl LinePiperCallback for LogCallback {
-    fn invoke<'a>(
-        &'a self,
-        msg: &'a [u8],
-    ) -> Pin<Box<dyn for<'b> Future<Output = ()> + Send + 'a>> {
-        Box::pin(async move {
-            _ = crate::app::airupd()
-                .extensions
-                .rpc_invoke(Request::new(
-                    "logger.append",
-                    (&self.name, self.module, msg),
-                ))
-                .await;
-        })
-    }
-    fn clone_boxed(&self) -> Box<dyn LinePiperCallback> {
-        Box::new(self.clone())
-    }
 }
 
 async fn ace_environment(

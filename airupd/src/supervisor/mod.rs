@@ -1,6 +1,7 @@
 //! # The Airup Supervisor
 //! Main module containing full airup supervisor logic.
 
+pub mod logging;
 pub mod task;
 
 use crate::{ace::Child, app::airupd};
@@ -435,7 +436,7 @@ impl Supervisor {
     async fn start_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.timers.on_start();
         self.current_task
-            ._start_task(&self.context, async {
+            .start_task(&self.context, async {
                 task::start::start(Arc::clone(&self.context))
             })
             .await
@@ -444,7 +445,7 @@ impl Supervisor {
     /// Stops the service.
     async fn stop_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
-            ._start_task(&self.context, async {
+            .start_task(&self.context, async {
                 task::stop::start(Arc::clone(&self.context))
             })
             .await
@@ -473,14 +474,14 @@ impl Supervisor {
     /// Reloads the service.
     async fn reload_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
-            ._start_task(&self.context, task::reload::start(&self.context))
+            .start_task(&self.context, task::reload::start(&self.context))
             .await
     }
 
     /// Cleans the service up.
     async fn cleanup_service(&mut self, wait: Wait) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
-            ._start_task(&self.context, async {
+            .start_task(&self.context, async {
                 task::cleanup::start(Arc::clone(&self.context), wait)
             })
             .await
@@ -489,7 +490,7 @@ impl Supervisor {
     /// Executes health check for the service.
     async fn health_check(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task
-            ._start_task(&self.context, async {
+            .start_task(&self.context, async {
                 task::health_check::start(&self.context).await
             })
             .await
@@ -547,7 +548,7 @@ impl CurrentTask {
     /// # Errors
     /// The following errors would be returned by calling this function:
     ///  - [`Error::TaskExists`]: A task is already running in this container.
-    async fn _start_task(
+    async fn start_task(
         &mut self,
         context: &SupervisorContext,
         task_new: impl std::future::Future<Output = Arc<dyn TaskHandle>>,

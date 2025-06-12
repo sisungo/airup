@@ -21,12 +21,3 @@ pub(super) type Method = fn(Request) -> MethodFuture;
 
 /// Represents to future type of an IPC method.
 pub type MethodFuture = BoxFuture<'static, Result<ciborium::Value, Error>>;
-
-#[macro_export]
-macro_rules! ipc_methods {
-    ($prefix:ident, [$($n:ident),*,]) => {
-        [
-            $((concat!(stringify!($prefix), ".", stringify!($n)), $n as Method)),*
-        ]
-    };
-}
