@@ -16,7 +16,9 @@ use std::{
     cmp,
     collections::HashMap,
     convert::Infallible,
-    os::unix::process::CommandExt as _,
+    ffi::CStr,
+    os::unix::{ffi::OsStrExt, process::CommandExt as _},
+    path::Path,
     sync::{OnceLock, RwLock},
 };
 use tokio::{signal::unix::SignalKind, sync::watch};
@@ -30,6 +32,21 @@ pub trait CommandExt {
 
     /// View [`std::os::unix::process::CommandExt::groups`].
     fn groups(&mut self, groups: &[libc::gid_t]) -> &mut Self;
+
+    /// View [`std::os::unix::process::CommandExt::uid`].
+    ///
+    /// This is stable in Rust, however, it prevents some functions requiring root, like `groups` from working, so here
+    /// a version using `.pre_exec()` is provided.
+    fn uid(&mut self, uid: libc::uid_t) -> &mut Self;
+
+    /// Chroots to the specified directory.
+    fn root_dir(&mut self, path: &Path) -> &mut Self;
+
+    /// View [`std::process::Command::current_dir`].
+    ///
+    /// This is stable in Rust, however, it works weirdly when combined with `root_dir`, since it is applied earilier than
+    /// any `.pre_exec()`.
+    fn current_dir(&mut self, path: &Path) -> &mut Self;
 }
 impl CommandExt for std::process::Command {
     fn setsid(&mut self) -> &mut Self {
@@ -47,9 +64,7 @@ impl CommandExt for std::process::Command {
     }
 
     fn groups(&mut self, groups: &[libc::gid_t]) -> &mut Self {
-        fn setgroups(_groups: &[libc::gid_t]) -> std::io::Result<()> {
-            /*
-            This is temporarily commented, because `setuid` always runs ahead of `setgroups`, which caused this to always fail.
+        fn setgroups(groups: &[libc::gid_t]) -> std::io::Result<()> {
             unsafe {
                 let pgid = libc::setgroups(groups.len() as _, groups.as_ptr()) as _;
                 match pgid {
@@ -58,12 +73,47 @@ impl CommandExt for std::process::Command {
                     _ => unreachable!(),
                 }
             }
-            */
-            Ok(())
         }
 
         let groups = groups.to_vec();
         unsafe { self.pre_exec(move || setgroups(&groups[..])) }
+    }
+
+    fn uid(&mut self, uid: libc::uid_t) -> &mut Self {
+        fn setuid(uid: libc::uid_t) -> std::io::Result<()> {
+            unsafe {
+                match libc::setuid(uid) {
+                    0 => Ok(()),
+                    -1 => Err(std::io::Error::last_os_error()),
+                    _ => unreachable!(),
+                }
+            }
+        }
+
+        unsafe { self.pre_exec(move || setuid(uid)) }
+    }
+
+    fn root_dir(&mut self, path: &Path) -> &mut Self {
+        fn chroot(path: &Path) -> std::io::Result<()> {
+            unsafe {
+                let s = CStr::from_bytes_with_nul(path.as_os_str().as_bytes())
+                    .map_err(|_| std::io::Error::from(std::io::ErrorKind::InvalidInput))?
+                    .as_ptr();
+                match libc::chroot(s) {
+                    0 => Ok(()),
+                    -1 => Err(std::io::Error::last_os_error()),
+                    _ => unreachable!(),
+                }
+            }
+        }
+
+        let path = path.to_path_buf();
+        unsafe { self.pre_exec(move || chroot(&path)) }
+    }
+
+    fn current_dir(&mut self, path: &Path) -> &mut Self {
+        let path = path.to_path_buf();
+        unsafe { self.pre_exec(move || std::env::set_current_dir(&path)) }
     }
 }
 
@@ -313,10 +363,13 @@ pub(crate) async fn command_to_std(
         result.gid(x);
     }
     if let Some(x) = command.env.uid {
-        result.uid(x);
+        CommandExt::uid(&mut result, x);
+    }
+    if let Some(x) = &command.env.root_dir {
+        result.root_dir(x);
     }
     if let Some(x) = &command.env.working_dir {
-        result.current_dir(x);
+        CommandExt::current_dir(&mut result, x);
     }
     if command.env.clear_vars {
         result.env_clear();

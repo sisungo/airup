@@ -193,6 +193,7 @@ async fn ace_environment(
         .stderr(to_ace(env.stderr.clone(), 2))
         .clear_vars(env.clear_vars)
         .vars::<String, _, String>(vars)
+        .root_dir::<PathBuf, _>(env.root_dir.clone())
         .working_dir::<PathBuf, _>(env.working_dir.clone())
         .setsid(true);
 
