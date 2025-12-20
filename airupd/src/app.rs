@@ -99,7 +99,7 @@ impl Airupd {
     pub async fn start_rpc_server(&self) -> anyhow::Result<()> {
         #[cfg(target_os = "linux")]
         {
-            if let Some(name) = airup_sdk::build::manifest().linux_ipc_name {
+            if let Some(name) = &airup_sdk::build::manifest().linux_ipc_name {
                 // TODO
             }
         }
