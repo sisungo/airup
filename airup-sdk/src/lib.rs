@@ -38,11 +38,14 @@ use std::{
 pub fn socket_path() -> &'static Path {
     static SOCKET_PATH: OnceLock<&'static Path> = OnceLock::new();
 
+    let default_runtime_dir = build::try_manifest()
+        .map(|x| x.runtime_dir.as_path())
+        .unwrap_or(Path::new("/run/airup"));
     SOCKET_PATH.get_or_init(|| {
         Box::leak(
             std::env::var("AIRUP_SOCK")
                 .map(PathBuf::from)
-                .unwrap_or_else(|_| build::manifest().runtime_dir.join("airupd.sock"))
+                .unwrap_or_else(|_| default_runtime_dir.join("airupd.sock"))
                 .into(),
         )
     })

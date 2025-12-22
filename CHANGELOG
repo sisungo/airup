@@ -1,3 +1,6 @@
+Changes in v0.10.9:
+ * feat: support setting root directory for a service
+
 Changes in v0.10.8:
  * BREAKING: Renamed `fallback_logger` to `airup-fallback-logger`.
 

@@ -43,6 +43,20 @@ fn default_os_name() -> String {
 
 /// Gets a reference to the global [`BuildManifest`] instance. If [`set_manifest`] was not previously called, it automatically
 /// initializes the instance by reading the compile-time `build_manifest.json`.
+pub fn try_manifest() -> Option<&'static BuildManifest> {
+    #[cfg(feature = "_internal")]
+    {
+        Some(MANIFEST.get_or_init(embedded_manifest))
+    }
+
+    #[cfg(not(feature = "_internal"))]
+    {
+        MANIFEST.get()
+    }
+}
+
+/// Gets a reference to the global [`BuildManifest`] instance. If [`set_manifest`] was not previously called, it automatically
+/// initializes the instance by reading the compile-time `build_manifest.json`.
 ///
 /// # Panics
 /// Panics if the [`BuildManifest`] instance was not initialized yet and the compile-time `build_manifest.json` was invalid.
