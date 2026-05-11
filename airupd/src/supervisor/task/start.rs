@@ -1,6 +1,9 @@
 use super::*;
 use crate::app::airupd;
-use airup_sdk::{files::service::Kind, system::Status};
+use airup_sdk::{
+    files::service::Kind,
+    system::{ServiceStartReason, Status},
+};
 use airupfx::prelude::*;
 use std::sync::Arc;
 
@@ -184,7 +187,10 @@ impl StartService {
         // Start dependencies
         for dep in self.context.service.service.dependencies.iter() {
             airupd()
-                .make_service_active(dep)
+                .autostart_service(
+                    dep,
+                    ServiceStartReason::Dependency(self.context.service.name.clone()),
+                )
                 .await
                 .map_err(|_| Error::dep_not_satisfied(dep))?;
         }

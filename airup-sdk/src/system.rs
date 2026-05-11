@@ -4,13 +4,29 @@ use serde::{Deserialize, Serialize};
 /// Result of querying a service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryService {
+    /// Status of the service.
     pub status: Status,
+
+    /// Time when status of the service last changed.
     pub status_since: Option<i64>,
+
+    /// PID of the service's main process.
     pub pid: Option<i64>,
+
+    /// Memory usage of the whole service, in bytes.
     pub memory_usage: Option<u64>,
+
+    /// Class of the currently performing supervisor task of the service.
     pub task_class: Option<String>,
+
+    /// Last error of service supervisor operation.
     pub last_error: Option<Error>,
+
+    /// Definition (manifest) of the service.
     pub definition: Service,
+
+    /// Reason the service is last started.
+    pub start_reason: Option<ServiceStartReason>,
 }
 impl QueryService {
     pub fn default_of(definition: Service) -> Self {
@@ -22,8 +38,22 @@ impl QueryService {
             task_class: None,
             last_error: None,
             definition,
+            start_reason: None,
         }
     }
+}
+
+/// Reason a service is started.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ServiceStartReason {
+    /// The service is manually started.
+    Manual,
+
+    /// The service is started as a dependency of another service.
+    Dependency(String),
+
+    /// The service is started to reach a milestone.
+    Milestone(String),
 }
 
 /// Result of querying information about the whole system.

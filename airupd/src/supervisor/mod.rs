@@ -8,7 +8,7 @@ use crate::{ace::Child, app::airupd};
 use airup_sdk::{
     Error,
     files::{Service, Validate, service::WatchdogKind},
-    system::{Event, QueryService, Status},
+    system::{Event, QueryService, ServiceStartReason, Status},
 };
 use airupfx::{isolator::Realm, process::Wait, time::Alarm};
 use std::{
@@ -219,14 +219,11 @@ impl SupervisorHandle {
         Result<Arc<dyn TaskHandle>, Error>,
         Request::InterruptTask
     );
-    supervisor_req!(
-        make_active_raw,
-        Result<Arc<dyn TaskHandle>, Error>,
-        Request::MakeActive
-    );
 
-    pub async fn make_active(&self) -> Result<(), Error> {
-        match self.make_active_raw().await?.wait().await {
+    pub async fn autostart(&self, why: ServiceStartReason) -> Result<(), Error> {
+        let (tx, rx) = oneshot::channel();
+        self.sender.send(Request::Autostart(why, tx)).await.unwrap();
+        match rx.await.unwrap()?.wait().await {
             Ok(_) | Err(Error::Started) => Ok(()),
             Err(err) => Err(err),
         }
@@ -301,13 +298,13 @@ impl Supervisor {
                 self.context.last_error.set_autosave(false);
                 _ = chan.send(handle);
             }
-            Request::MakeActive(chan) => {
+            Request::Autostart(why, chan) => {
                 _ = match &self.current_task.0 {
                     Some(task) => match task.task_class() {
                         "StartService" => chan.send(Ok(Arc::clone(task))),
                         _ => chan.send(Err(Error::TaskExists)),
                     },
-                    None => match self.user_start_service().await {
+                    None => match self.autostart(why).await {
                         Ok(handle) => chan.send(Ok(handle)),
                         Err(err) => chan.send(Err(err)),
                     },
@@ -390,6 +387,7 @@ impl Supervisor {
             task_class: task.map(|x| x.task_class().to_owned()),
             last_error: self.context.last_error.get(),
             definition: self.context.service.clone(),
+            start_reason: self.context.start_reason.read().unwrap().clone(),
         }
     }
 
@@ -409,13 +407,26 @@ impl Supervisor {
         Ok(std::mem::replace(&mut context.service, new))
     }
 
+    /// Called when the service is started as a dependency.
+    ///
+    /// This resets the retry counter, then returns the just-started "StartService" task if task creation succeeded.
+    async fn autostart(&mut self, why: ServiceStartReason) -> Result<Arc<dyn TaskHandle>, Error> {
+        self.current_task.interrupt_non_important().await;
+        self.context.retry.reset();
+        let task_handle = self.start_service().await?;
+        *self.context.start_reason.write().unwrap() = Some(why);
+        Ok(task_handle)
+    }
+
     /// Called when the user attempted to start the service.
     ///
     /// This resets the retry counter, then returns the just-started "StartService" task if task creation succeeded.
     async fn user_start_service(&mut self) -> Result<Arc<dyn TaskHandle>, Error> {
         self.current_task.interrupt_non_important().await;
         self.context.retry.reset();
-        self.start_service().await
+        let task_handle = self.start_service().await?;
+        *self.context.start_reason.write().unwrap() = Some(ServiceStartReason::Manual);
+        Ok(task_handle)
     }
 
     /// Called when the user attempted to stop the service.
@@ -572,6 +583,7 @@ struct SupervisorContext {
     realm: Option<Arc<Realm>>,
     child: tokio::sync::RwLock<Option<Child>>,
     retry: RetryContext,
+    start_reason: RwLock<Option<ServiceStartReason>>,
 }
 impl SupervisorContext {
     /// Creates a new [`SupervisorContext`] instance for the given [`Service`].
@@ -585,6 +597,7 @@ impl SupervisorContext {
             realm,
             child: Default::default(),
             retry: Default::default(),
+            start_reason: Default::default(),
         })
     }
 
@@ -759,16 +772,20 @@ impl crate::app::Airupd {
     ///
     /// # Errors
     /// This method would fail if the service is running a task but is not `StartService` or the specific service was not found.
-    pub async fn make_service_active(&self, name: &str) -> Result<(), Error> {
-        let supervisor = match self.supervisors.get(name).await {
+    pub async fn autostart_service(
+        &self,
+        to_start: &str,
+        why: ServiceStartReason,
+    ) -> Result<(), Error> {
+        let supervisor = match self.supervisors.get(to_start).await {
             Some(supervisor) => supervisor,
             None => {
                 self.supervisors
-                    .supervise(self.storage.get_service_patched(name).await?)
+                    .supervise(self.storage.get_service_patched(to_start).await?)
                     .await
             }
         };
-        supervisor.make_active().await
+        supervisor.autostart(why).await
     }
 
     /// Starts the specific service, returns a handle of the spawned `StartService` task on success.
@@ -902,7 +919,10 @@ enum Request {
     Reload(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
     UpdateManifest(Box<Service>, oneshot::Sender<Result<Service, Error>>),
     InterruptTask(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
-    MakeActive(oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>),
+    Autostart(
+        ServiceStartReason,
+        oneshot::Sender<Result<Arc<dyn TaskHandle>, Error>>,
+    ),
 }
 
 /// Does necessary operations in special context for a child.

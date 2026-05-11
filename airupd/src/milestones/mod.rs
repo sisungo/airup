@@ -14,7 +14,7 @@ use airup_sdk::{
         milestone::{Item, Kind},
     },
     prelude::*,
-    system::EnteredMilestone,
+    system::{EnteredMilestone, ServiceStartReason},
 };
 use std::{
     cell::LazyCell,
@@ -174,7 +174,10 @@ async fn exec_milestone_serial(def: &Milestone) {
                     tracing::error!(target: "console", "Failed to load service {}: {}", service, err);
                 }
             }
-            Item::Start(service) => match app::airupd().make_service_active(&service).await {
+            Item::Start(service) => match app::airupd()
+                .autostart_service(&service, ServiceStartReason::Milestone(def.name.clone()))
+                .await
+            {
                 Ok(_) => {
                     tracing::info!(target: "console", "Starting {}", display_name(&service).await)
                 }

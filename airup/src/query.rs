@@ -1,7 +1,7 @@
 use airup_sdk::{
     blocking::Connection,
     extapi::ConnectionExt,
-    system::{ConnectionExt as _, QueryService, QuerySystem, Status},
+    system::{ConnectionExt as _, QueryService, QuerySystem, ServiceStartReason, Status},
 };
 use anyhow::anyhow;
 use chrono::prelude::*;
@@ -102,6 +102,16 @@ fn print_query_service(query_service: &QueryService) {
             .map(|x| x.to_string())
             .unwrap_or_else(|| format!("{}", style("(null)").dim()))
     );
+
+    if let PrintedStatusKind::Active | PrintedStatusKind::Starting = status.kind {
+        let reason = match &query_service.start_reason {
+            Some(ServiceStartReason::Manual) => "manual".into(),
+            Some(ServiceStartReason::Dependency(dep)) => format!("dependency of `{dep}`"),
+            Some(ServiceStartReason::Milestone(milestone)) => format!("in milestone `{milestone}`"),
+            None => "(unknown)".into(),
+        };
+        println!("{:>14} {}", "Start Reason:", reason,);
+    }
 
     if let Some(x) = &query_service.memory_usage {
         println!("{:>14} {}", "Memory:", crate::util::format_size(*x));
