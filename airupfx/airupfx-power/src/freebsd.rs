@@ -26,6 +26,10 @@ impl PowerManager for Power {
         crate::unix::prepare().await;
         airupfx_process::reload_image()
     }
+
+    async fn custom(&self, _: &str) -> std::io::Result<Infallible> {
+        self.reboot().await
+    }
 }
 
 fn reboot(cmd: libc::c_int) -> std::io::Result<Infallible> {
