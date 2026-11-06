@@ -1,3 +1,8 @@
+Changes in v0.10.10:
+ * feat: drop sysinfo dependency to support non-etc users
+ * feat: record reason a service is started
+ * developer: add new c sdk
+
 Changes in v0.10.9:
  * feat: support setting root directory for a service
 
