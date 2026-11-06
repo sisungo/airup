@@ -187,7 +187,7 @@ impl StartService {
         // Start dependencies
         for dep in self.context.service.service.dependencies.iter() {
             airupd()
-                .autostart_service(
+                .autostart_service_wait(
                     dep,
                     ServiceStartReason::Dependency(self.context.service.name.clone()),
                 )

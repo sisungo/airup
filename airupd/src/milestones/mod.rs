@@ -148,7 +148,10 @@ async fn exec_milestone_async(def: &Milestone) {
                     tracing::error!(target: "console", "Failed to load service {}: {}", service, err);
                 }
             }
-            Item::Start(service) => match app::airupd().start_service(&service).await {
+            Item::Start(service) => match app::airupd()
+                .autostart_service(&service, ServiceStartReason::Milestone(def.name.clone()))
+                .await
+            {
                 Ok(_) => {
                     tracing::info!(target: "console", "Starting {}", display_name(&service).await)
                 }
@@ -175,7 +178,7 @@ async fn exec_milestone_serial(def: &Milestone) {
                 }
             }
             Item::Start(service) => match app::airupd()
-                .autostart_service(&service, ServiceStartReason::Milestone(def.name.clone()))
+                .autostart_service_wait(&service, ServiceStartReason::Milestone(def.name.clone()))
                 .await
             {
                 Ok(_) => {
@@ -206,7 +209,10 @@ async fn exec_milestone_sync(def: &Milestone) {
                     tracing::error!(target: "console", "Failed to load service {}: {}", service, err);
                 }
             }
-            Item::Start(service) => match app::airupd().start_service(&service).await {
+            Item::Start(service) => match app::airupd()
+                .autostart_service(&service, ServiceStartReason::Milestone(def.name.clone()))
+                .await
+            {
                 Ok(x) => {
                     handles.push((service, x));
                 }

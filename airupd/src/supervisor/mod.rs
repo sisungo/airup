@@ -220,10 +220,14 @@ impl SupervisorHandle {
         Request::InterruptTask
     );
 
-    pub async fn autostart(&self, why: ServiceStartReason) -> Result<(), Error> {
+    pub async fn autostart(&self, why: ServiceStartReason) -> Result<Arc<dyn TaskHandle>, Error> {
         let (tx, rx) = oneshot::channel();
         self.sender.send(Request::Autostart(why, tx)).await.unwrap();
-        match rx.await.unwrap()?.wait().await {
+        rx.await.unwrap()
+    }
+
+    pub async fn autostart_wait(&self, why: ServiceStartReason) -> Result<(), Error> {
+        match self.autostart(why).await?.wait().await {
             Ok(_) | Err(Error::Started) => Ok(()),
             Err(err) => Err(err),
         }
@@ -772,7 +776,7 @@ impl crate::app::Airupd {
     ///
     /// # Errors
     /// This method would fail if the service is running a task but is not `StartService` or the specific service was not found.
-    pub async fn autostart_service(
+    pub async fn autostart_service_wait(
         &self,
         to_start: &str,
         why: ServiceStartReason,
@@ -782,6 +786,23 @@ impl crate::app::Airupd {
             None => {
                 self.supervisors
                     .supervise(self.storage.get_service_patched(to_start).await?)
+                    .await
+            }
+        };
+        supervisor.autostart_wait(why).await
+    }
+
+    /// Auto-starts the specific service, returns a handle of the spawned `StartService` task on success.
+    pub async fn autostart_service(
+        &self,
+        name: &str,
+        why: ServiceStartReason,
+    ) -> Result<Arc<dyn TaskHandle>, Error> {
+        let supervisor = match self.supervisors.get(name).await {
+            Some(supervisor) => supervisor,
+            None => {
+                self.supervisors
+                    .supervise(self.storage.get_service_patched(name).await?)
                     .await
             }
         };
