@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::{TokenStreamExt, quote};
-use syn::{FnArg, ItemFn, ReturnType};
+use syn::{FnArg, ItemFn, ReturnType, Safety};
 
 /// Declares a method for RPC.
 #[proc_macro_attribute]
@@ -10,7 +10,7 @@ pub fn api(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_ma
         Err(e) => return token_stream_with_error(item.into(), e).into(),
     };
 
-    if input.sig.unsafety.is_some() {
+    if matches!(input.sig.safety, Safety::Unsafe(_)) {
         return quote! {
             ::std::compile_error!("an API function cannot be marked `unsafe`");
         }
