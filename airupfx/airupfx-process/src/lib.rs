@@ -376,6 +376,7 @@ impl Command {
 #[derive(Debug, Clone, thiserror::Error)]
 #[error("{0}")]
 pub struct WaitError(String);
+#[allow(unreachable_code)]
 impl From<sys::WaitError> for WaitError {
     fn from(value: sys::WaitError) -> Self {
         Self(value.to_string())

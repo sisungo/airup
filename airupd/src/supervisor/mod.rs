@@ -682,7 +682,7 @@ impl RetryContext {
             -1 => true,
             max => self
                 .count
-                .fetch_update(
+                .try_update(
                     atomic::Ordering::SeqCst,
                     atomic::Ordering::SeqCst,
                     |x| match (x + 1).cmp(&max) {

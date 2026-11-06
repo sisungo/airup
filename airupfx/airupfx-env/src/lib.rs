@@ -2,13 +2,15 @@
 
 pub mod users;
 
-pub use users::{current_uid, with_current_user, with_user_by_id, with_user_by_name};
+pub use users::{current_uid, current_user, user_by_id, user_by_name};
 
 use std::{
-    ffi::{OsStr, OsString},
+    ffi::{CStr, OsStr, OsString},
     path::Path,
     sync::RwLock,
 };
+
+pub const FALLBACK_INSTANCE_NAME: &str = "localhost";
 
 static INSTANCE_NAME: RwLock<String> = RwLock::new(String::new());
 
@@ -46,9 +48,7 @@ pub fn take_var<K: AsRef<OsStr>>(key: K) -> Result<String, std::env::VarError> {
 
 /// Refreshes the environmental database.
 #[inline]
-pub async fn refresh() {
-    users::refresh();
-}
+pub async fn refresh() {}
 
 /// Sets instance name of the process.
 #[inline]
@@ -61,7 +61,23 @@ pub fn set_instance_name(name: String) {
 pub fn instance_name() -> String {
     let global = INSTANCE_NAME.read().unwrap();
     if global.is_empty() {
-        sysinfo::System::host_name().unwrap_or_else(|| String::from("localhost"))
+        cfg_if::cfg_if! {
+            if #[cfg(target_family = "unix")] {
+                unsafe {
+                    let mut buf = [0; 64];
+                    let status = libc::gethostname(buf.as_mut_ptr(), size_of_val(&buf));
+                    if status == -1 {
+                        return FALLBACK_INSTANCE_NAME.into();
+                    }
+                    CStr::from_bytes_until_nul(&buf)
+                        .map(|x| x.to_string_lossy())
+                        .unwrap_or(FALLBACK_INSTANCE_NAME.into())
+                        .into()
+                }
+            } else {
+                FALLBACK_INSTANCE_NAME.into()
+            }
+        }
     } else {
         global.clone()
     }

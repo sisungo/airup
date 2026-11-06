@@ -10,7 +10,6 @@ publish = false
 
 [dependencies]
 cfg-if = "1"
-sysinfo = "0.39"
 tokio = { workspace = true }
 
 [target.'cfg(target_family = "unix")'.dependencies]

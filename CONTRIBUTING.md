@@ -6,7 +6,6 @@ Welcome to contribute to Airup!
 ## HOWTO: Port Airup To A New Platform
 Airup depends on some libraries which contains platform-specific code. All these dependencies must be satisfied:
  - `tokio`
- - `sysinfo`
 
 Some OS features are used:
  - Unix Domain Sockets

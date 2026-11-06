@@ -394,24 +394,13 @@ pub(crate) async fn command_to_std(
 }
 
 pub(crate) fn command_login(env: &mut CommandEnv, name: &str) -> std::io::Result<()> {
-    let (uid, gid, groups_id) = airupfx_env::with_user_by_name(name, |entry| {
-        (
-            **entry.id(),
-            *entry.group_id(),
-            entry
-                .groups()
-                .into_iter()
-                .map(|x| **x.id())
-                .collect::<Vec<_>>(),
-        )
-    })
-    .ok_or_else(|| {
+    let user = airupfx_env::user_by_name(name).ok_or_else(|| {
         std::io::Error::new(
             std::io::ErrorKind::NotFound,
             format!("user \"{name}\" not found"),
         )
     })?;
-    env.uid(uid).gid(gid).groups(groups_id);
+    env.uid(user.uid).gid(user.gid).groups(user.groups);
 
     Ok(())
 }
